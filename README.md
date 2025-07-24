@@ -19,7 +19,7 @@ Given the project goal to build a medical image segmentation web app using clien
 3. (Optional) Build a backend endpoint to receive segmentation metadata and call an LLM API to generate a report.
 4. Ensure that inference remains client-side to protect user privacy.
 
-Please follow modern JavaScript practices and keep all components modular and minimal.
+Please follow modern TypeScript practices and keep all components modular and minimal.
 
 ---
 
