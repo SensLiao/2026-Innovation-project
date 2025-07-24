@@ -8,6 +8,19 @@ This is a medical image analysis and disease prediction
 
 ---
 
+## Usage
+Backend and Frontend are separated, they need to be both activated to access
+First, run backend to connect with database:
+```
+2026-Innovation-project\backend> npm run dev
+```
+Then, run frontend to access homepage at `http://localhost:5173/`:
+```
+2026-Innovation-project\frontend> npm run dev
+``` 
+
+
+
 ## Agent Role Prompt
 
 You are a full-stack AI assistant.
