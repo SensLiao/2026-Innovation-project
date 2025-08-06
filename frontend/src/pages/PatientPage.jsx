@@ -18,7 +18,7 @@ const PatientPage = () => {
       <ul>
         {patients && patients.length > 0 ? (
           patients.map((patient) => (
-            <li key={patient.id || patient._id}>
+            <li key={patient.pid || patient._pid}>
               {patient.name || patient.fullName || 'Unnamed Patient'}
             </li>
           ))
