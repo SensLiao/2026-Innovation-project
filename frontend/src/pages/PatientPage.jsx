@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import { usePatientsStore } from '../backendFunction/usePatients';
+import { userPatientDB } from '../backendFunction/usePatients';
 
 const PatientPage = () => {
-  const { patients, loading, error, fetchPatients } = usePatientsStore();
+  const { patients, loading, error, fetchPatients } = userPatientDB();
 
   useEffect(() => {
     fetchPatients();
