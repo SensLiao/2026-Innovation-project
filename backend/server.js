@@ -3,6 +3,7 @@ import morgan from 'morgan';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import patientRoute from './routes/patientRoute.js';
+import userRoute from './routes/userRoute.js';
 import { sql } from './config/db.js';
 
 dotenv.config();
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/patients', patientRoute);
+app.use('/api/users', userRoute);
 
 async function initDB() {
   // Initialize your database connection here if needed

@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const BASE_URL = 'http://localhost:3000';
 
-export const usePatientsStore = create((set, get) => ({
+export const userPatientDB = create((set, get) => ({
     patients: [],
     loading: false,
     error: null,
