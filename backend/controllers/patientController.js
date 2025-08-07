@@ -4,7 +4,7 @@ export const getPatients = async (req, res) => {
     try {
         const patients = await sql`
             SELECT * FROM patients
-            ORDER BY id DESC;
+            ORDER BY PID DESC;
         `;
         console.log("Patients fetched successfully");
         res.status(200).json({success:true, data: patients});

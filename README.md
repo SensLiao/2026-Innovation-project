@@ -21,6 +21,10 @@ For the USYD coding fest 2026-Innovation-project: It is a medical image segement
 # Routes
 ## Backend
 1. `http://localhost:3000/api/patients` to fetch all patients from database
+2. `http://localhost:3000/api/users` to fetch all users from database
+
 
 ## Frontend
 1. `http://localhost:5173/` by default root display patient page to list all patients fetched from backend
+2. `http://localhost:5173/login` simple login page
+3. `http://localhost:5173/profile-photo` simple page after successful login
