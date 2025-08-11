@@ -16,6 +16,10 @@ For the USYD coding fest 2026-Innovation-project: It is a medical image segement
 1. `cd frontend`
 2. `npm run dev`
 
+### Login
+Email: doc1@hospital.com
+Password: hashedpassword1
+
 ---
 
 # Routes
