@@ -1,0 +1,26 @@
+/* subtle rounded row “cards” inside table */
+.row-card {
+    @apply bg-white rounded-md border border-gray-200 px-3 py-2;
+  }
+  
+  /* small square icon buttons like in your mock */
+  .icon-btn {
+    @apply inline-flex items-center justify-center rounded-md border border-gray-300 p-1.5 hover:bg-gray-50;
+  }
+  
+  /* Decorative background blobs outside the white sheet */
+  .deco-blob {
+    width: 180px;
+    height: 180px;
+    background: #cfe3ee;
+    border-radius: 48px;
+    transform: rotate(8deg);
+  }
+  .deco-blob-sm {
+    width: 140px;
+    height: 100px;
+    background: #d9ebf4;
+    border-radius: 40px;
+    transform: rotate(-6deg);
+  }
+  
