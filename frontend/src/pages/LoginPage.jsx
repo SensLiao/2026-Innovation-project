@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useUserDB } from '../backendFunction/useUsers';
+import { useUserDB } from '../useDB/useUsers';
 import { useNavigate } from 'react-router-dom';
 import LoginImage from '../assets/images/login.png';
 import Decoration from '../assets/images/main2.png';

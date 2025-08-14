@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { userPatientDB } from "../backendFunction/usePatients";
+import { userPatientDB } from "../useDB/usePatients";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./patient.css";
 import main from "../assets/images/Main.png";
