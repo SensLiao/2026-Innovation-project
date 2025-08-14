@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { userPatientDB } from "../useDB/usePatients";
+import { usePatientDB } from "../useDB/usePatients";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./patient.css";
 import main from "../assets/images/Main.png";
 import Decoration from '../assets/images/main2.png';
 
 const PatientPage = () => {
-  const { patients, loading, error, fetchPatients } = userPatientDB();
+  const { patients, loading, error, fetchPatients } = usePatientDB();
   const [q, setQ] = useState("");
 
   // Get profile photo passed from Login OR fallback to localStorage
@@ -155,7 +155,7 @@ const PatientPage = () => {
   const navigate = useNavigate();
   const handleLogout = () => {
     // If you later add an auth context, call signOut() here.
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
   };
 
 
@@ -187,7 +187,15 @@ const PatientPage = () => {
                 <a className="hover:text-black" href="#history">History</a>
               </nav>
 
-              <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-white bg-gray-100">
+              <div
+                className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-white bg-gray-100 cursor-pointer"
+                onClick={() => {
+                  // Pass all user info in state if available
+                  const userInfo = state || {};
+                  navigate("/profile", { state: userInfo });
+                }}
+                title="View Profile"
+              >
                 {profileUrl ? (
                   <img src={profileUrl} alt="avatar" className="w-full h-full object-cover" />
                 ) : (
