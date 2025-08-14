@@ -18,7 +18,7 @@ const LoginPage = () => {
     e.preventDefault();
     const user = (users || []).find(u => u.email === email && u.passwordhash === password);
     if (user){
-      navigate("/", {
+      navigate("/patient", {
         state: {
           profilephoto: user.profilephoto, 
           name: user.name,
