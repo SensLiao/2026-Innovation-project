@@ -2,9 +2,10 @@ import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { usePubDB } from "../useDB/usePub";
 
-const ProfilePhotoPage = () => {
+const UserProfilePage = () => {
   const navigate = useNavigate();
   const { state: user } = useLocation();
+  console.log("Navigation state:", user);
   const { publications, loading, error, fetchPublicationsByUid } = usePubDB();
 
   useEffect(() => {
@@ -71,4 +72,4 @@ const ProfilePhotoPage = () => {
   );
 };
 
-export default ProfilePhotoPage;
+export default UserProfilePage;
