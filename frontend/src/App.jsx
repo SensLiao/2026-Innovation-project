@@ -5,7 +5,7 @@ import viteLogo from '/vite.svg'
 import './App.css'
 import PatientPage from './pages/PatientPage'
 import LoginPage from './pages/LoginPage';
-import ProfilePhotoPage from './pages/ProfilePhotoPage';
+import UserProfilePage from './pages/UserProfilePage';
 
 function App() {
   return (
@@ -14,7 +14,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/patient" element={<PatientPage />} />
-          <Route path="/profile" element={<ProfilePhotoPage />} />
+          <Route path="/profile" element={<UserProfilePage />} />
         </Routes>
       </div>
     </BrowserRouter>
