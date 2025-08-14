@@ -6,26 +6,40 @@ For the USYD coding fest 2026-Innovation-project: It is a medical image segement
 - `backend/`: Node.js Express server
 - `frontend/`: React app (Vite)
 
-## Getting Started
+---
 
-### Backend
+# Getting Started
+
+## Instal Dependencies
+To install all dependencies, run the following command in the `backend` and `frontend` directory separately:
+
+```
+npm install
+```
+
+This will download and install all required packages as specified in `package.json`.
+
+A list of used dependencies are documented in each directory in `DEPENDENCIES.md`.
+
+## Start Backend
 1. `cd backend`
 2. `npm run dev`
 
-### Frontend
+## Start Frontend
 1. `cd frontend`
 2. `npm run dev`
 
-### Login
-Email: doc1@hospital.com
-Password: hashedpassword1
+## Login
+- Email: doc1@hospital.com
+- Password: hashedpassword1
 
 ---
 
 # Routes
 ## Backend
-1. `http://localhost:3000/api/patients` to fetch all patients from database
-2. `http://localhost:3000/api/users` to fetch all users from database
+1. `http://localhost:3000/api/patients/...` refer to `backend/routes/patientRoute.js` for all patient routes
+2. `http://localhost:3000/api/users/...` refer to `backend/routes/userRoute.js` for all user routes
+3. `http://localhost:3000/api/publications/...` refer to `backend/routes/pubRoute.js` for all publication routes
 
 
 ## Frontend
