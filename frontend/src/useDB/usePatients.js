@@ -97,14 +97,15 @@ export const usePatientDB = create((set, get) => ({
         e.preventDefault();
         set({ loading: true });
         try {
-            const { registerData } = get();
+            const { patientData } = get();
             // Send POST request to add user
-            await axios.post(`${BASE_URL}/api/patients`, registerData);
+            await axios.post(`${BASE_URL}/api/patients`, patientData);
             
             //Refetch data
             await get().fetchPatients();
             get().resetPatientData();
             console.log("Patient added successfully");
+            document.getElementById("add_patient_modal").close();
         } catch (error) {
             console.log("Error adding patient:", error);
             set({ error: error.message });

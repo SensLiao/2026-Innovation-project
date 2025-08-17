@@ -4,10 +4,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import "./patient.css";
 import main from "../assets/images/Main.png";
 import Decoration from '../assets/images/main2.png';
+import AddPatientModal from "../components/AddPatientModal";
 
 const PatientPage = () => {
-  const { patients, loading, error, fetchPatients, deletePatient, fetchPatientByID } = usePatientDB();
+  const { patients, loading, error, fetchPatients, deletePatient, fetchPatientByID, updatePatient, setPatientData, patientData } = usePatientDB();
   const [q, setQ] = useState("");
+  const [editPid, setEditPid] = useState(null);
+  const [editFields, setEditFields] = useState({ name: '', age: '', gender: '', email: '' });
 
   // Get profile photo passed from Login OR fallback to localStorage
   const { state } = useLocation();
@@ -207,12 +210,23 @@ const PatientPage = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="absolute left-4 bottom-0 -translate-y-1/2 px-3 py-2 rounded-lg text-xs md:text-sm font-medium bg-gray-900 text-white hover:bg-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 shadow-md"
-          >
-            Logout
-          </button>
+          {/* Logout and Add Patient Buttons (bottom left) */}
+          <div className="absolute left-4 bottom-0 -translate-y-1/2 flex gap-3 z-10">
+            <button
+              onClick={handleLogout}
+              className="px-3 py-2 rounded-lg text-xs md:text-sm font-medium bg-gray-900 text-white hover:bg-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 shadow-md"
+            >
+              Logout
+            </button>
+            <button
+              onClick={() => document.getElementById("add_patient_modal").showModal()}  
+              className="px-3 py-2 rounded-lg text-xs md:text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 shadow-md"
+            >
+              Add Patient
+            </button>
+          </div>
+          {/* Add Patient Modal */}
+          <AddPatientModal />
 
 
 
@@ -264,36 +278,36 @@ const PatientPage = () => {
           <table className="w-full text-left text-[11px] md:text-xs border-separate border-spacing-y-2">
             <thead>
               <tr className="text-gray-500 text-[11px] md:text-xs">
-                  {[
-                    { key: "pid", label: "PID" },
-                    { key: "name", label: "Name" },
-                    { key: "age", label: "Age" },
-                    { key: "gender", label: "Gender" },
-                    { key: "date", label: "Registered Date" },
-                    { key: "email", label: "Email" },
-                  ].map(({ key, label }) => {
-                    const active = sort.key === key;
-                    return (
-                      <th key={key} className="px-4">
-                        <button
-                          type="button"
-                          onClick={() => headerClick(key)}
-                          className={`inline-flex items-center pb-1 border-b-2 ${
-                            active
-                              ? "text-black border-black"
-                              : "text-gray-500 border-transparent hover:text-black"
-                          }`}
-                          title={`Click to sort & search by ${label}`}
-                        >
-                          {label}
-                          <SortIcon active={active} dir={sort.dir} />
-                        </button>
-                      </th>
-                    );
-                  })}
-                  <th className="px-4 text-right">Actions</th>
-                </tr>
-              </thead>
+                {[
+                  { key: "pid", label: "PID" },
+                  { key: "name", label: "Name" },
+                  { key: "age", label: "Age" },
+                  { key: "gender", label: "Gender" },
+                  { key: "date", label: "Registered Date" },
+                  { key: "email", label: "Email" },
+                ].map(({ key, label }) => {
+                  const active = sort.key === key;
+                  return (
+                    <th key={key} className="px-4">
+                      <button
+                        type="button"
+                        onClick={() => headerClick(key)}
+                        className={`inline-flex items-center pb-1 border-b-2 ${
+                          active
+                            ? "text-black border-black"
+                            : "text-gray-500 border-transparent hover:text-black"
+                        }`}
+                        title={`Click to sort & search by ${label}`}
+                      >
+                        {label}
+                        <SortIcon active={active} dir={sort.dir} />
+                      </button>
+                    </th>
+                  );
+                })}
+                <th className="px-4">Actions</th>
+              </tr>
+            </thead>
 
               <tbody>
                 {loading && (
@@ -327,45 +341,132 @@ const PatientPage = () => {
                   const regRaw = p.createdat || p.registeredDate || p.createdAt || "—";
                   const reg = toDDMMYYYY(regRaw);
 
+                  const isEditing = editPid === pid;
+
                   return (
                     <tr key={pid}>
                       <td className="px-4">
                         <div className="row-card">{pid}</div>
                       </td>
                       <td className="px-4">
-                        <div className="row-card">{name}</div>
+                        <div className="row-card">
+                          {isEditing ? (
+                            <input
+                              className="border rounded px-2 py-1 w-24"
+                              value={editFields.name}
+                              onChange={e => setEditFields(f => ({ ...f, name: e.target.value }))}
+                            />
+                          ) : name}
+                        </div>
                       </td>
                       <td className="px-4">
-                        <div className="row-card w-20 text-center">{age}</div>
+                        <div className="row-card w-20 text-center">
+                          {isEditing ? (
+                            <input
+                              className="border rounded px-2 py-1 w-12 text-center"
+                              type="number"
+                              value={editFields.age}
+                              onChange={e => setEditFields(f => ({ ...f, age: e.target.value }))}
+                            />
+                          ) : age}
+                        </div>
                       </td>
                       <td className="px-4">
                         <div className="row-card w-24">
-                          <span className="inline-block text-xs px-2 py-1 rounded-full bg-gray-100 border border-gray-300">
-                            {gender || "—"}
-                          </span>
+                          {isEditing ? (
+                            <select
+                              className="border rounded px-2 py-1 w-20"
+                              value={editFields.gender}
+                              onChange={e => setEditFields(f => ({ ...f, gender: e.target.value }))}
+                            >
+                              <option value="">—</option>
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          ) : (
+                            <span className="inline-block text-xs px-2 py-1 rounded-full bg-gray-100 border border-gray-300">
+                              {gender || "—"}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4">
                         <div className="row-card w-32">{reg}</div>
                       </td>
                       <td className="px-4">
-                        <div className="row-card">{email}</div>
+                        <div className="row-card">
+                          {isEditing ? (
+                            <input
+                              className="border rounded px-2 py-1 w-32"
+                              type="email"
+                              value={editFields.email}
+                              onChange={e => setEditFields(f => ({ ...f, email: e.target.value }))}
+                            />
+                          ) : email}
+                        </div>
                       </td>
                       <td className="px-4">
                         <div className="row-card flex items-center justify-end gap-2">
-                          {/* Edit */}
-                          <button className="icon-btn" title="Edit">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-                              <path
-                                d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Z"
-                                stroke="currentColor"
-                                strokeWidth="1.6"
-                              />
-                              <path d="M14.06 6.19l3.75 3.75" stroke="currentColor" strokeWidth="1.6" />
-                            </svg>
-                          </button>
+                          {/* Edit/Save/Cancel */}
+                          {isEditing ? (
+                            <>
+                              <button
+                                className="icon-btn text-green-600"
+                                title="Save"
+                                onClick={async () => {
+                                  setPatientData({ ...p, ...editFields });
+                                  await updatePatient(pid);
+                                  setEditPid(null);
+                                  fetchPatients();
+                                }}
+                              >
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                                  <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="1.6" fill="none" />
+                                </svg>
+                              </button>
+                              <button
+                                className="icon-btn text-gray-500"
+                                title="Cancel"
+                                onClick={() => setEditPid(null)}
+                              >
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                                  <path d="M6 6l12 12M6 18L18 6" stroke="currentColor" strokeWidth="1.6" />
+                                </svg>
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              className="icon-btn"
+                              title="Edit"
+                              onClick={() => {
+                                setEditPid(pid);
+                                setEditFields({
+                                  name: p.name || p.fullName || "",
+                                  age: p.age ?? "",
+                                  gender: p.gender || "",
+                                  email: p.email || "",
+                                });
+                              }}
+                            >
+                              <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                                <path
+                                  d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Z"
+                                  stroke="currentColor"
+                                  strokeWidth="1.6"
+                                />
+                                <path d="M14.06 6.19l3.75 3.75" stroke="currentColor" strokeWidth="1.6" />
+                              </svg>
+                            </button>
+                          )}
                           {/* View */}
-                          <button className="icon-btn" title="View">
+                          <button
+                            className="icon-btn"
+                            title="View"
+                            onClick={async () => {
+                              navigate(`/patient/${pid}`);
+                            }}
+                          >
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
                               <path
                                 d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"
@@ -378,7 +479,6 @@ const PatientPage = () => {
                           {/* Delete */}
                           <button className="icon-btn" title="Delete"
                             onClick={()=> deletePatient(pid)}>
-                              {/* check luicide-react for icons */}
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
                               <path
                                 d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"

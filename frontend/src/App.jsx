@@ -6,6 +6,7 @@ import './App.css'
 import PatientPage from './pages/PatientPage'
 import LoginPage from './pages/LoginPage';
 import UserProfilePage from './pages/UserProfilePage';
+import PatientProfilePage from './pages/PatientProfilePage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/patient" element={<PatientPage />} />
+          <Route path="/patient/:pid" element={<PatientProfilePage />} />
           <Route path="/profile" element={<UserProfilePage />} />
         </Routes>
       </div>
