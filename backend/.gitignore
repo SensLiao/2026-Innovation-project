@@ -1,0 +1,2 @@
+# Ignore node_modules to avoid tracking downloaded dependencies
+node_modules/

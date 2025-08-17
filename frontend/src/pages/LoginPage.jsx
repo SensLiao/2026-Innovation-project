@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useUserDB } from '../backendFunction/useUsers';
+import { useUserDB } from '../useDB/useUsers';
 import { useNavigate } from 'react-router-dom';
 import LoginImage from '../assets/images/login.png';
 import Decoration from '../assets/images/main2.png';
 
 const LoginPage = () => {
-  const { users, loading, error, fetchUsers } = useUserDB();
+  const { users, loading, error, fetchUsers, addUser, signupData, setSignupData } = useUserDB();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState(null);
@@ -18,7 +18,7 @@ const LoginPage = () => {
     e.preventDefault();
     const user = (users || []).find(u => u.email === email && u.passwordhash === password);
     if (user){
-      navigate("/", {
+      navigate("/patient", {
         state: {
           profilephoto: user.profilephoto, 
           name: user.name,
@@ -108,42 +108,58 @@ const LoginPage = () => {
             </form>
           ) : (
             // SIGNUP FORM
-            <form onSubmit={(e) => { e.preventDefault(); /* handle signup */ }} className="space-y-5">
+            <form onSubmit={addUser} className="space-y-5">
+
+              {/* Username */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
                 <input
                   type="text"
                   className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-400"
                   placeholder="Username"
+                  value={signupData.name}
+                  onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
                   required
                 />
               </div>
 
+              {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
                   type="email"
                   className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-400"
+                  // put constraint that email should contain '@' and '.'
+                  value={signupData.email}
+                  onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                   placeholder="Email"
                   required
                 />
               </div>
 
+              {/* Phone */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                 <input
                   type="tel"
                   className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-400"
                   placeholder="Phone"
+                  value={signupData.phone}
+                  onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
+                  required
                 />
               </div>
 
+              {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input
                   type="password"
                   className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-400"
                   placeholder="Password"
+                  valule={signupData.password}
+                  onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                  minLength={6} // Minimum length of 6 characters
                   required
                 />
               </div>
