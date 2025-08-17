@@ -6,7 +6,7 @@ import main from "../assets/images/Main.png";
 import Decoration from '../assets/images/main2.png';
 
 const PatientPage = () => {
-  const { patients, loading, error, fetchPatients } = usePatientDB();
+  const { patients, loading, error, fetchPatients, deletePatient, fetchPatientByID } = usePatientDB();
   const [q, setQ] = useState("");
 
   // Get profile photo passed from Login OR fallback to localStorage
@@ -376,7 +376,9 @@ const PatientPage = () => {
                             </svg>
                           </button>
                           {/* Delete */}
-                          <button className="icon-btn" title="Delete">
+                          <button className="icon-btn" title="Delete"
+                            onClick={()=> deletePatient(pid)}>
+                              {/* check luicide-react for icons */}
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
                               <path
                                 d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"
