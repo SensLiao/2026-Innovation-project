@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePatientDB } from "../useDB/usePatients";
+import Logo from "../assets/images/Logo.png";
+import { Edit, Trash2 } from "lucide-react";
+import { toDDMMYYYY } from "../components/Header";
+
 
 const PatientProfilePage = () => {
   const { pid } = useParams();
@@ -69,195 +73,155 @@ const PatientProfilePage = () => {
   } = currentPatient;
 
   return (
-    <div className="min-h-screen bg-[#C2DCE7] flex justify-center items-start p-8 relative">
+    <div className="min-h-screen bg-[#C2DCE7] p-6 md:p-10 flex justify-center">
+      
       {/* Success popup */}
       {showSuccess && (
-        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           Update Successful
         </div>
       )}
+
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-3xl relative">
-        {/* Loading overlay */}
-        {loading && (
-          <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center z-40 rounded-3xl">
-            <div className="flex flex-col items-center">
-              <svg className="animate-spin h-8 w-8 text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-              </svg>
-              <span className="text-blue-500 font-semibold">Loading...</span>
-            </div>
-          </div>
-        )}
-        <button
-          className="absolute top-6 right-6 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-          onClick={() => navigate(-1)}
-        >
-          Back
-        </button>
-        <button
-          className={`absolute top-6 left-6 px-4 py-2 rounded-lg ${isEditing ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-          disabled={loading}
-          onClick={async () => {
-            if (isEditing) {
-              setPatientData({ ...currentPatient, ...editFields });
-              await updatePatient(currentPatient.pid);
-              setIsEditing(false);
-              setShowSuccess(true);
-              setTimeout(() => setShowSuccess(false), 2000);
-            } else {
-              setIsEditing(true);
-            }
-          }}
-        >
-          {isEditing ? 'Save' : 'Edit'}
-        </button>
-        {isEditing && (
-          <button
-            className="absolute top-6 left-28 px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400"
-            disabled={loading}
-            onClick={() => {
-              setIsEditing(false);
-              setEditFields({
-                name: currentPatient.name || '',
-                age: currentPatient.age ?? '',
-                gender: currentPatient.gender || '',
-                dateofbirth: currentPatient.dateofbirth || '',
-                phone: currentPatient.phone || '',
-                email: currentPatient.email || '',
-                emergencycontactname: currentPatient.emergencycontactname || '',
-                emergencycontactphone: currentPatient.emergencycontactphone || '',
-                streetaddress: currentPatient.streetaddress || '',
-                suburb: currentPatient.suburb || '',
-                state: currentPatient.state || '',
-                postcode: currentPatient.postcode || '',
-                country: currentPatient.country || '',
-              });
-            }}
-          >
-            Cancel
-          </button>
-        )}
-        <div className="flex flex-col md:flex-row gap-8 mt-12">
-          {/* Profile photo */}
-          <div className="flex-shrink-0">
-            {profilephoto ? (
-              <img
-                src={profilephoto}
-                alt="Profile"
-                className="w-32 h-32 rounded-full object-cover border-4 border-blue-200 shadow"
-              />
-            ) : (
-              <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 border-4 border-blue-200 shadow">
-                No Photo
+
+        {/*---------------------------------------- Header Section ------------------------------------- */}
+        <div className="flex justify-between items-center border-b pb-3 mb-6 relative">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="text-2xl leading-none"
+              aria-label="Go back"
+              title="Go back"
+            >
+              ←
+            </button>
+            Patient Profile
+          </h2>
+
+          {/*--------------------------------------------- Logo -------------------------------------*/}
+          <img src={Logo} 
+            alt="Logo" 
+            className="w-[100px] object-contain absolute right-10 top-7 -translate-y-1/2 pointer-events-none select-none" 
+          />
+        </div>
+
+        {/* Main Content Layout */}
+        <div className="grid grid-cols-3 gap-6">
+          {/* Left (2/3) */}
+          <div className="col-span-2">
+            
+            {/* Patient Info Card */}
+            <div className="flex items-start gap-4 mb-6">
+            <div className="flex-shrink-0">
+              {/*------------------------------------Patient Profile Photo --------------------------------------*/}
+              {profilephoto ? (
+                <img
+                  src={profilephoto}
+                  alt="Profile"
+                  className="w-32 h-32 rounded-lg object-cover border-4 border-blue-200 shadow"
+                />
+              ) : (
+                <div className="w-32 h-32 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 border-4 border-blue-200 shadow">
+                  No Photo
+                </div>
+              )}
+
+              {/* ------------------------------------Buttons under profile ------------------------------*/}
+              {/* Edit / Delete Buttons */}
+              <div className="flex justify-center gap-4 w-32 mt-2">
+                <button className="p-2 bg-gray-200 hover:bg-gray-300 rounded" aria-label="Edit" title="Edit">
+                  <Edit className="w-5 h-5 text-gray-700" />
+                </button>
+                <button className="p-2 bg-red-100 hover:bg-red-200 rounded" aria-label="Delete" title="Delete">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </button>
               </div>
-            )}
-          </div>
-          {/* Info */}
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-            <div>
-              <div className="text-gray-500 text-xs">PID</div>
-              <div className="font-bold text-lg">{patientPid || "—"}</div>
-            </div>
-            <div>
-              <div className="text-gray-500 text-xs">Name</div>
-              <div className="font-bold text-lg">
-                {isEditing ? (
-                  <input className="border rounded px-2 py-1 w-full" value={editFields.name} onChange={e => setEditFields(f => ({ ...f, name: e.target.value }))} disabled={loading} />
-                ) : (name || "—")}
+
+              {/* Segmentation Button */}
+              <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-32 mt-4">
+                Segmentation
+              </button>
+            </div> 
+
+            {/* ---------------------------------Wrapper for text sections (aligned with photo) ----------------------- */}
+            <div className="ml-[10px] space-y-8">
+
+              {/* Patient Information */}
+              <div>
+                <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                  Patient Information
+                  <span className="border-b border-gray-200 w-24" />
+                </h3>
+
+                <div className="grid grid-cols-[auto,1fr] gap-y-3 gap-x-4 mt-2">
+                  <label className="text-sm text-gray-600 flex items-center">Name</label>
+                  <input value={name || ""} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+
+                  <label className="text-sm text-gray-600 flex items-center">Patient ID</label>
+                  <input value={patientPid ?? ""} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+
+                  <label className="text-sm text-gray-600 flex items-center">Gender</label>
+                  <input value={gender || ""} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+
+                  <label className="text-sm text-gray-600 flex items-center">Date of Birth</label>
+                  <input value={toDDMMYYYY(dateofbirth)} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+
+                  <label className="text-sm text-gray-600 flex items-center">Register Date</label>
+                  <input value={toDDMMYYYY(createdat)} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="text-gray-500 text-xs">Age</div>
-              <div className="font-bold text-lg">
-                {isEditing ? (
-                  <input className="border rounded px-2 py-1 w-full" type="number" value={editFields.age} onChange={e => setEditFields(f => ({ ...f, age: e.target.value }))} disabled={loading} />
-                ) : (age || "—")}
+
+              {/* Emergency Contact */}
+              <div>
+                <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                  Emergency Contact
+                  <span className="border-b border-gray-200 w-24" />
+                </h3>
+
+                <div className="grid grid-cols-[auto,1fr] gap-y-3 gap-x-4 mt-2">
+                  <label className="text-sm text-gray-600 flex items-center">Name</label>
+                  <input value={emergencycontactname || ""} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+
+                  <label className="text-sm text-gray-600 flex items-center">Phone</label>
+                  <input value={emergencycontactphone || ""} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="text-gray-500 text-xs">Gender</div>
-              <div className="font-bold text-lg">
-                {isEditing ? (
-                  <select className="border rounded px-2 py-1 w-full" value={editFields.gender} onChange={e => setEditFields(f => ({ ...f, gender: e.target.value }))} disabled={loading}>
-                    <option value="">—</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                ) : (gender || "—")}
-              </div>
-            </div>
-            <div>
-              <div className="text-gray-500 text-xs">Date of Birth</div>
-              <div className="font-bold text-lg">
-                {isEditing ? (
-                  <input
-                    className="border rounded px-2 py-1 w-full"
-                    type="date"
-                    value={editFields.dateofbirth}
-                    onChange={e => setEditFields(f => ({ ...f, dateofbirth: e.target.value }))}
-                    disabled={loading}
-                  />
-                ) : (dateofbirth || "—")}
-              </div>
-            </div>
-            <div>
-              <div className="text-gray-500 text-xs">Registered</div>
-              <div className="font-bold text-lg">{createdat ? new Date(createdat).toLocaleDateString() : "—"}</div>
-            </div>
-            <div>
-              <div className="text-gray-500 text-xs">Phone</div>
-              <div className="font-bold text-lg">
-                {isEditing ? (
-                  <input className="border rounded px-2 py-1 w-full" value={editFields.phone} onChange={e => setEditFields(f => ({ ...f, phone: e.target.value }))} disabled={loading} />
-                ) : (phone || "—")}
+
+              {/* Address */}
+              <div>
+                <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                  Address
+                  <span className="border-b border-gray-200 w-48" /> 
+                </h3>
+
+                <div className="grid grid-cols-[auto,1fr] gap-y-3 gap-x-4 mt-2">
+                  <label className="text-sm text-gray-600 flex items-center">Street</label>
+                  <input value={streetaddress || ""} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+
+                  <label className="text-sm text-gray-600 flex items-center">Suburb</label>
+                  <input value={suburb || ""} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+
+                  <label className="text-sm text-gray-600 flex items-center">State</label>
+                  <input value={patientState || ""} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+
+                  <label className="text-sm text-gray-600 flex items-center">Postcode</label>
+                  <input value={postcode || ""} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+
+                  <label className="text-sm text-gray-600 flex items-center">Country</label>
+                  <input value={country || ""} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+                </div>
               </div>
             </div>
-            <div>
-              <div className="text-gray-500 text-xs">Email</div>
-              <div className="font-bold text-lg">
-                {isEditing ? (
-                  <input className="border rounded px-2 py-1 w-full" type="email" value={editFields.email} onChange={e => setEditFields(f => ({ ...f, email: e.target.value }))} disabled={loading} />
-                ) : (email || "—")}
-              </div>
-            </div>
-            <div>
-              <div className="text-gray-500 text-xs">Emergency Contact Name</div>
-              <div className="font-bold text-lg">
-                {isEditing ? (
-                  <input className="border rounded px-2 py-1 w-full" value={editFields.emergencycontactname} onChange={e => setEditFields(f => ({ ...f, emergencycontactname: e.target.value }))} disabled={loading} />
-                ) : (emergencycontactname || "—")}
-              </div>
-            </div>
-            <div>
-              <div className="text-gray-500 text-xs">Emergency Contact Phone</div>
-              <div className="font-bold text-lg">
-                {isEditing ? (
-                  <input className="border rounded px-2 py-1 w-full" value={editFields.emergencycontactphone} onChange={e => setEditFields(f => ({ ...f, emergencycontactphone: e.target.value }))} disabled={loading} />
-                ) : (emergencycontactphone || "—")}
-              </div>
-            </div>
-            <div className="md:col-span-2">
-              <div className="text-gray-500 text-xs">Address</div>
-              <div className="font-bold text-lg">
-                {isEditing ? (
-                  <>
-                    <input className="border rounded px-2 py-1 w-32 mr-2 mb-1" placeholder="Street" value={editFields.streetaddress} onChange={e => setEditFields(f => ({ ...f, streetaddress: e.target.value }))} disabled={loading} />
-                    <input className="border rounded px-2 py-1 w-24 mr-2 mb-1" placeholder="Suburb" value={editFields.suburb} onChange={e => setEditFields(f => ({ ...f, suburb: e.target.value }))} disabled={loading} />
-                    <input className="border rounded px-2 py-1 w-16 mr-2 mb-1" placeholder="State" value={editFields.state} onChange={e => setEditFields(f => ({ ...f, state: e.target.value }))} disabled={loading} />
-                    <input className="border rounded px-2 py-1 w-16 mr-2 mb-1" placeholder="Postcode" value={editFields.postcode} onChange={e => setEditFields(f => ({ ...f, postcode: e.target.value }))} disabled={loading} />
-                    <input className="border rounded px-2 py-1 w-24 mb-1" placeholder="Country" value={editFields.country} onChange={e => setEditFields(f => ({ ...f, country: e.target.value }))} disabled={loading} />
-                  </>
-                ) : (
-                  [streetaddress, suburb, patientState, postcode, country].filter(Boolean).join(", ") || "—"
-                )}
-              </div>
-            </div>
+
+          {/* --------------------------- Record  ----------------------- */}
+          {/* --------------------------- Trend  ----------------------- */}
           </div>
         </div>
       </div>
     </div>
+  </div>
+      
   );
 };
 
