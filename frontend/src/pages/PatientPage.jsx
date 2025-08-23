@@ -5,6 +5,8 @@ import "./patient.css";
 import main from "../assets/images/Main.png";
 import Decoration from '../assets/images/main2.png';
 import AddPatientModal from "../components/AddPatientModal";
+import Header from "../components/Header";
+import { toDDMMYYYY } from "../components/Header";
 
 const PatientPage = () => {
   const { patients, loading, error, fetchPatients, deletePatient, fetchPatientByID, updatePatient, setPatientData, patientData } = usePatientDB();
@@ -14,17 +16,6 @@ const PatientPage = () => {
 
   // Get profile photo passed from Login OR fallback to localStorage
   const { state } = useLocation();
-  const profileUrl =
-    state?.profilephoto ||
-    state?.profileUrl ||
-    (() => {
-      try {
-        const u = JSON.parse(localStorage.getItem("currentUser") || "{}");
-        return u?.profilephoto || u?.profilephoto || "";
-      } catch {
-        return "";
-      }
-    })();
 
   useEffect(() => {
     fetchPatients();
@@ -140,26 +131,10 @@ const PatientPage = () => {
     });
   }, [patients, q, sort, searchKey]);
 
-  // ------- DD/MM/YYYY formatter -------
-  const toDDMMYYYY = (value) => {
-    if (!value) return "—";
-    if (value?.toDate) value = value.toDate();
-    if (value?.seconds) value = new Date(value.seconds * 1000);
-    const d = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(d.getTime())) return "—";
-    return new Intl.DateTimeFormat("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(d);
-  };
+  
 
-   // ---------------- Logout  -------------------
+   // ---------------- Navigation  -------------------
   const navigate = useNavigate();
-  const handleLogout = () => {
-    // If you later add an auth context, call signOut() here.
-    navigate("/", { replace: true });
-  };
 
 
   return (
@@ -178,53 +153,12 @@ const PatientPage = () => {
         <div className="bg-white rounded-3xl shadow-2xl px-6 md:px-12 py-8 md:py-10 relative">
           
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="text-5xl font-extrabold tracking-tight">LOGO</div>
-
-            {/* Right group: tabs + avatar */}
-            <div className="ml-auto flex items-center gap-6">
-              <nav className="hidden sm:flex gap-8 text-gray-500 text-sm md:text-base">
-                <a className="hover:text-black" href="#patient">Patient</a>
-                <a className="hover:text-black" href="#segmentation">Segmentation</a>
-                <a className="text-black font-medium border-b-2 border-black pb-1" href="#report">Report</a>
-                <a className="hover:text-black" href="#history">History</a>
-              </nav>
-
-              <div
-                className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-white bg-gray-100 cursor-pointer"
-                onClick={() => {
-                  // Pass all user info in state if available
-                  const userInfo = state || {};
-                  navigate("/profile", { state: userInfo });
-                }}
-                title="View Profile"
-              >
-                {profileUrl ? (
-                  <img src={profileUrl} alt="avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full grid place-items-center text-[10px] text-gray-500">
-                    No photo
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Logout and Add Patient Buttons (bottom left) */}
-          <div className="absolute left-4 bottom-0 -translate-y-1/2 flex gap-3 z-10">
-            <button
-              onClick={handleLogout}
-              className="px-3 py-2 rounded-lg text-xs md:text-sm font-medium bg-gray-900 text-white hover:bg-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 shadow-md"
-            >
-              Logout
-            </button>
-            <button
-              onClick={() => document.getElementById("add_patient_modal").showModal()}  
-              className="px-3 py-2 rounded-lg text-xs md:text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 shadow-md"
-            >
-              Add Patient
-            </button>
-          </div>
+          <Header 
+            activeTab="patient"
+            showLogout={true}
+            showAddPatient={true}
+            onAddPatientClick={() => document.getElementById("add_patient_modal").showModal()}
+          />
           {/* Add Patient Modal */}
           <AddPatientModal />
 
