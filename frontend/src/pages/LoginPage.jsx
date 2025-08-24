@@ -16,13 +16,23 @@ const LoginPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const user = (users || []).find(u => u.email === email && u.passwordhash === password);
+    const passwordhash = btoa(password); // Simple base64 encoding for passwordhash
+    console.log(passwordhash);
+    console.log(password);
+    const user = (users || []).find(u => u.email === email && u.passwordhash === passwordhash);
     if (user){
       navigate("/patient", {
         state: {
           profilephoto: user.profilephoto, 
           name: user.name,
           uid: user.uid,
+          passwordhash: user.passwordhash,
+          phone: user.phone,
+          email: user.email,
+          createdat: user.createdat,
+          yearofexperience: user.yearofexperience,
+          education: user.education,
+          languages: user.languages
         },
       });
     }
