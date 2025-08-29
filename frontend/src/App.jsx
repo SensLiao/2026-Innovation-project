@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import UserProfilePage from './pages/UserProfilePage';
 import PatientProfilePage from './pages/PatientProfilePage';
 import HistoryPage from './pages/HistoryPage';
+import Segmentation from './pages/Segmentation';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/patient/:pid" element={<PatientProfilePage />} />
           <Route path="/profile" element={<UserProfilePage />} />
           <Route path="/history" element={<HistoryPage />} />
+          <Route path="/segmentation" element={<Segmentation />} />
         </Routes>
       </div>
     </BrowserRouter>
