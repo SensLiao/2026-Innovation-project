@@ -130,7 +130,8 @@ const Header = ({
       
 
       {/* Logout and Add Patient Buttons (bottom left) */}
-      <div className="absolute left-4 bottom-0 -translate-y-1/2 flex gap-3 z-10">
+      <div className="absolute left-13 bottom-3 flex gap-3 z-10">
+
         {showLogout && (
           <button
             onClick={handleLogout}
