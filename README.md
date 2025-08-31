@@ -31,7 +31,10 @@ A list of used dependencies are documented in each directory in `DEPENDENCIES.md
 
 ## Login
 - Email: doc1@hospital.com
-- Password: hashedpassword1
+- Password: signup
+
+- Email: user2@email.com
+- Password: user2pwd
 
 ---
 
