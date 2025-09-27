@@ -2,10 +2,14 @@ import express from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import ort from 'onnxruntime-node';
+import fs from 'fs';
 import patientRoute from './routes/patientRoute.js';
 import userRoute from './routes/userRoute.js';
 import pubRoute from './routes/pubRoute.js';
 import { sql } from './config/db.js';
+import globals from './globals.js';
+import * as modelModule from './routes/models.js';
 
 dotenv.config();
 
@@ -14,9 +18,18 @@ const PORT = process.env.PORT || 3001;
 
 // parse incoming data
 // send image/price/etc., extract json data
-app.use(express.json());// used for req.body
+app.use(express.json({ limit: '50mb' })); // 增加请求体大小限制
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors()); // enable CORS for all routes
 app.use(morgan('dev')); // log requests to the console
+
+// 错误处理中间件
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Payload too large' });
+  }
+  next(err);
+});
 
 // API routes
 app.get('/', (req, res) => {
@@ -26,6 +39,7 @@ app.get('/', (req, res) => {
 app.use('/api/patients', patientRoute);
 app.use('/api/users', userRoute);
 app.use('/api/publications', pubRoute);
+app.use('/api', modelModule.router);
 
 async function initDB() {
   // Initialize your database connection here if needed
@@ -131,14 +145,54 @@ async function initDefaultData() {
   }
 }
 
-initDB().then(() => {
-  // initDefaultData()
-  // Start the server after initializing the database
-  app.listen(PORT, () => {
-    console.log(`Backend server running on http://localhost:${PORT}`);
-  });
-}).catch((error) => {
-  console.error('Failed to initialize database:', error);
-  process.exit(1);
-});
+// ONNX模型加载函数
+async function loadModels() {
+  try {
+    console.log('Loading ONNX models...');
+    const [encoder, decoder] = await Promise.all([
+      ort.InferenceSession.create('./models/sam-med2d_b.encoder.onnx'),
+      ort.InferenceSession.create('./models/sam-med2d_b.decoder.onnx')
+    ]);
+
+    globals.onnxModels = {
+      encoder,
+      decoder
+    };
+
+    console.log('✅ All ONNX models loaded successfully!');
+  } catch (err) {
+    console.error('❌ Failed to load ONNX models:', err);
+    throw err;
+  }
+}
+
+// 统一的服务器启动函数
+async function startServer() {
+  try {
+    // 1. 初始化数据库
+    await initDB();
+    // await initDefaultData(); // 如果需要初始化默认数据
+
+    // 2. 加载ONNX模型
+    await loadModels();
+
+    // 3. 测试图像加载
+    const buffer = fs.readFileSync('./image/image1.png');
+    await modelModule.test(buffer);
+
+    // 4. 添加模型路由
+    app.use('/api/models', modelModule.router);
+
+    // 5. 启动服务器
+    app.listen(PORT, () => {
+      console.log(`Backend server running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Server startup failed:', error);
+    process.exit(1);
+  }
+}
+
+// 启动服务器
+startServer();
 export default app;
