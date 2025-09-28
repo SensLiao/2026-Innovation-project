@@ -49,28 +49,86 @@ const SegmentationPage = () => {
 
   const inputRef = useRef(null);
 
+  // 1) 新增 ref & 重绘触发器
+  const canvasRef = useRef(null);        // 叠加层画布
+  const [redrawTick, setRedrawTick] = useState(0);
+
+  // 可选：窗口尺寸变化时重绘
+  React.useEffect(() => {
+    const onResize = () => setRedrawTick(t => t + 1);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  React.useEffect(() => {
+    if (!canvasRef.current || !dropZoneRef.current) return;
+    if (!uploadedImage || !maskOutput || !maskDims) return;
+
+    const canvas = canvasRef.current;
+    const rect = getImageRect();
+    if (!rect) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(rect.contW * dpr);
+    canvas.height = Math.round(rect.contH * dpr);
+    canvas.style.width = `${rect.contW}px`;
+    canvas.style.height = `${rect.contH}px`;
+
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, rect.contW, rect.contH);
+
+    const [mH, mW] = maskDims;
+    const maskArr = Array.isArray(maskOutput) ? maskOutput : Array.from(maskOutput);
+    if (maskArr.length !== mH * mW) return;
+
+    // 生成一张 mask 小图，再按最近邻拉伸到显示矩形
+    const temp = document.createElement('canvas');
+    temp.width = mW; temp.height = mH;
+    const tctx = temp.getContext('2d');
+    const imgData = tctx.createImageData(mW, mH);
+
+    // DodgerBlue + 60% 透明（与 SecondPage 一致）
+    const R = 30, G = 144, B = 255, A = 153;
+    for (let i = 0; i < maskArr.length; i++) {
+      const on = Number(maskArr[i]) > 0.5;
+      const off = i * 4;
+      imgData.data[off]     = R;
+      imgData.data[off + 1] = G;
+      imgData.data[off + 2] = B;
+      imgData.data[off + 3] = on ? A : 0;
+    }
+    tctx.putImageData(imgData, 0, 0);
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(temp, rect.offsetX, rect.offsetY, rect.drawW, rect.drawH);
+  }, [maskOutput, maskDims, uploadedImage, origImSize, redrawTick,activeTab]);
+
+
+
   // ---------------- 文件处理：读取→上传到 /api/load_model → 保存尺寸与 embeddings ----------------
+  // ✅ 修改：handleFile —— 读取原图尺寸并缓存离屏 Image（绘制与导出都会用到）
   async function handleFile(f) {
     setFileName(f.name);
     setIsRunning(true);
     try {
       const dataURL = await fileToDataURL(f);
-      setUploadedImage(dataURL);
+      setUploadedImage(dataURL); // 预览
 
-      // 预载离屏 Image 拿原始 H/W
+      // 读取原图尺寸（叠加与导出所需）
       const { natW, natH } = await loadImageOffscreen(dataURL);
-      imgElRef.current = new Image();
-      imgElRef.current.src = dataURL;
       setOrigImSize([natH, natW]);
+      const im = new Image();
+      im.src = dataURL;
+      imgElRef.current = im;
 
-      // 上传到后端
+      // 上传到后端（拿 embeddings）
       const form = new FormData();
       form.append("image", f);
       const resp = await axios.post("http://localhost:3000/api/load_model", form);
       setImageEmbeddings(resp.data.image_embeddings || []);
       setEmbeddingsDims(resp.data.embedding_dims || []);
 
-      // UI 提示
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 1200);
     } catch (e) {
@@ -91,101 +149,125 @@ const SegmentationPage = () => {
     inputRef.current?.click();
   }
 
+  // 更新 handleContainerClick 函数以记录点击点
   function handleContainerClick(e) {
-    // 未上传：行为保持为“选文件”
     if (!uploadedImage || !fileName) {
       handleBrowse();
       return;
     }
-    // 已上传：当 Tool=point 时，记录点击点
     if (tool !== "point") {
-      alert("当前 Demo 仅实现 Point 提示；Box/Everything 暂未接入后端。");
+      alert("当前仅支持 Point 工具。");
       return;
     }
     if (!dropZoneRef.current) return;
-    const rect = dropZoneRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+
+    const hostRect = dropZoneRef.current.getBoundingClientRect();
+    const imgRect = getImageRect();
+    if (!imgRect) return;
+
+    const localX = e.clientX - hostRect.left - imgRect.offsetX;
+    const localY = e.clientY - hostRect.top  - imgRect.offsetY;
+
+    // 只允许点击在图片矩形内
+    if (localX < 0 || localY < 0 || localX > imgRect.drawW || localY > imgRect.drawH) return;
+
+    const x = localX / imgRect.drawW;  // 归一化到图片宽
+    const y = localY / imgRect.drawH;  // 归一化到图片高
+
     setClickPoints((prev) => [...prev, { x, y }]);
-    setPointLabels((prev) => [...prev, mode === "foreground" ? 1 : 0]);
+    setPointLabels((prev) => [...prev, mode === "foreground" ? 1 : 0]); // 背景点=0，显示为红色
   }
 
-  // ---------------- 运行模型：整合 refine / recompute 逻辑并调用 /api/run_model ----------------
-  function isDisplayPointInsideMask(p, maskOut, dims) {
-    if (!dropZoneRef.current || !maskOut || !dims) return false;
-    const displayW = dropZoneRef.current.clientWidth;
-    const displayH = dropZoneRef.current.clientHeight;
-    const [H, W] = dims;
-    const mx = Math.round(p.x * (W / displayW));
-    const my = Math.round(p.y * (H / displayH));
-    if (mx < 0 || my < 0 || mx >= W || my >= H) return false;
-    const idx = my * W + mx;
-    return Number(maskOut[idx]) > 0.5;
-  }
-
+  // ✅ 修改：runModel —— 仅发送“新增点”；若无新增点则提示；依据是否需要外扩选择 refine/recompute，但绝不带旧点
   async function runModel() {
+    // 前置校验
     if (!uploadedImage || !imageEmbeddings?.length) {
-      alert("Please upload an image and wait for embeddings.");
+      alert("请先上传图片并等待后端返回 embeddings");
       return;
     }
     if (tool !== "point") {
-      alert("Only Point tool is implemented in backend for now.");
+      alert("当前 Demo 仅实现点提示");
       return;
     }
-    if (clickPoints.length === 0) {
-      alert("Please add at least one point by clicking the upload area.");
-      return;
-    }
-    // 尺寸与坐标变换（显示→原图）
-    const [H, W] = origImSize;
-    const displayW = dropZoneRef.current?.clientWidth || 1;
-    const displayH = dropZoneRef.current?.clientHeight || 1;
-    const toOrig = (p) => ([
-      Math.max(0, Math.min(Math.round(p.x * (W / displayW)), W)),
-      Math.max(0, Math.min(Math.round(p.y * (H / displayH)), H)),
-    ]);
 
-    // 新增点
+    // 仅允许“新增点”触发；没有新增点就提示
     const newPts = clickPoints.slice(lastRunIndex);
     const newLabs = pointLabels.slice(lastRunIndex);
-
-    // 1) 默认细化
-    let useRefine = !!maskInput && hasMaskInput?.[0] === 1;
-
-    // 2) 若新增“正点”有落在当前掩码外 → 改为重算
-    if (newPts.length > 0 && maskOutput && maskDims) {
-      const posOutside = newPts.some((p, i) => newLabs[i] === 1 && !isDisplayPointInsideMask(p, maskOutput, maskDims));
-      if (posOutside) useRefine = false;
+    if (newPts.length === 0) {
+      alert("请先添加新的点再运行模型");
+      return;
     }
 
-    // 3) 组装点
-    let sendPointCoords = [];
-    let sendPointLabels = [];
-    if (useRefine) {
-      sendPointCoords = newPts.map(toOrig);
-      sendPointLabels = [...newLabs];
-    } else {
-      sendPointCoords = clickPoints.map(toOrig);
-      sendPointLabels = [...pointLabels];
+    // 确保原图尺寸
+    let [H, W] = origImSize;
+    if (!(Number.isFinite(H) && H > 0 && Number.isFinite(W) && W > 0)) {
+      const dims = await new Promise((resolve, reject) => {
+        const im = new Image();
+        im.onload = () => resolve([im.naturalHeight, im.naturalWidth]);
+        im.onerror = reject;
+        im.src = uploadedImage;
+      });
+      [H, W] = dims;
+      setOrigImSize(dims);
+      if (!imgElRef.current) {
+        const im2 = new Image();
+        im2.src = uploadedImage;
+        imgElRef.current = im2;
+      }
     }
 
-    // 调用后端
+    // 序列化工具 & 坐标转换（你的点是相对图片矩形归一化的）
+    const toPlainArray = (v) =>
+      v == null ? v : ArrayBuffer.isView(v) ? Array.from(v) : Array.isArray(v) ? v : v;
+    const toPointPairs = (arr) =>
+      Array.isArray(arr) ? arr.map((p) => [Math.round(p.x * W), Math.round(p.y * H)]) : [];
+
+    // 是否需要外扩（正点落在当前掩码外）
+    const existsPosOutside = (() => {
+      if (!(newPts.length > 0 && maskOutput && maskDims)) return false;
+      const [mH, mW] = maskDims;
+      return newPts.some((p, i) => {
+        if (newLabs[i] !== 1) return false;
+        const mx = Math.max(0, Math.min(Math.round(p.x * mW), mW - 1));
+        const my = Math.max(0, Math.min(Math.round(p.y * mH), mH - 1));
+        const idx = my * mW + mx;
+        return !(Number(maskOutput[idx]) > 0.5);
+      });
+    })();
+
+    // 默认细化；若需外扩则重算（但永远只发“新增点”，不发历史点）
+    const wantRefine = !!maskInput && hasMaskInput?.[0] === 1 && !existsPosOutside;
+
+    const sendPointCoords = toPointPairs(newPts);
+    const sendPointLabels = [...newLabs];
+
+    // mask_input 校验（仅当 refine）
+    const validLowResMask = (arr) => {
+      if (!Array.isArray(arr)) return false;
+      const L = arr.length;
+      const s = Math.sqrt(L);
+      return Number.isInteger(s) && s > 0;
+    };
+    const refinedMask = wantRefine && validLowResMask(maskInput) ? maskInput : null;
+    const refinedFlag = refinedMask ? [1] : [0];
+
     setIsRunning(true);
     try {
       const body = {
-        image_embeddings: imageEmbeddings,
-        embedding_dims: embeddingsDims,
-        point_coords: sendPointCoords,
-        point_labels: sendPointLabels,
-        mask_input: useRefine ? maskInput : null,
-        has_mask_input: useRefine ? [1] : [0],
+        image_embeddings: toPlainArray(imageEmbeddings),
+        embedding_dims: toPlainArray(embeddingsDims),
+        point_coords: toPlainArray(sendPointCoords),  // 仅新增点
+        point_labels: toPlainArray(sendPointLabels),
+        mask_input: refinedMask ? toPlainArray(refinedMask) : null,
+        has_mask_input: refinedFlag,
         orig_im_size: [H, W],
         hint_type: "point",
       };
+
       const res = await axios.post("http://localhost:3000/api/run_model", body);
       const data = res.data || {};
 
-      const visMask = data.masks;
+      const visMask = ArrayBuffer.isView(data.masks) ? Array.from(data.masks) : data.masks;
       const visShape = data.masks_shape;
       const visHW = Array.isArray(visShape) ? visShape.slice(-2) : null;
 
@@ -201,13 +283,133 @@ const SegmentationPage = () => {
         setHasMaskInput([0]);
       }
 
+      // 仅当成功时推进“已运行”的分界
       setLastRunIndex(clickPoints.length);
+
+      console.log("run_model:", {
+        flow: wantRefine ? "refine(new points)" : "recompute(new points only)",
+        masks_shape: visShape,
+        low_res_shape: data.low_res_masks_shape,
+      });
     } catch (e) {
-      console.error("run_model error:", e);
-      alert("Model inference failed.");
+      console.error("调用模型失败:", e);
+      alert("Model inference failed: " + (e.response?.data?.error || e.message));
     } finally {
       setIsRunning(false);
     }
+  }
+
+  // ✅ 新增：计算图片在容器中的实际显示矩形（object-contain）
+  function getImageRect() {
+    if (!dropZoneRef.current) return null;
+    const box = dropZoneRef.current;
+    const contW = box.clientWidth;
+    const contH = box.clientHeight;
+    const [natH, natW] = origImSize;
+    if (!natH || !natW || !contW || !contH) return null;
+
+    const scale = Math.min(contW / natW, contH / natH);
+    const drawW = Math.round(natW * scale);
+    const drawH = Math.round(natH * scale);
+    const offsetX = Math.round((contW - drawW) / 2);
+    const offsetY = Math.round((contH - drawH) / 2);
+    return { contW, contH, drawW, drawH, offsetX, offsetY };
+  }
+
+  // ✅ 新增：点的样式（前景=蓝、背景=红），以及渲染位置换算到图片矩形内
+  function pointDotClass(index) {
+    return pointLabels[index] === 1 ? "bg-blue-500" : "bg-red-500";
+  }
+  function styleForPoint(p /* {x,y} */, _idx) {
+    const r = getImageRect();
+    if (!r) return { display: "none" };
+    const left = r.offsetX + p.x * r.drawW;
+    const top  = r.offsetY + p.y * r.drawH;
+    return {
+      left: `${left}px`,
+      top: `${top}px`,
+      transform: "translate(-50%, -50%)",
+    };
+  }
+
+  // ✅ 修改：掩码绘制 useEffect —— 复用 getImageRect()，与点击/点渲染完全一致
+  React.useEffect(() => {
+    if (!canvasRef.current || !dropZoneRef.current) return;
+    if (!uploadedImage || !maskOutput || !maskDims) return;
+
+    const canvas = canvasRef.current;
+    const rect = getImageRect();
+    if (!rect) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(rect.contW * dpr);
+    canvas.height = Math.round(rect.contH * dpr);
+    canvas.style.width = `${rect.contW}px`;
+    canvas.style.height = `${rect.contH}px`;
+
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, rect.contW, rect.contH);
+
+    const [mH, mW] = maskDims;
+    const maskArr = Array.isArray(maskOutput) ? maskOutput : Array.from(maskOutput);
+    if (maskArr.length !== mH * mW) return;
+
+    // 生成一张 mask 小图，再按最近邻拉伸到显示矩形
+    const temp = document.createElement('canvas');
+    temp.width = mW; temp.height = mH;
+    const tctx = temp.getContext('2d');
+    const imgData = tctx.createImageData(mW, mH);
+
+    // DodgerBlue + 60% 透明（与 SecondPage 一致）
+    const R = 30, G = 144, B = 255, A = 153;
+    for (let i = 0; i < maskArr.length; i++) {
+      const on = Number(maskArr[i]) > 0.5;
+      const off = i * 4;
+      imgData.data[off]     = R;
+      imgData.data[off + 1] = G;
+      imgData.data[off + 2] = B;
+      imgData.data[off + 3] = on ? A : 0;
+    }
+    tctx.putImageData(imgData, 0, 0);
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(temp, rect.offsetX, rect.offsetY, rect.drawW, rect.drawH);
+  }, [maskOutput, maskDims, uploadedImage, origImSize, redrawTick]);
+
+  // ✅ 新增：导出覆盖图（与 SecondPage 同思路）
+  async function handleExportOverlay() {
+    try {
+      if (!imgElRef.current || !uploadedImage || !maskOutput || !maskDims) {
+        alert("No mask to export. Please run the model first.");
+        return;
+      }
+      const maskArray = Array.isArray(maskOutput) ? maskOutput : Array.from(maskOutput);
+      const blob = await composeOverlayPNG({
+        imageEl: imgElRef.current,
+        mask: maskArray,
+        maskDims: maskDims,       // [H, W]
+        overlayColor: "#1E90FF",  // DodgerBlue
+        overlayOpacity: 0.60,
+        scale_factor: 1,          // 原图尺寸导出
+        export_quality: 1,
+      });
+      const ts = new Date().toISOString().replace(/[:.]/g, "-");
+      downloadBlob(blob, `overlay_${ts}.png`);
+    } catch (err) {
+      console.error("导出失败：", err);
+      alert("导出失败，请查看控制台日志");
+    }
+  }
+  function downloadBlob(blob, filename = "overlay.png") {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
 
   // ---------------- Undo / Reset ----------------
@@ -254,6 +456,10 @@ const SegmentationPage = () => {
 
   // ---------------- Compose 覆盖图并触发 /api/medical_report_init ----------------
   async function handleAnalysis() {
+    if (!imageEmbeddings.length) {
+      alert("Please upload an image and wait for embeddings before analyzing.");
+      return;
+    }
     if (!imgElRef.current || !maskOutput || !maskDims) {
       alert("No segmentation mask found. Please run the model first.");
       return;
@@ -288,6 +494,10 @@ const SegmentationPage = () => {
 
   // ---------------- 右侧聊天：/api/medical_report_rein ----------------
   async function sendMessage() {
+    if (!imageEmbeddings.length) {
+      alert("Please upload an image and wait for embeddings before sending a message.");
+      return;
+    }
     if (!isAnalysisTriggered) {
       alert("Please run Analyse first to initialize the report context.");
       return;
@@ -518,14 +728,35 @@ const SegmentationPage = () => {
                     <input
                       ref={inputRef}
                       type="file"
-                      accept="image/*,.dcm"
+                      accept="image/png,image/jpeg"
                       className="hidden"
                       onChange={(e) => {
                         const f = e.target.files?.[0];
                         if (f) handleFile(f);
                       }}
                     />
-                    <div className="mb-2 text-gray-600">Drag the image here to upload</div>
+                    {uploadedImage ? (
+                      <>
+                        <img
+                          src={uploadedImage}
+                          alt="Uploaded Preview"
+                          className="absolute inset-0 h-full w-full object-contain rounded-2xl"
+                        />
+                        <canvas
+                          ref={canvasRef}
+                          className="absolute inset-0 rounded-2xl pointer-events-none"
+                        />
+                        {clickPoints.map((point, index) => (
+                          <div
+                            key={index}
+                            className={`absolute w-2 h-2 rounded-full ${pointDotClass(index)}`}
+                            style={styleForPoint(point, index)}
+                          />
+                        ))}
+                      </>
+                    ) : (
+                      <div className="mb-2 text-gray-600">Drag the image here to upload</div>
+                    )}
                     <button className="rounded-full bg-blue-600 px-4 py-1.5 text-white text-sm font-semibold shadow hover:bg-blue-700">
                       {fileName ? "Replace" : "File"}
                     </button>
@@ -595,6 +826,15 @@ const SegmentationPage = () => {
                       >
                         Reset Image
                       </button>
+                      {uploadedImage && maskOutput && maskDims && (
+                        <button
+                          onClick={handleExportOverlay}
+                          className="flex-1 min-w-[130px] h-11 rounded-full border px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap"
+                          title="Export PNG"
+                        >
+                          Export PNG
+                        </button>
+                      )}
                     </div>
                   </div>
                 </>
@@ -605,6 +845,10 @@ const SegmentationPage = () => {
                   model={model}
                   onChangeModel={setModel}
                   samples={{ medical: sampleGeneratedReport, formal: defaultReport }}
+                  uploadedImage={uploadedImage}   // dataURL
+                  maskOutput={maskOutput}         // 0/1 或 0~1 数组（长度 = H*W）
+                  maskDims={maskDims}             // [H, W]（与 maskOutput 匹配）
+                  origImSize={origImSize}         // [H, W] 原图尺寸
                 />
               )}
             </div>
@@ -679,7 +923,6 @@ const SegmentationPage = () => {
                   onClick={handleAnalysis}
                   className="ml-3 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-blue-700"
                   title="Generate report from current mask"
-                  disabled={!maskOutput || !maskDims}
                 >
                   Analyse
                 </button>
@@ -696,7 +939,7 @@ const SegmentationPage = () => {
                   onClick={sendMessage}
                   className="h-10 shrink-0 rounded-md border px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                   title="Send"
-                  disabled={!isAnalysisTriggered}
+                  disabled={isRunning}
                 >
                   Send
                 </button>
