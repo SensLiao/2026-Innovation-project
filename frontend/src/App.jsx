@@ -9,7 +9,6 @@ import UserProfilePage from './pages/UserProfilePage';
 import PatientProfilePage from './pages/PatientProfilePage';
 import HistoryPage from './pages/HistoryPage';
 import Segmentation from './pages/Segmentation';
-import ImageUploadTest from './pages/ImageUploadTest';
 import RequireAuth from './components/RequireAuth';
 
 function App() {
@@ -25,7 +24,6 @@ function App() {
             <Route path="/profile" element={<UserProfilePage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/segmentation" element={<Segmentation />} />
-            <Route path="/image-upload-test" element={<ImageUploadTest />} />
           </Route>
         </Routes>
       </div>

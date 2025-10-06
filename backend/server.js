@@ -2,7 +2,7 @@ import express from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
 import dotenv from 'dotenv';
-// import ort from 'onnxruntime-node';
+import ort from 'onnxruntime-node';
 import fs from 'fs';
 import cookieParser from 'cookie-parser';
 import patientRoute from './routes/patientRoute.js';
@@ -10,7 +10,7 @@ import userRoute from './routes/userRoute.js';
 import pubRoute from './routes/pubRoute.js';
 import { sql } from './config/db.js';
 import globals from './globals.js';
-// import * as modelModule from './routes/models.js';
+import * as modelModule from './routes/models.js';
 import imageRoute from './routes/imageRoute.js';
 import buildAuthRouter from './routes/authRoute.js';
 
@@ -50,7 +50,7 @@ app.use('/api/patients', patientRoute);
 app.use('/api/users', userRoute);
 app.use('/api/publications', pubRoute);
 app.use('/api/images', imageRoute);
-// app.use('/api', modelModule.router);
+app.use('/api', modelModule.router);
 app.use('/api/auth', buildAuthRouter());
 
 async function initDB() {
@@ -193,15 +193,15 @@ async function startServer() {
     await initDB();
     // await initDefaultData(); // 如果需要初始化默认数据
 
-    // // 2. 加载ONNX模型
-    // await loadModels();
+    // 2. 加载ONNX模型
+    await loadModels();
 
-    // // 3. 测试图像加载
-    // const buffer = fs.readFileSync('./image/image1.png');
-    // await modelModule.test(buffer);
+    // 3. 测试图像加载
+    const buffer = fs.readFileSync('./image/image1.png');
+    await modelModule.test(buffer);
 
-    // // 4. 添加模型路由
-    // app.use('/api/models', modelModule.router);
+    // 4. 添加模型路由
+    app.use('/api/models', modelModule.router);
 
     // 5. 启动服务器
     app.listen(PORT, () => {
