@@ -11,7 +11,6 @@ import pubRoute from './routes/pubRoute.js';
 import { sql } from './config/db.js';
 import globals from './globals.js';
 import * as modelModule from './routes/models.js';
-import imageRoute from './routes/imageRoute.js';
 import buildAuthRouter from './routes/authRoute.js';
 
 dotenv.config();
@@ -49,7 +48,6 @@ app.get('/', (req, res) => {
 app.use('/api/patients', patientRoute);
 app.use('/api/users', userRoute);
 app.use('/api/publications', pubRoute);
-app.use('/api/images', imageRoute);
 app.use('/api', modelModule.router);
 app.use('/api/auth', buildAuthRouter());
 
@@ -104,14 +102,6 @@ async function initDB() {
         CONSTRAINT patient_exists UNIQUE (Name, Age, DateOfBirth, Gender, Phone, Email, ProfilePhoto)
       );
     `;
-
-    await sql`
-      CREATE TABLE IF NOT EXISTS images (
-        id SERIAL PRIMARY KEY,
-        data BYTEA NOT NULL,
-        mimetype TEXT NOT NULL
-      );
-    `
     console.log('Database Users and Patients initialized');
   }catch (error) {
     console.error('Error initializing database:', error);
