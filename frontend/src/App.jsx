@@ -9,6 +9,8 @@ import UserProfilePage from './pages/UserProfilePage';
 import PatientProfilePage from './pages/PatientProfilePage';
 import HistoryPage from './pages/HistoryPage';
 import Segmentation from './pages/Segmentation';
+import ImageUploadTest from './pages/ImageUploadTest';
+import RequireAuth from './components/RequireAuth';
 
 function App() {
   return (
@@ -16,11 +18,15 @@ function App() {
       <div>
         <Routes>
           <Route path="/" element={<LoginPage />} />
-          <Route path="/patient" element={<PatientPage />} />
-          <Route path="/patient/:pid" element={<PatientProfilePage />} />
-          <Route path="/profile" element={<UserProfilePage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/segmentation" element={<Segmentation />} />
+
+          <Route element={<RequireAuth/>}>
+            <Route path="/patient" element={<PatientPage />} />
+            <Route path="/patient/:pid" element={<PatientProfilePage />} />
+            <Route path="/profile" element={<UserProfilePage />} />
+            <Route path="/history" element={<HistoryPage />} />
+            <Route path="/segmentation" element={<Segmentation />} />
+            <Route path="/image-upload-test" element={<ImageUploadTest />} />
+          </Route>
         </Routes>
       </div>
     </BrowserRouter>

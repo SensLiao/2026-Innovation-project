@@ -49,11 +49,11 @@ export const addUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
     const { id } = req.params;
-    const { name, email, phone, passwordhash, profilephoto, yearofexperience, education, languages } = req.body;
+    const { name, email, phone, profilephoto, yearofexperience, education, languages } = req.body;
     try {
         const updatedUser = await sql`
             UPDATE users
-            SET Name = ${name}, Email = ${email}, Phone = ${phone}, PasswordHash = ${passwordhash}, ProfilePhoto = ${profilephoto}, YearOfExperience = ${yearofexperience}, Education = ${education}, Languages = ${languages}
+            SET Name = ${name}, Email = ${email}, Phone = ${phone}, ProfilePhoto = ${profilephoto}, YearOfExperience = ${yearofexperience}, Education = ${education}, Languages = ${languages}
             WHERE UID = ${id}
             RETURNING *;
         `;

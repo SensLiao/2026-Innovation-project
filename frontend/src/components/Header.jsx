@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../useDB/useAuth";
 
 // ------- DD/MM/YYYY formatter -------
 export const toDDMMYYYY = (value) => {
@@ -23,46 +24,11 @@ const Header = ({
 }) => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const [profileUrl, setProfileUrl] = useState("");
-
-  // Get profile photo from state or localStorage
-  useEffect(() => {
-    const getProfilePhoto = () => {
-      const photo = state?.profilephoto || 
-                   state?.profileUrl || 
-                   (() => {
-                     try {
-                       const u = JSON.parse(localStorage.getItem("currentUser") || "{}");
-                       return u?.profilephoto || u?.profileUrl || "";
-                     } catch {
-                       return "";
-                     }
-                   })();
-      setProfileUrl(photo);
-    };
-
-    getProfilePhoto();
-
-    // Listen for localStorage changes (when profile photo is updated)
-    const handleStorageChange = () => {
-      getProfilePhoto();
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also check localStorage periodically for changes
-    const interval = setInterval(getProfilePhoto, 1000);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [state]);
-
-
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    navigate("/", { replace: true });
+    navigate("/", { replace: true }); 
+    logout();
   };
 
   const handleProfileClick = () => {
@@ -115,8 +81,8 @@ const Header = ({
           onClick={handleProfileClick}
           title="View Profile"
         >
-          {profileUrl ? (
-            <img src={profileUrl} alt="avatar" className="w-full h-full object-cover" />
+          {user.profilephoto ? (
+            <img src={user.profilephoto} alt="avatar" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full grid place-items-center text-gray-500">
               <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
