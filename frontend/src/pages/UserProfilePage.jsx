@@ -2,13 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { usePubDB } from "../useDB/usePub";
 import { useUserDB } from "../useDB/useUsers";
+import { useAuth } from "../useDB/useAuth";
 
 const UserProfilePage = () => {
   const navigate = useNavigate();
-  const { state: user } = useLocation();
-  console.log("Navigation state:", user);
+  const { user, fetchMe } = useAuth();
+  // Local user state for display, to allow refresh after update
+
   const { publications, loading, error, fetchPublicationsByUid } = usePubDB();
-  const { updateUser, setuserData, userData, loading: userLoading, fetchUsers, users } = useUserDB();
+  const { updateUser, setuserData, loading: userLoading } = useUserDB();
   // Edit state
   const [isEditing, setIsEditing] = useState(false);
   const [editFields, setEditFields] = useState({
@@ -18,29 +20,22 @@ const UserProfilePage = () => {
     yearofexperience: user?.YearOfExperience ?? user?.yearofexperience ?? "",
     education: user?.Education || user?.education || "",
     languages: user?.Languages || user?.languages || "",
-    passwordhash: user?.passwordhash || "",
     profilephoto: user?.profilephoto || "",
   });
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Local user state for display, to allow refresh after update
-  const [localUser, setLocalUser] = useState(user);
+  // 首次进入没 user 时拉一次，会自动带上 cookie
+  useEffect(() => {
+    if (!user) fetchMe();
+  }, [user, fetchMe]);
 
   useEffect(() => {
-    if (user && (user.UID || user.uid)) {
-      fetchPublicationsByUid(user.UID || user.uid);
+    if (user && user.uid ) {
+      fetchPublicationsByUid(user.uid);
     }
   }, [user, fetchPublicationsByUid]);
 
-  // After update, fetch latest user info from users list
-  useEffect(() => {
-    if (users && (user?.UID || user?.uid)) {
-      const updated = users.find(u => (u.uid || u.UID) === (user.uid || user.UID));
-      if (updated) setLocalUser(updated);
-    }
-  }, [users, user]);
-
-  if (!localUser || Object.keys(localUser).length === 0) {
+  if (!user || Object.keys(user).length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded shadow text-center">
@@ -69,8 +64,8 @@ const UserProfilePage = () => {
       <div className="bg-white p-8 rounded shadow w-full max-w-md relative">
         <div className="flex flex-col items-center mb-6">
           <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-blue-200">
-            {localUser.profilephoto ? (
-              <img src={localUser.profilephoto} alt="Profile" className="w-full h-full object-cover" />
+            {user.profilephoto ? (
+              <img src={user.profilephoto} alt="Profile" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400">No Photo</div>
             )}
@@ -90,8 +85,8 @@ const UserProfilePage = () => {
             </>
           ) : (
             <>
-              <h2 className="text-2xl font-bold mb-2">{localUser.Name || localUser.name || "User"}</h2>
-              <p className="text-gray-500">{localUser.Email || localUser.email}</p>
+              <h2 className="text-2xl font-bold mb-2">{user.name || "User"}</h2>
+              <p className="text-gray-500">{user.email}</p>
             </>
           )}
         </div>
@@ -104,7 +99,7 @@ const UserProfilePage = () => {
                 value={editFields.phone}
                 onChange={e => setEditFields(f => ({ ...f, phone: e.target.value }))}
               />
-            ) : (localUser.Phone || localUser.phone || "—")}
+            ) : (user.phone || "—")}
           </div>
           <div>
             <strong>Year of Experience:</strong>{" "}
@@ -115,7 +110,7 @@ const UserProfilePage = () => {
                 value={editFields.yearofexperience}
                 onChange={e => setEditFields(f => ({ ...f, yearofexperience: e.target.value }))}
               />
-            ) : (localUser.YearOfExperience ?? localUser.yearofexperience ?? "—")}
+            ) : ( user.yearofexperience ?? "—")}
           </div>
           <div>
             <strong>Education:</strong>{" "}
@@ -125,7 +120,7 @@ const UserProfilePage = () => {
                 value={editFields.education}
                 onChange={e => setEditFields(f => ({ ...f, education: e.target.value }))}
               />
-            ) : (localUser.Education || localUser.education || "—")}
+            ) : (user.education || "—")}
           </div>
           <div>
             <strong>Languages:</strong>{" "}
@@ -135,9 +130,9 @@ const UserProfilePage = () => {
                 value={editFields.languages}
                 onChange={e => setEditFields(f => ({ ...f, languages: e.target.value }))}
               />
-            ) : (localUser.Languages || localUser.languages || "—")}
+            ) : ( user.languages || "—")}
           </div>
-          <div><strong>Created At:</strong> {formatDate(localUser.CreatedAt || localUser.createdat)}</div>
+          <div><strong>Created At:</strong> {formatDate(user.createdat)}</div>
         </div>
         {/* Edit/Save/Cancel buttons */}
         <div className="flex gap-3 mb-6">
@@ -158,11 +153,11 @@ const UserProfilePage = () => {
                     yearofexperience: yoe,
                     education: editFields.education,
                     languages: editFields.languages,
-                    passwordhash: editFields.passwordhash,
                     profilephoto: editFields.profilephoto,
                   });
-                  await updateUser(user.UID || user.uid);
-                  await fetchUsers(); // Refresh users list
+                  await updateUser(user.uid);
+                  await fetchMe(); // Refresh auth user info
+
                   // Update editFields with latest value from localUser after update
                   setEditFields(prev => ({
                     ...prev,
@@ -181,14 +176,13 @@ const UserProfilePage = () => {
                 onClick={() => {
                   setIsEditing(false);
                   setEditFields({
-                    name: localUser.Name || localUser.name || "",
-                    email: localUser.Email || localUser.email || "",
-                    phone: localUser.Phone || localUser.phone || "",
-                    yearofexperience: localUser.YearOfExperience ?? localUser.yearofexperience ?? "",
-                    education: localUser.Education || localUser.education || "",
-                    languages: localUser.Languages || localUser.languages || "",
-                    passwordhash: localUser.passwordhash || "",
-                    profilephoto: localUser.profilephoto || "",
+                    name: user.name || "",
+                    email: user.email || "",
+                    phone: user.phone || "",
+                    yearofexperience: user.yearofexperience ?? "",
+                    education: user.education || "",
+                    languages: user.languages || "",
+                    profilephoto: user.profilephoto || "",
                   });
                 }}
                 disabled={userLoading}
