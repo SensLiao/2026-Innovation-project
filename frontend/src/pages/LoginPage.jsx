@@ -1,42 +1,54 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../useDB/useAuth';
 import { useUserDB } from '../useDB/useUsers';
 import { useNavigate } from 'react-router-dom';
 import LoginImage from '../assets/images/login.png';
 import Decoration from '../assets/images/main2.png';
 
 const LoginPage = () => {
-  const { users, loading, error, fetchUsers, addUser, signupData, setSignupData } = useUserDB();
+  const { login, loading, error } = useAuth();
+  const { addUser, signupData, setSignupData } = useUserDB();
+  // const { users, loading, error, fetchUsers, addUser, signupData, setSignupData } = useUserDB();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState(null);
   const [tab, setTab] = useState('login');           
   const navigate = useNavigate();
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  // useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const passwordhash = btoa(password); // Simple base64 encoding for passwordhash
-    console.log(passwordhash);
-    console.log(password);
-    const user = (users || []).find(u => u.email === email && u.passwordhash === passwordhash);
-    if (user){
-      navigate("/patient", {
-        state: {
-          profilephoto: user.profilephoto, 
-          name: user.name,
-          uid: user.uid,
-          passwordhash: user.passwordhash,
-          phone: user.phone,
-          email: user.email,
-          createdat: user.createdat,
-          yearofexperience: user.yearofexperience,
-          education: user.education,
-          languages: user.languages
-        },
-      });
+    const ok = await login(email, password);
+    console.log("ok value:", ok);
+    console.log({ email, password, ok });
+
+    if (ok) {
+      navigate('/patient'); // Redirect to patient dashboard after login
+    } else {
+      setLoginError('Invalid email or password');
     }
-    else setLoginError('Invalid email or password');
+    // const passwordhash = btoa(password); // Simple base64 encoding for passwordhash
+    // console.log(passwordhash);
+    // console.log(password);
+    // const user = (users || []).find(u => u.email === email && u.passwordhash === passwordhash);
+    // if (user){
+    //   navigate("/patient", {
+    //     state: {
+    //       profilephoto: user.profilephoto, 
+    //       name: user.name,
+    //       uid: user.uid,
+    //       passwordhash: user.passwordhash,
+    //       phone: user.phone,
+    //       email: user.email,
+    //       createdat: user.createdat,
+    //       yearofexperience: user.yearofexperience,
+    //       education: user.education,
+    //       languages: user.languages
+    //     },
+    //   });
+    // }
+    // else setLoginError('Invalid email or password');
   };
 
   return (
@@ -102,7 +114,7 @@ const LoginPage = () => {
               </div>
 
               {loginError && <p className="text-red-600 text-sm">{loginError}</p>}
-              {error && <p className="text-red-600 text-sm">Error loading users.</p>}
+              {/* {error && <p className="text-red-600 text-sm">Error loading users.</p>} */}
 
               <button
                 type="submit"
