@@ -1,6 +1,5 @@
 import {create} from 'zustand';
 import axios from 'axios';
-import { api } from '../lib/api';
 
 
 const BASE_URL = 'http://localhost:3000';
