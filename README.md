@@ -31,6 +31,9 @@ A list of used dependencies is documented below.
 - `express`: Web framework for Node.js.
 - `morgan`: HTTP request logger middleware.
 - `nodemon`: Utility that monitors for file changes and automatically restarts the server.
+- `cookie-parser`: HTTP cookie usage. req.cookiese.xxx to access cookie content
+- `jsonwebtoken`: JWT usage
+- `bcrypt`: For password hash
 
 ### Frontend Dependencies
 #### Production Dependencies

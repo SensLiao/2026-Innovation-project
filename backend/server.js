@@ -4,12 +4,14 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import ort from 'onnxruntime-node';
 import fs from 'fs';
+import cookieParser from 'cookie-parser';
 import patientRoute from './routes/patientRoute.js';
 import userRoute from './routes/userRoute.js';
 import pubRoute from './routes/pubRoute.js';
 import { sql } from './config/db.js';
 import globals from './globals.js';
 import * as modelModule from './routes/models.js';
+import buildAuthRouter from './routes/authRoute.js';
 
 dotenv.config();
 
@@ -20,8 +22,15 @@ const PORT = process.env.PORT || 3001;
 // send image/price/etc., extract json data
 app.use(express.json({ limit: '50mb' })); // 增加请求体大小限制
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(cors()); // enable CORS for all routes
+app.use(
+  cors({
+    origin: "http://localhost:5173", // 允许的前端地址
+    credentials: true, // 允许携带cookie
+  })
+); // enable CORS for all routes
 app.use(morgan('dev')); // log requests to the console
+app.use(cookieParser());
+
 
 // 错误处理中间件
 app.use((err, req, res, next) => {
@@ -40,6 +49,7 @@ app.use('/api/patients', patientRoute);
 app.use('/api/users', userRoute);
 app.use('/api/publications', pubRoute);
 app.use('/api', modelModule.router);
+app.use('/api/auth', buildAuthRouter());
 
 async function initDB() {
   // Initialize your database connection here if needed
