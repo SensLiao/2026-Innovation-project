@@ -1,12 +1,11 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import Header from "../components/Header";
 import main from "../assets/images/Main.png";
 import Decoration from "../assets/images/main2.png";
 import "./patient.css";
 import axios from "axios";
-
-// NEW: import the extracted panel (保持不变)
 import ReportPanel from "../components/ReportPanel";
+import { Eye, EyeOff, Trash2, ChevronDown } from "lucide-react";
 
 const SegmentationPage = () => {
   const [activeTab, setActiveTab] = useState("segmentation");
@@ -17,112 +16,76 @@ const SegmentationPage = () => {
   const [question, setQuestion] = useState("");
   const [model, setModel] = useState("SOMA-CT-v1");
 
-  // === SecondPage 功能等价映射 ===
-  const [mode, setMode] = useState("foreground"); // 'foreground' | 'background'
-  const [tool, setTool] = useState("point");      // 'point' | 'box' | 'everything'
+  // === 同原实现 ===
+  const [mode, setMode] = useState("foreground");
+  const [tool, setTool] = useState("point");
   const dropZoneRef = useRef(null);
 
   // 图像与尺寸
-  const [uploadedImage, setUploadedImage] = useState(null);    // dataURL
-  const imgElRef = useRef(null);                               // 离屏 Image 对象
-  const [origImSize, setOrigImSize] = useState([0, 0]);        // [H, W]
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const imgElRef = useRef(null);
+  const [origImSize, setOrigImSize] = useState([0, 0]);
 
   // Embeddings
-  const [imageEmbeddings, setImageEmbeddings] = useState([]);  // number[]
-  const [embeddingsDims, setEmbeddingsDims] = useState([]);    // number[]
+  const [imageEmbeddings, setImageEmbeddings] = useState([]);
+  const [embeddingsDims, setEmbeddingsDims] = useState([]);
 
-  // 交互点
-  const [clickPoints, setClickPoints] = useState([]);          // [{x,y}] (基于上传区显示尺寸)
-  const [pointLabels, setPointLabels] = useState([]);          // 1 前景 / 0 后景
+  // 点提示
+  const [clickPoints, setClickPoints] = useState([]);
+  const [pointLabels, setPointLabels] = useState([]);
   const [lastRunIndex, setLastRunIndex] = useState(0);
 
-  // 掩码与细化
-  const [maskOutput, setMaskOutput] = useState(null);          // 0/1 数组(或Float32)
-  const [maskDims, setMaskDims] = useState(null);              // [H,W]
-  const [maskInput, setMaskInput] = useState(null);            // low_res_masks
-  const [hasMaskInput, setHasMaskInput] = useState([0]);
-  const [lowResStack, setLowResStack] = useState([]);          // 历史 logits
+  // 多掩码
+  // { mask, maskDims, maskInput, hasMaskInput, lowResStack, visible, name, color }
+  const [masks, setMasks] = useState([]);
+  const [currentMaskIndex, setCurrentMaskIndex] = useState(0);
 
-  // 右侧聊天
-  const [messages, setMessages] = useState([]);                // {role:'user'|'assistant', text:string}
+  // Chat
+  const [messages, setMessages] = useState([]);
   const [isAnalysisTriggered, setIsAnalysisTriggered] = useState(false);
 
   const inputRef = useRef(null);
 
-  // 1) 新增 ref & 重绘触发器
-  const canvasRef = useRef(null);        // 叠加层画布
+  // 叠加画布
+  const canvasRef = useRef(null);
   const [redrawTick, setRedrawTick] = useState(0);
 
-  // 可选：窗口尺寸变化时重绘
-  React.useEffect(() => {
-    const onResize = () => setRedrawTick(t => t + 1);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+  // ===== 新：Masks 折叠面板（默认关闭），最多显示 2 项 =====
+  const [maskListOpen, setMaskListOpen] = useState(false);
+  const listWrapRef = useRef(null);
+  const listULRef = useRef(null);
+  const [listMaxHeight, setListMaxHeight] = useState(0); // 计算后的动画高度
+
+  // 色板
+  const maskColors = ["#1E90FF","#00BFFF","#7FFF00","#FFD700","#FF7F50","#FF1493","#8A2BE2"];
+
+  // 窗口变化重绘
+  useEffect(() => {
+    const onResize = () => setRedrawTick((t) => t + 1);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  React.useEffect(() => {
-    if (!canvasRef.current || !dropZoneRef.current) return;
-    if (!uploadedImage || !maskOutput || !maskDims) return;
+  // tab 切换回 segmentation 时刷新一次
+  useEffect(() => {
+    if (activeTab === "segmentation") setRedrawTick((t) => t + 1);
+  }, [activeTab]);
 
-    const canvas = canvasRef.current;
-    const rect = getImageRect();
-    if (!rect) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.round(rect.contW * dpr);
-    canvas.height = Math.round(rect.contH * dpr);
-    canvas.style.width = `${rect.contW}px`;
-    canvas.style.height = `${rect.contH}px`;
-
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, rect.contW, rect.contH);
-
-    const [mH, mW] = maskDims;
-    const maskArr = Array.isArray(maskOutput) ? maskOutput : Array.from(maskOutput);
-    if (maskArr.length !== mH * mW) return;
-
-    // 生成一张 mask 小图，再按最近邻拉伸到显示矩形
-    const temp = document.createElement('canvas');
-    temp.width = mW; temp.height = mH;
-    const tctx = temp.getContext('2d');
-    const imgData = tctx.createImageData(mW, mH);
-
-    // DodgerBlue + 60% 透明（与 SecondPage 一致）
-    const R = 30, G = 144, B = 255, A = 153;
-    for (let i = 0; i < maskArr.length; i++) {
-      const on = Number(maskArr[i]) > 0.5;
-      const off = i * 4;
-      imgData.data[off]     = R;
-      imgData.data[off + 1] = G;
-      imgData.data[off + 2] = B;
-      imgData.data[off + 3] = on ? A : 0;
-    }
-    tctx.putImageData(imgData, 0, 0);
-
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(temp, rect.offsetX, rect.offsetY, rect.drawW, rect.drawH);
-  }, [maskOutput, maskDims, uploadedImage, origImSize, redrawTick,activeTab]);
-
-
-
-  // ---------------- 文件处理：读取→上传到 /api/load_model → 保存尺寸与 embeddings ----------------
-  // ✅ 修改：handleFile —— 读取原图尺寸并缓存离屏 Image（绘制与导出都会用到）
+  // ======= 文件处理 =======
   async function handleFile(f) {
     setFileName(f.name);
     setIsRunning(true);
     try {
       const dataURL = await fileToDataURL(f);
-      setUploadedImage(dataURL); // 预览
+      setUploadedImage(dataURL);
 
-      // 读取原图尺寸（叠加与导出所需）
       const { natW, natH } = await loadImageOffscreen(dataURL);
       setOrigImSize([natH, natW]);
+
       const im = new Image();
       im.src = dataURL;
       imgElRef.current = im;
 
-      // 上传到后端（拿 embeddings）
       const form = new FormData();
       form.append("image", f);
       const resp = await axios.post("http://localhost:3000/api/load_model", form);
@@ -138,18 +101,16 @@ const SegmentationPage = () => {
       setIsRunning(false);
     }
   }
-
   function handleDrop(e) {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
     if (f) handleFile(f);
   }
-
   function handleBrowse() {
     inputRef.current?.click();
   }
 
-  // 更新 handleContainerClick 函数以记录点击点
+  // 画面内点击 -> 记录点
   function handleContainerClick(e) {
     if (!uploadedImage || !fileName) {
       handleBrowse();
@@ -166,21 +127,18 @@ const SegmentationPage = () => {
     if (!imgRect) return;
 
     const localX = e.clientX - hostRect.left - imgRect.offsetX;
-    const localY = e.clientY - hostRect.top  - imgRect.offsetY;
-
-    // 只允许点击在图片矩形内
+    const localY = e.clientY - hostRect.top - imgRect.offsetY;
     if (localX < 0 || localY < 0 || localX > imgRect.drawW || localY > imgRect.drawH) return;
 
-    const x = localX / imgRect.drawW;  // 归一化到图片宽
-    const y = localY / imgRect.drawH;  // 归一化到图片高
+    const x = localX / imgRect.drawW;
+    const y = localY / imgRect.drawH;
 
     setClickPoints((prev) => [...prev, { x, y }]);
-    setPointLabels((prev) => [...prev, mode === "foreground" ? 1 : 0]); // 背景点=0，显示为红色
+    setPointLabels((prev) => [...prev, mode === "foreground" ? 1 : 0]);
   }
 
-  // ✅ 修改：runModel —— 仅发送“新增点”；若无新增点则提示；依据是否需要外扩选择 refine/recompute，但绝不带旧点
+  // 运行模型（仅新增点）
   async function runModel() {
-    // 前置校验
     if (!uploadedImage || !imageEmbeddings?.length) {
       alert("请先上传图片并等待后端返回 embeddings");
       return;
@@ -189,8 +147,6 @@ const SegmentationPage = () => {
       alert("当前 Demo 仅实现点提示");
       return;
     }
-
-    // 仅允许“新增点”触发；没有新增点就提示
     const newPts = clickPoints.slice(lastRunIndex);
     const newLabs = pointLabels.slice(lastRunIndex);
     if (newPts.length === 0) {
@@ -198,7 +154,7 @@ const SegmentationPage = () => {
       return;
     }
 
-    // 确保原图尺寸
+    // 原图尺寸确保
     let [H, W] = origImSize;
     if (!(Number.isFinite(H) && H > 0 && Number.isFinite(W) && W > 0)) {
       const dims = await new Promise((resolve, reject) => {
@@ -216,39 +172,40 @@ const SegmentationPage = () => {
       }
     }
 
-    // 序列化工具 & 坐标转换（你的点是相对图片矩形归一化的）
-    const toPlainArray = (v) =>
-      v == null ? v : ArrayBuffer.isView(v) ? Array.from(v) : Array.isArray(v) ? v : v;
-    const toPointPairs = (arr) =>
-      Array.isArray(arr) ? arr.map((p) => [Math.round(p.x * W), Math.round(p.y * H)]) : [];
+    const toPlainArray = (v) => (v == null ? v : ArrayBuffer.isView(v) ? Array.from(v) : Array.isArray(v) ? v : v);
+    const toPointPairs = (arr) => (Array.isArray(arr) ? arr.map((p) => [Math.round(p.x * W), Math.round(p.y * H)]) : []);
 
-    // 是否需要外扩（正点落在当前掩码外）
+    // 外扩判断
+    const curMaskObj = masks[currentMaskIndex] || {};
+    const curMaskArr = Array.isArray(curMaskObj.mask) ? curMaskObj.mask : Array.from(curMaskObj.mask || []);
+    const curMaskDims = curMaskObj.maskDims || null;
     const existsPosOutside = (() => {
-      if (!(newPts.length > 0 && maskOutput && maskDims)) return false;
-      const [mH, mW] = maskDims;
+      if (!(newPts.length > 0 && curMaskArr && curMaskDims)) return false;
+      const [mH, mW] = curMaskDims;
+      if (!mH || !mW) return false;
       return newPts.some((p, i) => {
         if (newLabs[i] !== 1) return false;
         const mx = Math.max(0, Math.min(Math.round(p.x * mW), mW - 1));
         const my = Math.max(0, Math.min(Math.round(p.y * mH), mH - 1));
         const idx = my * mW + mx;
-        return !(Number(maskOutput[idx]) > 0.5);
+        return !(Number(curMaskArr[idx]) > 0.5);
       });
     })();
 
-    // 默认细化；若需外扩则重算（但永远只发“新增点”，不发历史点）
-    const wantRefine = !!maskInput && hasMaskInput?.[0] === 1 && !existsPosOutside;
+    const curMaskInput = curMaskObj.maskInput || null;
+    const curHasMaskInput = curMaskObj.hasMaskInput || [0];
+    const wantRefine = !!curMaskInput && curHasMaskInput?.[0] === 1 && !existsPosOutside;
 
     const sendPointCoords = toPointPairs(newPts);
     const sendPointLabels = [...newLabs];
 
-    // mask_input 校验（仅当 refine）
     const validLowResMask = (arr) => {
       if (!Array.isArray(arr)) return false;
       const L = arr.length;
       const s = Math.sqrt(L);
       return Number.isInteger(s) && s > 0;
     };
-    const refinedMask = wantRefine && validLowResMask(maskInput) ? maskInput : null;
+    const refinedMask = wantRefine && validLowResMask(curMaskInput) ? curMaskInput : null;
     const refinedFlag = refinedMask ? [1] : [0];
 
     setIsRunning(true);
@@ -256,7 +213,7 @@ const SegmentationPage = () => {
       const body = {
         image_embeddings: toPlainArray(imageEmbeddings),
         embedding_dims: toPlainArray(embeddingsDims),
-        point_coords: toPlainArray(sendPointCoords),  // 仅新增点
+        point_coords: toPlainArray(sendPointCoords),
         point_labels: toPlainArray(sendPointLabels),
         mask_input: refinedMask ? toPlainArray(refinedMask) : null,
         has_mask_input: refinedFlag,
@@ -271,26 +228,25 @@ const SegmentationPage = () => {
       const visShape = data.masks_shape;
       const visHW = Array.isArray(visShape) ? visShape.slice(-2) : null;
 
-      setMaskOutput(visMask || null);
-      setMaskDims(visHW);
-
-      if (Array.isArray(data.low_res_masks)) {
-        setMaskInput(data.low_res_masks);
-        setHasMaskInput([1]);
-        setLowResStack((stk) => [...stk, data.low_res_masks]);
-      } else {
-        setMaskInput(null);
-        setHasMaskInput([0]);
-      }
-
-      // 仅当成功时推进“已运行”的分界
-      setLastRunIndex(clickPoints.length);
-
-      console.log("run_model:", {
-        flow: wantRefine ? "refine(new points)" : "recompute(new points only)",
-        masks_shape: visShape,
-        low_res_shape: data.low_res_masks_shape,
+      setMasks((prev) => {
+        const next = [...prev];
+        const maskObj = {
+          mask: visMask || null,
+          maskDims: visHW,
+          maskInput: Array.isArray(data.low_res_masks) ? data.low_res_masks : null,
+          hasMaskInput: Array.isArray(data.low_res_masks) ? [1] : [0],
+          lowResStack: Array.isArray(data.low_res_masks) ? [data.low_res_masks] : [],
+          visible: true,
+          name: `Mask ${currentMaskIndex + 1}`,
+          color: maskColors[currentMaskIndex % maskColors.length],
+        };
+        if (next[currentMaskIndex]) next[currentMaskIndex] = maskObj;
+        else next[currentMaskIndex] = maskObj;
+        return next;
       });
+
+      setLastRunIndex(clickPoints.length);
+      setRedrawTick((t) => t + 1);
     } catch (e) {
       console.error("调用模型失败:", e);
       alert("Model inference failed: " + (e.response?.data?.error || e.message));
@@ -299,7 +255,25 @@ const SegmentationPage = () => {
     }
   }
 
-  // ✅ 新增：计算图片在容器中的实际显示矩形（object-contain）
+  // 新增一个空槽位
+  function startNextMask() {
+    setClickPoints([]);
+    setPointLabels([]);
+    setLastRunIndex(0);
+    setMasks((prev) => {
+      const next = [...prev];
+      const idx = prev.length;
+      next.push({
+        mask: null, maskDims: null, maskInput: null, hasMaskInput: [0],
+        lowResStack: [], visible: true, name: `Mask ${idx + 1}`,
+        color: maskColors[idx % maskColors.length],
+      });
+      setCurrentMaskIndex(idx);
+      return next;
+    });
+  }
+
+  // 图片显示矩形
   function getImageRect() {
     if (!dropZoneRef.current) return null;
     const box = dropZoneRef.current;
@@ -316,86 +290,110 @@ const SegmentationPage = () => {
     return { contW, contH, drawW, drawH, offsetX, offsetY };
   }
 
-  // ✅ 新增：点的样式（前景=蓝、背景=红），以及渲染位置换算到图片矩形内
   function pointDotClass(index) {
     return pointLabels[index] === 1 ? "bg-blue-500" : "bg-red-500";
   }
-  function styleForPoint(p /* {x,y} */, _idx) {
+  function styleForPoint(p) {
     const r = getImageRect();
     if (!r) return { display: "none" };
     const left = r.offsetX + p.x * r.drawW;
     const top  = r.offsetY + p.y * r.drawH;
-    return {
-      left: `${left}px`,
-      top: `${top}px`,
-      transform: "translate(-50%, -50%)",
-    };
+    return { left: `${left}px`, top: `${top}px`, transform: "translate(-50%, -50%)" };
   }
 
-  // ✅ 修改：掩码绘制 useEffect —— 复用 getImageRect()，与点击/点渲染完全一致
-  React.useEffect(() => {
+  // 绘制叠加掩码
+  useEffect(() => {
     if (!canvasRef.current || !dropZoneRef.current) return;
-    if (!uploadedImage || !maskOutput || !maskDims) return;
-
-    const canvas = canvasRef.current;
     const rect = getImageRect();
     if (!rect) return;
 
+    const canvas = canvasRef.current;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = Math.round(rect.contW * dpr);
     canvas.height = Math.round(rect.contH * dpr);
     canvas.style.width = `${rect.contW}px`;
     canvas.style.height = `${rect.contH}px`;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, rect.contW, rect.contH);
 
-    const [mH, mW] = maskDims;
-    const maskArr = Array.isArray(maskOutput) ? maskOutput : Array.from(maskOutput);
-    if (maskArr.length !== mH * mW) return;
+    if (!uploadedImage || !masks || masks.length === 0) return;
 
-    // 生成一张 mask 小图，再按最近邻拉伸到显示矩形
-    const temp = document.createElement('canvas');
-    temp.width = mW; temp.height = mH;
-    const tctx = temp.getContext('2d');
-    const imgData = tctx.createImageData(mW, mH);
+    masks.forEach((mObj, idx) => {
+      if (!mObj || !mObj.visible || !mObj.mask || !mObj.maskDims) return;
+      const maskArr = Array.isArray(mObj.mask) ? mObj.mask : Array.from(mObj.mask || []);
+      const md = mObj.maskDims;
+      if (!md || maskArr.length !== md[0] * md[1]) return;
 
-    // DodgerBlue + 60% 透明（与 SecondPage 一致）
-    const R = 30, G = 144, B = 255, A = 153;
-    for (let i = 0; i < maskArr.length; i++) {
-      const on = Number(maskArr[i]) > 0.5;
-      const off = i * 4;
-      imgData.data[off]     = R;
-      imgData.data[off + 1] = G;
-      imgData.data[off + 2] = B;
-      imgData.data[off + 3] = on ? A : 0;
-    }
-    tctx.putImageData(imgData, 0, 0);
+      const [mH, mW] = md;
+      const temp = document.createElement("canvas");
+      temp.width = mW; temp.height = mH;
+      const tctx = temp.getContext("2d");
+      const imgData = tctx.createImageData(mW, mH);
 
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(temp, rect.offsetX, rect.offsetY, rect.drawW, rect.drawH);
-  }, [maskOutput, maskDims, uploadedImage, origImSize, redrawTick]);
+      const hex = (mObj.color || maskColors[idx % maskColors.length]).replace("#", "");
+      const rC = parseInt(hex.length === 3 ? hex[0] + hex[0] : hex.slice(0, 2), 16);
+      const gC = parseInt(hex.length === 3 ? hex[1] + hex[1] : hex.slice(2, 4), 16);
+      const bC = parseInt(hex.length === 3 ? hex[2] + hex[2] : hex.slice(4, 6), 16);
+      const A = Math.round(0.6 * 255);
 
-  // ✅ 新增：导出覆盖图（与 SecondPage 同思路）
+      for (let i = 0; i < maskArr.length; i++) {
+        const on = Number(maskArr[i]) > 0.5;
+        const off = i * 4;
+        imgData.data[off] = rC;
+        imgData.data[off + 1] = gC;
+        imgData.data[off + 2] = bC;
+        imgData.data[off + 3] = on ? A : 0;
+      }
+      tctx.putImageData(imgData, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(temp, rect.offsetX, rect.offsetY, rect.drawW, rect.drawH);
+    });
+  }, [masks, uploadedImage, origImSize, redrawTick, activeTab]);
+
+  // 导出覆盖图
   async function handleExportOverlay() {
     try {
-      if (!imgElRef.current || !uploadedImage || !maskOutput || !maskDims) {
+      if (!imgElRef.current || !uploadedImage || !masks || masks.length === 0) {
         alert("No mask to export. Please run the model first.");
         return;
       }
-      const maskArray = Array.isArray(maskOutput) ? maskOutput : Array.from(maskOutput);
-      const blob = await composeOverlayPNG({
-        imageEl: imgElRef.current,
-        mask: maskArray,
-        maskDims: maskDims,       // [H, W]
-        overlayColor: "#1E90FF",  // DodgerBlue
-        overlayOpacity: 0.60,
-        scale_factor: 1,          // 原图尺寸导出
-        export_quality: 1,
+      const natW = imgElRef.current.naturalWidth;
+      const natH = imgElRef.current.naturalHeight;
+      const out = document.createElement("canvas");
+      out.width = natW; out.height = natH;
+      const octx = out.getContext("2d");
+      octx.drawImage(imgElRef.current, 0, 0, natW, natH);
+
+      masks.forEach((mObj, idx) => {
+        if (!mObj || !mObj.visible || !mObj.mask || !mObj.maskDims) return;
+        const [mH, mW] = mObj.maskDims;
+        const tmp = document.createElement("canvas");
+        tmp.width = mW; tmp.height = mH;
+        const tctx = tmp.getContext("2d");
+        const imgData = tctx.createImageData(mW, mH);
+        const maskArr = Array.isArray(mObj.mask) ? mObj.mask : Array.from(mObj.mask || []);
+        const hex = (mObj.color || maskColors[idx % maskColors.length]).replace("#", "");
+        const rC = parseInt(hex.length === 3 ? hex[0] + hex[0] : hex.slice(0, 2), 16);
+        const gC = parseInt(hex.length === 3 ? hex[1] + hex[1] : hex.slice(2, 4), 16);
+        const bC = parseInt(hex.length === 3 ? hex[2] + hex[2] : hex.slice(4, 6), 16);
+        const a = Math.round(0.6 * 255);
+        for (let i = 0; i < maskArr.length; i++) {
+          const on = Number(maskArr[i]) > 0.5;
+          const off = i * 4;
+          imgData.data[off] = rC; imgData.data[off + 1] = gC; imgData.data[off + 2] = bC; imgData.data[off + 3] = on ? a : 0;
+        }
+        tctx.putImageData(imgData, 0, 0);
+        octx.imageSmoothingEnabled = false;
+        octx.drawImage(tmp, 0, 0, natW, natH);
       });
+
+      const outBlob =
+        (await new Promise((resolve) => out.toBlob(resolve, "image/png", 1))) ||
+        (await new Promise((resolve) => out.toBlob(resolve, "image/webp", 0.95)));
       const ts = new Date().toISOString().replace(/[:.]/g, "-");
-      downloadBlob(blob, `overlay_${ts}.png`);
+      downloadBlob(outBlob, `overlay_${ts}.png`);
     } catch (err) {
       console.error("导出失败：", err);
       alert("导出失败，请查看控制台日志");
@@ -404,38 +402,30 @@ const SegmentationPage = () => {
   function downloadBlob(blob, filename = "overlay.png") {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
 
-  // ---------------- Undo / Reset ----------------
+  // 撤销 / 重置
   function undoPoints() {
-    // 1) 回退点与标签
     setClickPoints((prev) => prev.slice(0, -1));
     setPointLabels((prev) => prev.slice(0, -1));
-    // 2) 回退 refine 历史
-    setLowResStack((prev) => {
-      if (prev.length === 0) {
-        setMaskInput(null);
-        setHasMaskInput([0]);
-        return prev;
-      }
-      const next = prev.slice(0, -1);
-      if (next.length === 0) {
-        setMaskInput(null);
-        setHasMaskInput([0]);
-      } else {
-        setMaskInput(next[next.length - 1]);
-        setHasMaskInput([1]);
-      }
+    setMasks((prev) => {
+      const next = [...prev];
+      const cur = next[currentMaskIndex];
+      if (!cur) return prev;
+      const stack = cur.lowResStack || [];
+      if (stack.length === 0) return prev;
+      const newStack = stack.slice(0, -1);
+      cur.lowResStack = newStack;
+      cur.maskInput = newStack.length ? newStack[newStack.length - 1] : null;
+      cur.hasMaskInput = newStack.length ? [1] : [0];
+      next[currentMaskIndex] = { ...cur };
       return next;
     });
+    setRedrawTick((t) => t + 1);
   }
-
   function resetImage() {
     setFileName(null);
     setUploadedImage(null);
@@ -447,39 +437,56 @@ const SegmentationPage = () => {
     setPointLabels([]);
     setLastRunIndex(0);
 
-    setMaskOutput(null);
-    setMaskDims(null);
-    setMaskInput(null);
-    setHasMaskInput([0]);
-    setLowResStack([]);
+    setMasks([]);
+    setCurrentMaskIndex(0);
+    setRedrawTick((t) => t + 1);
   }
 
-  // ---------------- Compose 覆盖图并触发 /api/medical_report_init ----------------
+  // 生成报告
   async function handleAnalysis() {
     if (!imageEmbeddings.length) {
       alert("Please upload an image and wait for embeddings before analyzing.");
       return;
     }
-    if (!imgElRef.current || !maskOutput || !maskDims) {
+    if (!imgElRef.current || !masks || masks.length === 0) {
       alert("No segmentation mask found. Please run the model first.");
       return;
     }
     setIsRunning(true);
     try {
-      const blob = await composeOverlayPNG({
-        imageEl: imgElRef.current,
-        mask: Array.isArray(maskOutput) ? maskOutput : Array.from(maskOutput),
-        maskDims: maskDims,
-        overlayColor: "#1E90FF",
-        overlayOpacity: 0.6,
-        scale_factor: 0.6,
-        export_quality: 0.8,
+      const natW = imgElRef.current.naturalWidth;
+      const natH = imgElRef.current.naturalHeight;
+      const out = document.createElement("canvas");
+      out.width = natW; out.height = natH;
+      const octx = out.getContext("2d");
+      octx.drawImage(imgElRef.current, 0, 0, natW, natH);
+      masks.forEach((mObj, idx) => {
+        if (!mObj || !mObj.visible || !mObj.mask || !mObj.maskDims) return;
+        const [mH, mW] = mObj.maskDims;
+        const tmp = document.createElement("canvas");
+        tmp.width = mW; tmp.height = mH;
+        const tctx = tmp.getContext("2d");
+        const imgData = tctx.createImageData(mW, mH);
+        const maskArr = Array.isArray(mObj.mask) ? mObj.mask : Array.from(mObj.mask || []);
+        const hex = (mObj.color || maskColors[idx % maskColors.length]).replace("#", "");
+        const rC = parseInt(hex.length === 3 ? hex[0] + hex[0] : hex.slice(0, 2), 16);
+        const gC = parseInt(hex.length === 3 ? hex[1] + hex[1] : hex.slice(2, 4), 16);
+        const bC = parseInt(hex.length === 3 ? hex[2] + hex[2] : hex.slice(4, 6), 16);
+        const a = Math.round(0.6 * 255);
+        for (let i = 0; i < maskArr.length; i++) {
+          const on = Number(maskArr[i]) > 0.5;
+          const off = i * 4;
+          imgData.data[off] = rC; imgData.data[off + 1] = gC; imgData.data[off + 2] = bC; imgData.data[off + 3] = on ? a : 0;
+        }
+        tctx.putImageData(imgData, 0, 0);
+        octx.imageSmoothingEnabled = false;
+        octx.drawImage(tmp, 0, 0, natW, natH);
       });
+      const blob = (await new Promise((resolve) => out.toBlob(resolve, "image/webp", 0.8))) ||
+                   (await new Promise((resolve) => out.toBlob(resolve, "image/png")));
       const image_base64 = await blobToDataURL(blob);
 
-      const res = await axios.post("http://localhost:3000/api/medical_report_init", {
-        final_image: image_base64,
-      });
+      const res = await axios.post("http://localhost:3000/api/medical_report_init", { final_image: image_base64 });
       const report = res.data?.report || sampleGeneratedReport;
       setReportText(report);
       setActiveTab("report");
@@ -492,7 +499,7 @@ const SegmentationPage = () => {
     }
   }
 
-  // ---------------- 右侧聊天：/api/medical_report_rein ----------------
+  // Chat Reinforce
   async function sendMessage() {
     if (!imageEmbeddings.length) {
       alert("Please upload an image and wait for embeddings before sending a message.");
@@ -509,11 +516,8 @@ const SegmentationPage = () => {
     setQuestion("");
     setIsRunning(true);
     try {
-      // 加一个占位loading
       setMessages((prev) => [...prev, { role: "assistant", text: "loading" }]);
-      const res = await axios.post("http://localhost:3000/api/medical_report_rein", {
-        userMessage: content,
-      });
+      const res = await axios.post("http://localhost:3000/api/medical_report_rein", { userMessage: content });
       const reply = res.data?.reply || "Service is temporarily unavailable.";
       setMessages((prev) => {
         const arr = [...prev];
@@ -521,7 +525,7 @@ const SegmentationPage = () => {
         if (idx !== -1) arr[idx] = { role: "assistant", text: reply };
         return arr;
       });
-    } catch (e) {
+    } catch {
       setMessages((prev) => {
         const arr = [...prev];
         const idx = arr.findIndex((m) => m.role === "assistant" && m.text === "loading");
@@ -533,7 +537,7 @@ const SegmentationPage = () => {
     }
   }
 
-  // ---------------- 小工具函数 ----------------
+  // 工具函数
   function fileToDataURL(file) {
     return new Promise((resolve, reject) => {
       const rd = new FileReader();
@@ -542,7 +546,6 @@ const SegmentationPage = () => {
       rd.readAsDataURL(file);
     });
   }
-
   function blobToDataURL(blob) {
     return new Promise((resolve) => {
       const rd = new FileReader();
@@ -550,7 +553,6 @@ const SegmentationPage = () => {
       rd.readAsDataURL(blob);
     });
   }
-
   function loadImageOffscreen(src) {
     return new Promise((resolve, reject) => {
       const im = new Image();
@@ -559,15 +561,9 @@ const SegmentationPage = () => {
       im.src = src;
     });
   }
-
   async function composeOverlayPNG({
-    imageEl,
-    mask,
-    maskDims,
-    overlayColor = "#FF4D4F",
-    overlayOpacity = 0.35,
-    scale_factor = 0.8,
-    export_quality = 0.8,
+    imageEl, mask, maskDims, overlayColor = "#FF4D4F", overlayOpacity = 0.35,
+    scale_factor = 0.8, export_quality = 0.8,
   }) {
     if (!imageEl || !mask || !maskDims) throw new Error("composeOverlayPNG: missing args");
     const natW = imageEl.naturalWidth;
@@ -581,13 +577,11 @@ const SegmentationPage = () => {
     const b = parseInt(hex.length === 3 ? hex[2] + hex[2] : hex.slice(4, 6), 16);
     const a = Math.round(Math.max(0, Math.min(1, overlayOpacity)) * 255);
 
-    // 1) 原图画布
     const out = document.createElement("canvas");
     out.width = natW; out.height = natH;
     const octx = out.getContext("2d");
     octx.drawImage(imageEl, 0, 0, natW, natH);
 
-    // 2) 遮罩画布
     const mc = document.createElement("canvas");
     mc.width = mW; mc.height = mH;
     const mctx = mc.getContext("2d");
@@ -602,11 +596,9 @@ const SegmentationPage = () => {
     }
     mctx.putImageData(imgData, 0, 0);
 
-    // 3) 放大到原图叠加
     octx.imageSmoothingEnabled = false;
     octx.drawImage(mc, 0, 0, natW, natH);
 
-    // 4) 导出前缩放
     let exportCanvas = out;
     if (scale_factor > 0 && scale_factor < 1) {
       const tw = Math.max(1, Math.round(natW * scale_factor));
@@ -620,13 +612,14 @@ const SegmentationPage = () => {
       exportCanvas = small;
     }
 
-    const blob = await new Promise((resolve) => exportCanvas.toBlob(resolve, "image/webp", export_quality))
-      || await new Promise((resolve) => exportCanvas.toBlob(resolve, "image/jpeg", export_quality))
-      || await new Promise((resolve) => exportCanvas.toBlob(resolve, "image/png"));
+    const blob =
+      (await new Promise((resolve) => exportCanvas.toBlob(resolve, "image/webp", export_quality))) ||
+      (await new Promise((resolve) => exportCanvas.toBlob(resolve, "image/jpeg", export_quality))) ||
+      (await new Promise((resolve) => exportCanvas.toBlob(resolve, "image/png")));
     return blob;
   }
 
-  // ---------------- 下拉选项（保持不变） ----------------
+  // 下拉选项
   const segOptions = useMemo(
     () => [
       { id: "foreground", label: "Foreground segmentation" },
@@ -634,7 +627,6 @@ const SegmentationPage = () => {
     ],
     []
   );
-
   const toolOptions = useMemo(
     () => [
       { id: "point", label: "Point" },
@@ -643,6 +635,70 @@ const SegmentationPage = () => {
     ],
     []
   );
+
+  // ====== 计算列表展开时的最大高度（最多显示 2 条）======
+  useEffect(() => {
+    // compute a reasonable max height for the panel (show up to 6 items before scroll)
+    if (!listULRef.current) {
+      setListMaxHeight(0);
+      return;
+    }
+    const items = Array.from(listULRef.current.querySelectorAll("li"));
+    const itemCount = Math.max(0, items.length);
+    // show up to 2 items in the visible window; rest available via scroll
+    const sampleCount = Math.min(2, itemCount || 2);
+    const h = items.slice(0, sampleCount).reduce((sum, el) => sum + el.offsetHeight, 0);
+    const gap = 8; // UL padding/gap 微调
+    const computed = Math.max(56, h + gap);
+    const capped = Math.min(160, computed); // cap so the visible area equals ~2 items
+    setListMaxHeight(capped);
+  }, [masks, maskListOpen, activeTab]);
+
+  // pointer drag to scroll support for the mask list
+  useEffect(() => {
+    const el = listULRef.current;
+    if (!el) return;
+    let isDown = false;
+    let startY = 0;
+    let startScroll = 0;
+
+    function onPointerDown(e) {
+      // don't start drag-to-scroll when clicking interactive controls inside the list
+      const tgt = e.target;
+      if (tgt) {
+        // if clicking a button, svg icon, input or link, let the event go through
+        if (tgt.closest && (tgt.closest('button') || tgt.closest('a') || tgt.closest('input') || tgt.closest('svg'))) {
+          return;
+        }
+      }
+      isDown = true;
+      startY = e.clientY;
+      startScroll = el.scrollTop;
+      el.setPointerCapture?.(e.pointerId);
+    }
+    function onPointerMove(e) {
+      if (!isDown) return;
+      const dy = e.clientY - startY;
+      el.scrollTop = startScroll - dy;
+    }
+    function onPointerUp(e) {
+      isDown = false;
+      try { el.releasePointerCapture?.(e.pointerId); } catch (err) {}
+    }
+    el.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+    return () => {
+      el.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+    };
+  }, [listULRef.current]);
+
+  // 过滤出可渲染项（保持索引）
+  const renderMasks = masks.map((m, idx) => ({ ...m, __idx: idx, __name: m?.name || `Mask ${idx + 1}` }));
 
   return (
     <div className="min-h-screen bg-[#C2DCE7] p-6 md:p-10 flex justify-center">
@@ -681,31 +737,23 @@ const SegmentationPage = () => {
                 <span className="inline-block border-t-2 border-dotted border-gray-400 w-56 align-middle ml-3" />
               </div>
             </div>
-            <img
-              src={main}
-              alt="Illustration"
-              className="w-[450px] object-contain justify-self-end pointer-events-none select-none"
-            />
+            <img src={main} alt="Illustration" className="w-[450px] object-contain justify-self-end pointer-events-none select-none" />
           </div>
 
           <div className="mt-10 flex flex-col md:flex-row gap-6">
-            {/* Left: Segmentation */}
+            {/* Left */}
             <div className="md:basis-3/5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
               {/* Tabs */}
               <div className="mb-3 flex items-center gap-2">
                 <button
                   onClick={() => setActiveTab("segmentation")}
-                  className={`rounded-md px-3 py-1 text-xs font-semibold shadow-sm ${
-                    activeTab === "segmentation" ? "bg-blue-600/90 text-white" : "bg-gray-300 text-gray-700"
-                  }`}
+                  className={`rounded-md px-3 py-1 text-xs font-semibold shadow-sm ${activeTab === "segmentation" ? "bg-blue-600/90 text-white" : "bg-gray-300 text-gray-700"}`}
                 >
                   Segmentation
                 </button>
                 <button
                   onClick={() => setActiveTab("report")}
-                  className={`rounded-md px-3 py-1 text-xs font-semibold shadow-sm ${
-                    activeTab === "report" ? "bg-blue-600/90 text-white" : "bg-gray-300 text-gray-700"
-                  }`}
+                  className={`rounded-md px-3 py-1 text-xs font-semibold shadow-sm ${activeTab === "report" ? "bg-blue-600/90 text-white" : "bg-gray-300 text-gray-700"}`}
                 >
                   Report
                 </button>
@@ -713,17 +761,14 @@ const SegmentationPage = () => {
 
               {activeTab === "segmentation" ? (
                 <>
+                  {/* 上传区 */}
                   <div
                     ref={dropZoneRef}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
                     onClick={handleContainerClick}
                     className="group relative flex h-[360px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-gray-300 bg-white hover:bg-gray-50"
-                    title={
-                      uploadedImage
-                        ? "Click to add a point (Point tool). Use radio to switch Foreground/Background."
-                        : "Click to choose a file or drag an image here"
-                    }
+                    title={uploadedImage ? "Click to add a point (Point tool)." : "Click to choose a file or drag an image here"}
                   >
                     <input
                       ref={inputRef}
@@ -737,21 +782,10 @@ const SegmentationPage = () => {
                     />
                     {uploadedImage ? (
                       <>
-                        <img
-                          src={uploadedImage}
-                          alt="Uploaded Preview"
-                          className="absolute inset-0 h-full w-full object-contain rounded-2xl"
-                        />
-                        <canvas
-                          ref={canvasRef}
-                          className="absolute inset-0 rounded-2xl pointer-events-none"
-                        />
-                        {clickPoints.map((point, index) => (
-                          <div
-                            key={index}
-                            className={`absolute w-2 h-2 rounded-full ${pointDotClass(index)}`}
-                            style={styleForPoint(point, index)}
-                          />
+                        <img src={uploadedImage} alt="Uploaded Preview" className="absolute inset-0 h-full w-full object-contain rounded-2xl" />
+                        <canvas ref={canvasRef} className="absolute inset-0 rounded-2xl pointer-events-none" />
+                        {clickPoints.map((p, i) => (
+                          <div key={i} className={`absolute w-2 h-2 rounded-full ${pointDotClass(i)}`} style={styleForPoint(p)} />
                         ))}
                       </>
                     ) : (
@@ -763,79 +797,146 @@ const SegmentationPage = () => {
                     {fileName && <p className="mt-2 line-clamp-1 text-xs text-gray-500">{fileName}</p>}
                   </div>
 
+                  {/* 选项 + 按钮 */}
                   <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                     <fieldset className="col-span-2 flex flex-wrap items-center gap-3">
-                      <legend className="mr-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                        Segmentation
-                      </legend>
+                      <legend className="mr-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Segmentation</legend>
                       {segOptions.map((opt) => (
                         <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-gray-700">
-                          <input
-                            type="radio"
-                            name="mode"
-                            value={opt.id}
-                            checked={mode === opt.id}
-                            onChange={() => setMode(opt.id)}
-                            className="h-4 w-4 accent-blue-600"
-                          />
+                          <input type="radio" name="mode" value={opt.id} checked={mode === opt.id} onChange={() => setMode(opt.id)} className="h-4 w-4 accent-blue-600" />
                           {opt.label}
                         </label>
                       ))}
                     </fieldset>
 
                     <fieldset className="col-span-2 flex flex-wrap items-center gap-3">
-                      <legend className="mr-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                        Tool
-                      </legend>
+                      <legend className="mr-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Tool</legend>
                       {toolOptions.map((opt) => (
                         <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-gray-700">
-                          <input
-                            type="radio"
-                            name="tool"
-                            value={opt.id}
-                            checked={tool === opt.id}
-                            onChange={() => setTool(opt.id)}
-                            className="h-4 w-4 accent-blue-600"
-                          />
+                          <input type="radio" name="tool" value={opt.id} checked={tool === opt.id} onChange={() => setTool(opt.id)} className="h-4 w-4 accent-blue-600" />
                           {opt.label}
                         </label>
                       ))}
                     </fieldset>
 
-                    <div className="col-span-2 md:col-span-1 flex items-center">
-                      <button
-                        onClick={runModel}
-                        className="w-full h-11 rounded-full bg-blue-600 px-5 text-sm font-semibold text-white shadow hover:bg-blue-700"
-                        disabled={!fileName || clickPoints.length === 0}
-                        title="Run model"
-                      >
-                        Run Model
-                      </button>
-                    </div>
-                    <div className="col-span-2 md:col-span-1 flex gap-2 min-w-0">
-                      <button
-                        onClick={undoPoints}
-                        className="flex-1 min-w-[130px] h-11 rounded-full border px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap"
-                        disabled={clickPoints.length === 0}
-                      >
-                        Undo Points
-                      </button>
-                      <button
-                        onClick={resetImage}
-                        className="flex-1 min-w-[130px] h-11 rounded-full border px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap"
-                      >
-                        Reset Image
-                      </button>
-                      {uploadedImage && maskOutput && maskDims && (
+                    {/* 行内按钮（自动换行） */}
+                    <div className="col-span-2 md:col-span-4">
+                      <div className="flex flex-wrap gap-2 items-center">
                         <button
-                          onClick={handleExportOverlay}
-                          className="flex-1 min-w-[130px] h-11 rounded-full border px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 whitespace-nowrap"
-                          title="Export PNG"
+                          onClick={runModel}
+                          className="rounded-full bg-blue-600 px-5 h-11 text-sm font-semibold text-white shadow hover:bg-blue-700"
+                          disabled={!fileName || clickPoints.length === 0}
+                          title="Run model"
                         >
-                          Export PNG
+                          Run Model
                         </button>
-                      )}
+                        <button onClick={undoPoints} className="rounded-full border px-5 h-11 text-sm font-semibold text-gray-700 hover:bg-gray-50" disabled={clickPoints.length === 0}>
+                          Undo Points
+                        </button>
+                        <button onClick={startNextMask} className="rounded-full border px-5 h-11 text-sm font-semibold text-gray-700 hover:bg-gray-50" title="Start next mask">
+                          Start Next Mask
+                        </button>
+                        <button onClick={resetImage} className="rounded-full border px-5 h-11 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                          Reset Image
+                        </button>
+                        {uploadedImage && masks && masks.length > 0 && (
+                          <button onClick={handleExportOverlay} className="rounded-full border px-5 h-11 text-sm font-semibold text-gray-700 hover:bg-gray-50" title="Export PNG">
+                            Export PNG
+                          </button>
+                        )}
+                      </div>
                     </div>
+
+                    {/* ======= 新：折叠式 Masks List（默认关闭；最多显示 2 项） ======= */}
+                    <div className="col-span-2 md:col-span-4">
+                      <div
+                        ref={listWrapRef}
+                        className="rounded-2xl border border-gray-300 bg-white overflow-hidden"
+                        role="region"
+                        aria-label="Masks list"
+                      >
+                        {/* Header */}
+                        <button
+                          type="button"
+                          onClick={() => setMaskListOpen((o) => !o)}
+                          aria-expanded={maskListOpen}
+                          aria-controls="masks-panel"
+                          className="w-full flex items-center justify-between px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 focus:outline-none"
+                        >
+                          <span>Masks</span>
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform duration-300 ${maskListOpen ? "rotate-180" : "rotate-0"}`}
+                            aria-hidden="true"
+                          />
+                        </button>
+
+                        {/* Content (animated) */}
+                        <div
+                          id="masks-panel"
+                          style={{
+                            maxHeight: maskListOpen ? `${listMaxHeight}px` : 0,
+                          }}
+                          className="transition-[max-height] duration-300 ease-in-out"
+                        >
+                          <ul ref={listULRef} className="divide-y overflow-y-auto" style={{ maxHeight: listMaxHeight, WebkitOverflowScrolling: 'touch' }}>
+                            {renderMasks.length === 0 ? (
+                              <li className="px-4 py-3 text-sm text-gray-500">No masks</li>
+                            ) : (
+                              renderMasks.map((mObj) => {
+                                const idx = mObj.__idx;
+                                const selected = currentMaskIndex === idx;
+                                return (
+                                  <li key={idx} className={`flex items-center justify-between px-4 py-2 ${selected ? "bg-blue-50" : ""}`}>
+                                    <button
+                                      onClick={() => setCurrentMaskIndex(idx)}
+                                      className="min-w-0 text-left flex items-center gap-2"
+                                      title={mObj.__name}
+                                    >
+                                      <span className="inline-block w-3 h-3 rounded-sm shrink-0" style={{ background: mObj?.color }} />
+                                      <span className="truncate text-sm text-gray-800">{mObj.__name}</span>
+                                    </button>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <button
+                                        type="button"
+                                        aria-label={mObj?.visible ? "Hide" : "Show"}
+                                        onClick={() => {
+                                          setMasks((prev) => prev.map((m, j) => (j === idx ? { ...m, visible: !m.visible } : m)));
+                                          setRedrawTick((t) => t + 1);
+                                        }}
+                                        className="rounded-md border px-2 py-1 hover:bg-white"
+                                      >
+                                        {mObj?.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        aria-label="Delete"
+                                        onClick={() => {
+                                          setMasks((prev) => {
+                                            const next = prev.filter((_, j) => j !== idx);
+                                            setCurrentMaskIndex((ci) => {
+                                              if (next.length === 0) return 0;
+                                              if (ci === idx) return Math.max(0, idx - 1);
+                                              if (ci > idx) return ci - 1;
+                                              return ci;
+                                            });
+                                            return next;
+                                          });
+                                          setRedrawTick((t) => t + 1);
+                                        }}
+                                        className="rounded-md border px-2 py-1 hover:bg-white text-red-600"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  </li>
+                                );
+                              })
+                            )}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                    {/* ======= /Masks List ======= */}
                   </div>
                 </>
               ) : (
@@ -845,10 +946,9 @@ const SegmentationPage = () => {
                   model={model}
                   onChangeModel={setModel}
                   samples={{ medical: sampleGeneratedReport, formal: defaultReport }}
-                  uploadedImage={uploadedImage}   // dataURL
-                  maskOutput={maskOutput}         // 0/1 或 0~1 数组（长度 = H*W）
-                  maskDims={maskDims}             // [H, W]（与 maskOutput 匹配）
-                  origImSize={origImSize}         // [H, W] 原图尺寸
+                  uploadedImage={uploadedImage}
+                  masks={masks}
+                  origImSize={origImSize}
                 />
               )}
             </div>
@@ -856,7 +956,6 @@ const SegmentationPage = () => {
             {/* Right: Chat */}
             <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col h-[560px]">
               <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3">
-                {/* 动态消息渲染（保持容器结构不变） */}
                 {messages.length === 0 ? (
                   <>
                     <div className="mb-2 flex justify-end">
@@ -874,9 +973,7 @@ const SegmentationPage = () => {
                   messages.map((m, i) =>
                     m.role === "user" ? (
                       <div key={i} className="mb-2 flex justify-end">
-                        <div className="max-w-[75%] rounded-full bg-blue-100 px-4 py-2 text-sm text-gray-800">
-                          {m.text}
-                        </div>
+                        <div className="max-w-[75%] rounded-full bg-blue-100 px-4 py-2 text-sm text-gray-800">{m.text}</div>
                       </div>
                     ) : (
                       <div key={i} className="mb-2 flex justify-start">
@@ -892,38 +989,18 @@ const SegmentationPage = () => {
               <div className="mt-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <button
-                      type="button"
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                      title="Add"
-                    >
-                      +
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                      title="Settings"
-                    >
-                      ⚙
-                    </button>
+                    <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400" title="Add">+</button>
+                    <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400" title="Settings">⚙</button>
                     Models
                   </span>
-                  <select
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    className="rounded-md border px-2 py-1 text-sm text-gray-700 focus:outline-none"
-                  >
+                  <select value={model} onChange={(e) => setModel(e.target.value)} className="rounded-md border px-2 py-1 text-sm text-gray-700 focus:outline-none">
                     <option value="SOMA-CT-v1">SOMA-CT-v1</option>
                     <option value="SOMA-CT-v2">SOMA-CT-v2</option>
                     <option value="General-4o-mini">General-4o-mini</option>
                   </select>
                 </div>
 
-                <button
-                  onClick={handleAnalysis}
-                  className="ml-3 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-blue-700"
-                  title="Generate report from current mask"
-                >
+                <button onClick={handleAnalysis} className="ml-3 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-blue-700" title="Generate report from current mask">
                   Analyse
                 </button>
               </div>
@@ -935,12 +1012,7 @@ const SegmentationPage = () => {
                   placeholder="Enter your questions…"
                   className="flex-1 h-28 resize-none rounded-xl border bg-blue-50 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 />
-                <button
-                  onClick={sendMessage}
-                  className="h-10 shrink-0 rounded-md border px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                  title="Send"
-                  disabled={isRunning}
-                >
+                <button onClick={sendMessage} className="h-10 shrink-0 rounded-md border px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50" title="Send" disabled={isRunning}>
                   Send
                 </button>
               </div>

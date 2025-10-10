@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Edit3, Save as SaveIcon, Download, Copy, Printer, Code2 } from "lucide-react";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 /** Small rounded label */
 function Chip({ children, tone = "gray" }) {
@@ -22,7 +24,7 @@ function ReportToolbar({ onEdit, onSave, onDownload, onDuplicate, onPrint, onVie
     { Icon: SaveIcon, label: "Save", onClick: onSave },
     { Icon: Download, label: "Download", onClick: onDownload },
     { Icon: Copy, label: "Duplicate", onClick: onDuplicate },
-    { Icon: Printer, label: "Print/PDF", onClick: onPrint },
+    { Icon: Printer, label: "Export PDF", onClick: onPrint },
     { Icon: Code2, label: "View JSON", onClick: onViewJSON },
   ];
   return (
@@ -43,7 +45,7 @@ function ReportToolbar({ onEdit, onSave, onDownload, onDuplicate, onPrint, onVie
 }
 
 /**
- * ReportPanel – extracted standalone component
+ * ReportPanel – standalone component (with robust PDF export)
  *
  * @param {Object} props
  * @param {string} props.reportText
@@ -52,8 +54,7 @@ function ReportToolbar({ onEdit, onSave, onDownload, onDuplicate, onPrint, onVie
  * @param {(m: string) => void} [props.onChangeModel]
  * @param {{ medical: string, formal: string }} [props.samples]
  * @param {string|null} [props.uploadedImage]   dataURL
- * @param {number[]|Float32Array|null} [props.maskOutput]  length = H*W
- * @param {[number, number]|null} [props.maskDims]         [H, W]
+ * @param {Array|null} [props.masks]  array of mask objects { mask, maskDims, visible, color, name }
  * @param {[number, number]|null} [props.origImSize]       [H, W] of original image
  */
 export default function ReportPanel({
@@ -63,8 +64,7 @@ export default function ReportPanel({
   onChangeModel,
   samples,
   uploadedImage,
-  maskOutput,
-  maskDims,
+  masks,
   origImSize,
 }) {
   const now = new Date();
@@ -89,7 +89,7 @@ export default function ReportPanel({
     if (!host || !canvas) return;
 
     // 条件不足时清空 & 返回
-    if (!uploadedImage || !maskOutput || !maskDims || !origImSize) {
+    if (!uploadedImage || !masks || masks.length === 0 || !origImSize) {
       const ctx = canvas.getContext("2d");
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
       return;
@@ -126,34 +126,42 @@ export default function ReportPanel({
     im.onload = () => {
       ctx.drawImage(im, offsetX, offsetY, drawW, drawH);
 
-      // 2) 绘制掩码（与 Segmentation 一致：DodgerBlue + 60% 透明）
-      const [mH, mW] = maskDims;
-      const maskArr = Array.isArray(maskOutput) ? maskOutput : Array.from(maskOutput);
-      if (maskArr.length !== mH * mW) return;
+      // 2) 绘制所有可见掩码（按传入 masks 顺序，颜色由 mask.color 或默认表决定）
+      const defaultColors = ["#1E90FF","#00BFFF","#7FFF00","#FFD700","#FF7F50","#FF1493","#8A2BE2"];
+      masks.forEach((mObj, idx) => {
+        if (!mObj || !mObj.visible || !mObj.mask || !mObj.maskDims) return;
+        const [mH, mW] = mObj.maskDims;
+        const maskArr = Array.isArray(mObj.mask) ? mObj.mask : Array.from(mObj.mask);
+        if (maskArr.length !== mH * mW) return;
 
-      const temp = document.createElement("canvas");
-      temp.width = mW;
-      temp.height = mH;
-      const tctx = temp.getContext("2d");
-      const imgData = tctx.createImageData(mW, mH);
+        const temp = document.createElement("canvas");
+        temp.width = mW;
+        temp.height = mH;
+        const tctx = temp.getContext("2d");
+        const imgData = tctx.createImageData(mW, mH);
 
-      const R = 30, G = 144, B = 255, A = 153; // 60% alpha
-      for (let i = 0; i < maskArr.length; i++) {
-        const on = Number(maskArr[i]) > 0.5;
-        const off = i * 4;
-        imgData.data[off] = R;
-        imgData.data[off + 1] = G;
-        imgData.data[off + 2] = B;
-        imgData.data[off + 3] = on ? A : 0;
-      }
-      tctx.putImageData(imgData, 0, 0);
+        const hex = (mObj.color || defaultColors[idx % defaultColors.length]).replace('#','');
+        const R = parseInt(hex.length === 3 ? hex[0]+hex[0] : hex.slice(0,2),16);
+        const G = parseInt(hex.length === 3 ? hex[1]+hex[1] : hex.slice(2,4),16);
+        const B = parseInt(hex.length === 3 ? hex[2]+hex[2] : hex.slice(4,6),16);
+        const A = 153; // 60% alpha
+        for (let i = 0; i < maskArr.length; i++) {
+          const on = Number(maskArr[i]) > 0.5;
+          const off = i * 4;
+          imgData.data[off] = R;
+          imgData.data[off + 1] = G;
+          imgData.data[off + 2] = B;
+          imgData.data[off + 3] = on ? A : 0;
+        }
+        tctx.putImageData(imgData, 0, 0);
 
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(temp, offsetX, offsetY, drawW, drawH);
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(temp, offsetX, offsetY, drawW, drawH);
+      });
     };
     im.src = uploadedImage;
 
-  }, [uploadedImage, maskOutput, maskDims, origImSize]);
+  }, [uploadedImage, masks, origImSize]);
 
   // 窗口大小变化时，重绘一次（保持清晰）
   useEffect(() => {
@@ -168,7 +176,7 @@ export default function ReportPanel({
       canvas.height = Math.round(contH * dpr);
       canvas.style.width = `${contW}px`;
       canvas.style.height = `${contH}px`;
-      // 触发上面的 effect 重新绘制（依赖数组里有 uploadedImage 等，会自动走一遍）
+      // 上面的主绘制 effect 会因依赖（尺寸影响）而再次执行
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -178,10 +186,7 @@ export default function ReportPanel({
   function handleEdit() {
     setIsEditing((v) => {
       const next = !v;
-      // 如果进入编辑状态，聚焦文本域
-      if (next) {
-        setTimeout(() => textAreaRef.current?.focus(), 0);
-      }
+      if (next) setTimeout(() => textAreaRef.current?.focus(), 0);
       return next;
     });
   }
@@ -193,9 +198,7 @@ export default function ReportPanel({
         timestamp: new Date().toISOString(),
         text: reportText,
       };
-      // 最近一次
       localStorage.setItem("soma_report_last", JSON.stringify(payload));
-      // 追加到历史
       const hist = JSON.parse(localStorage.getItem("soma_report_history") || "[]");
       hist.push(payload);
       localStorage.setItem("soma_report_history", JSON.stringify(hist));
@@ -223,8 +226,9 @@ export default function ReportPanel({
     const header = [
       `Model: ${model}`,
       `Generated: ${ts}`,
-      `HasMask: ${!!(maskOutput && maskDims)}`,
-      `MaskDims: ${maskDims ? maskDims.join("x") : "-"}`,
+      `HasMask: ${!!(masks && masks.length > 0)}`,
+      `MaskCount: ${masks ? masks.length : 0}`,
+      `MaskDims: ${masks && masks[0]?.maskDims ? masks[0].maskDims.join("x") : "-"}`,
       "",
       "=== Report ===",
       "",
@@ -239,65 +243,77 @@ export default function ReportPanel({
       alert("Report copied to clipboard.");
     } catch (e) {
       console.warn("Clipboard API failed; fallback to prompt.", e);
-      // 退化方案
       window.prompt("Copy the report text:", reportText || "");
     }
   }
 
-  function handlePrint() {
-    const win = window.open("", "_blank", "noopener,noreferrer");
-    if (!win) return;
+  /** Robust PDF export: html2canvas + jsPDF, with paging and image scaling */
+  async function handlePrint() {
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 12;
+    let cursorY = margin + 6;
 
-    // 若有 ROI 画布，把它导出一张 PNG 嵌入打印页
-    let previewImgTag = "";
-    try {
-      const dataUrl = canvasRef.current?.toDataURL?.("image/png");
-      if (dataUrl) {
-        previewImgTag = `<img src="${dataUrl}" style="max-width:100%;border:1px solid #eee;border-radius:8px" />`;
+    // Title and meta
+    doc.setFontSize(16);
+    doc.text("SOMA Medical Report", margin, cursorY);
+    cursorY += 8;
+    doc.setFontSize(10);
+    doc.text(`Model: ${model}`, margin, cursorY); cursorY += 5;
+    doc.text(`Generated: ${ts}`, margin, cursorY); cursorY += 8;
+
+    // ROI image (screenshot the preview host; fallback to the internal canvas)
+    const addRoiImage = async () => {
+      try {
+        let dataUrl = "";
+        if (hostRef.current) {
+          const snap = await html2canvas(hostRef.current, {
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: "#ffffff",
+            scale: 2,
+            logging: false,
+          });
+          dataUrl = snap.toDataURL("image/png");
+        } else if (canvasRef.current?.toDataURL) {
+          dataUrl = canvasRef.current.toDataURL("image/png");
+        }
+        if (!dataUrl) return;
+
+        const imgProps = doc.getImageProperties(dataUrl);
+        const targetW = pageW - margin * 2;
+        const targetH = (imgProps.height * targetW) / imgProps.width;
+
+        if (cursorY + targetH > pageH - margin) {
+          doc.addPage(); cursorY = margin;
+        }
+        doc.addImage(dataUrl, "PNG", margin, cursorY, targetW, targetH);
+        cursorY += targetH + 6;
+      } catch (err) {
+        console.warn("ROI preview render failed, continue without image", err);
       }
-    } catch (e) {
-      // ignore
-    }
+    };
+    await addRoiImage();
 
-    const html = `
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>SOMA Report</title>
-          <style>
-            body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; padding: 24px; color: #111; }
-            h1 { margin: 0 0 8px; }
-            .meta { color:#555; margin-bottom: 16px; font-size: 12px; }
-            .section { margin: 16px 0; }
-            pre { white-space: pre-wrap; word-wrap: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; background:#fafafa; border:1px solid #eee; padding:12px; border-radius:8px; }
-          </style>
-        </head>
-        <body>
-          <h1>SOMA Medical Report</h1>
-          <div class="meta">
-            <div><strong>Model:</strong> ${model}</div>
-            <div><strong>Generated:</strong> ${ts}</div>
-            <div><strong>Has Mask:</strong> ${!!(maskOutput && maskDims)}</div>
-            <div><strong>Mask Dims:</strong> ${maskDims ? maskDims.join(" x ") : "-"}</div>
-          </div>
+    // Body (wrap & paginate)
+    const addBodyText = (text) => {
+      doc.setFontSize(12);
+      const maxWidth = pageW - margin * 2;
+      const lines = doc.splitTextToSize(text || "", maxWidth);
+      const lineHeight = 5.2; // mm
+      for (let i = 0; i < lines.length; i++) {
+        if (cursorY + lineHeight > pageH - margin) {
+          doc.addPage(); cursorY = margin;
+        }
+        doc.text(lines[i], margin, cursorY);
+        cursorY += lineHeight;
+      }
+    };
+    addBodyText(reportText || "");
 
-          <div class="section">
-            <h2>ROI Preview</h2>
-            ${previewImgTag || "<div style='color:#888'>No preview</div>"}
-          </div>
-
-          <div class="section">
-            <h2>Report</h2>
-            <pre>${(reportText || "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]))}</pre>
-          </div>
-
-          <script>window.print();</script>
-        </body>
-      </html>
-    `;
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
+    const safeTs = ts.replace(/[:]/g, "-").replace(/\s+/g, "_");
+    doc.save(`SOMA_Report_${safeTs}_${model}.pdf`);
   }
 
   function handleViewJSON() {
@@ -308,8 +324,8 @@ export default function ReportPanel({
   const jsonMeta = {
     model,
     generated_at: ts,
-    has_mask: !!(maskOutput && maskDims),
-    mask_dims: maskDims || null,
+    has_mask: !!(masks && masks.length > 0),
+    mask_dims: masks && masks[0]?.maskDims ? masks[0].maskDims : null,
     image_present: !!uploadedImage,
     report_chars: (reportText || "").length,
   };
@@ -364,7 +380,7 @@ export default function ReportPanel({
           ref={hostRef}
           className="h-[250px] w-full rounded-lg bg-white shadow-inner grid place-items-center"
         >
-          {uploadedImage && maskOutput && maskDims ? (
+          {uploadedImage && masks && masks.length > 0 ? (
             /* 放一个充满容器的画布，实际绘制在 useEffect 里 */
             <canvas ref={canvasRef} className="h-full w-full" />
           ) : (
