@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../useDB/useAuth";
+import Logo from "../assets/images/Logo.png";
 
 // ------- DD/MM/YYYY formatter -------
 export const toDDMMYYYY = (value) => {
@@ -19,7 +20,6 @@ export const toDDMMYYYY = (value) => {
 const Header = ({ 
   activeTab = "patient", 
   showLogout = true, 
-  showAddPatient = false,
   onAddPatientClick 
 }) => {
   const navigate = useNavigate();
@@ -36,46 +36,51 @@ const Header = ({
     navigate("/profile", { state: userInfo });
   };
 
-  const getTabClass = (tabName) => {
-    const isActive = activeTab === tabName;
-    return isActive 
-      ? "text-black font-medium border-b-2 border-black pb-1" 
-      : "hover:text-black";
-  };
-  
-  return (
-    <div className="flex items-center justify-between">
-      <div className="text-5xl font-extrabold tracking-tight">LOGO</div>
+  const tabs = [
+    { key: "patient", label: "Patient", path: "/patient" },
+    { key: "segmentation", label: "Segmentation", path: "/segmentation" },
+    { key: "report", label: "Report", path: "/report" },
+    { key: "history", label: "History", path: "/history" },
+  ];
 
-      {/* Right group: tabs + avatar */}
+  return (
+    <div className="flex items-center justify-between bg-transparent">
+      
+      {/* Logo */}
+      <img
+        src={Logo}
+        alt="Logo"
+        className="w-[200px] object-contain pointer-events-none select-none"
+      />
+
+      {/* Tabs + Avatar */}
       <div className="ml-auto flex items-center gap-6">
         <nav className="hidden sm:flex gap-8 text-gray-500 text-sm md:text-base">
-          <button 
-            className={`${getTabClass("patient")} bg-transparent border-none cursor-pointer`}
-            onClick={() => navigate("/patient")}
-          >
-            Patient
-          </button>
-          <button 
-            className={`${getTabClass("segmentation")} bg-transparent border-none cursor-pointer`}
-            onClick={() => navigate("/segmentation")}
-          >
-            Segmentation
-          </button>
-          <button 
-            className={`${getTabClass("report")} bg-transparent border-none cursor-pointer`}
-            onClick={() => navigate("/report")}
-          >
-            Report
-          </button>
-          <button 
-            className={`${getTabClass("segmentation")} bg-transparent border-none cursor-pointer`}
-            onClick={() => navigate("/history")}
-          >
-            History
-          </button>
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => navigate(tab.path)}
+              className={`
+                relative px-1 pb-1 font-medium transition-colors duration-200 
+                bg-transparent border-none cursor-pointer
+                ${activeTab === tab.key ? "text-black" : "hover:text-black"}
+              `}
+            >
+              {tab.label}
+              {/* Underline animation */}
+              <span
+                className={`
+                  absolute left-0 -bottom-[2px] h-[2px] w-full bg-black rounded-full
+                  transition-transform duration-300 ease-out
+                  ${activeTab === tab.key ? "scale-x-100" : "scale-x-0"}
+                `}
+                style={{ transformOrigin: "center" }}
+              ></span>
+            </button>
+          ))}
         </nav>
 
+        {/* Avatar */}
         <div
           className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-white bg-gray-100 cursor-pointer"
           onClick={handleProfileClick}
@@ -93,25 +98,14 @@ const Header = ({
         </div>
       </div>
 
-      
-
-      {/* Logout and Add Patient Buttons (bottom left) */}
+      {/* Logout */}
       <div className="absolute left-13 bottom-3 flex gap-3 z-10">
-
         {showLogout && (
           <button
             onClick={handleLogout}
             className="px-3 py-2 rounded-lg text-xs md:text-sm font-medium bg-gray-900 text-white hover:bg-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 shadow-md"
           >
             Logout
-          </button>
-        )}
-        {showAddPatient && (
-          <button
-            onClick={onAddPatientClick}
-            className="px-3 py-2 rounded-lg text-xs md:text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 shadow-md"
-          >
-            Add Patient
           </button>
         )}
       </div>
