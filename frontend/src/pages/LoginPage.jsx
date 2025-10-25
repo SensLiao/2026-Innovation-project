@@ -4,6 +4,7 @@ import { useUserDB } from '../useDB/useUsers';
 import { useNavigate } from 'react-router-dom';
 import LoginImage from '../assets/images/login.png';
 import Decoration from '../assets/images/main2.png';
+import Logo from "../assets/images/Logo.png";
 
 const LoginPage = () => {
   const { login, loading, error } = useAuth();
@@ -56,7 +57,14 @@ const LoginPage = () => {
 
       {/* white background */}
       <div className="bg-white rounded-lg shadow-lg pl-40 pr-10 py-40 w-[1000px] relative flex justify-end ">
-        <div className="absolute top-4 left-4 text-5xl font-extrabold tracking-tight">LOGO</div>
+        
+         {/* --------------------------------------------- Logo ------------------------------------- */}
+          <img 
+            src={Logo} 
+            alt="Logo" 
+            className="w-[220px] object-contain absolute left-10 top-16 -translate-y-1/2 pointer-events-none select-none"
+          />
+
 
         <img
           src={LoginImage}

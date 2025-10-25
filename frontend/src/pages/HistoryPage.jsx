@@ -2,22 +2,34 @@ import React from "react";
 import { useLocation } from "react-router-dom";
 import Header from "../components/Header";
 import "./patient.css";
+import Decoration from '../assets/images/main2.png';
 
 
 const HistoryPage = () => {
   const { state } = useLocation();
 
   return (
-    <div className="min-h-screen bg-[#C2DCE7] p-6 md:p-10 flex justify-center">
+    <div className="min-h-screen bg-[#C2DCE7] py-8">
+      {/* Decorative blobs */}
       <div className="relative w-full max-w-6xl">
+        <div className="absolute -right-20 bottom-80 hidden md:block deco-blob-sm" />
+        <img
+          src={Decoration}
+          alt="Decoration"
+          className="w-[400px] object-contain absolute -bottom-10 -left-60 z-0 pointer-events-none select-none"
+        />
+
+        {/* Fixed-width wrapper */}
+        <div className="mx-auto w-[1200px]"> {/* <- fixed width, not max-w */}
+
         {/* White sheet */}
-        <div className="bg-white rounded-3xl shadow-2xl px-6 md:px-12 py-8 md:py-10 relative">
-          
+         <div className="bg-white rounded-3xl shadow-2xl p-8 relative w-full overflow-hidden min-h-[75vh] md:min-h-[80vh] pb-20">
+   
           {/* Header - Note: activeTab is set to "history" and no Add Patient button */}
           <Header 
             activeTab="history"
             showLogout={true}
-            showAddPatient={false}
+            // showAddPatient={false}
           />
 
           {/* Title */}
@@ -46,6 +58,7 @@ const HistoryPage = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };
