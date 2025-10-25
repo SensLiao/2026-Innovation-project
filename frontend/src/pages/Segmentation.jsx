@@ -702,13 +702,17 @@ const SegmentationPage = () => {
   const renderMasks = masks.map((m, idx) => ({ ...m, __idx: idx, __name: m?.name || `Mask ${idx + 1}` }));
 
   return (
-    <div className="min-h-screen bg-[#C2DCE7] p-6 md:p-10 flex justify-center">
+    // <div className="min-h-screen bg-[#C2DCE7] p-6 md:p-10 flex justify-center">
+    // <div className="min-h-screen bg-[#C2DCE7] py-6 md:py-10">
+    <div className="min-h-screen bg-[#C2DCE7] py-8">
+
       {showSuccess && (
         <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-green-100 border border-green-300 text-green-800 px-5 py-2 rounded-lg shadow-lg z-50 animate-[fadeIn_200ms_ease-out]">
           Image processed successfully
         </div>
       )}
 
+      {/* Decorative blobs */}
       <div className="relative w-full max-w-6xl">
         <div className="absolute -right-20 bottom-80 hidden md:block deco-blob-sm" />
         <img
@@ -717,308 +721,337 @@ const SegmentationPage = () => {
           className="w-[400px] object-contain absolute -bottom-10 -left-60 z-0 pointer-events-none select-none"
         />
 
-        <div className="bg-white rounded-3xl shadow-2xl px-6 md:px-12 py-8 md:py-14 relative min-h-[90vh] pb-24">
-          {isRunning && (
-            <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-30 rounded-3xl">
-              <div className="mr-3 h-7 w-7 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
-              <span className="text-blue-700 font-medium">Working…</span>
-            </div>
-          )}
+        {/* Fixed-width wrapper */}
+        <div className="mx-auto w-[1200px]"> {/* <- fixed width, not max-w */}
 
-          <Header activeTab="segmentation" showLogout />
+          {/* White sheet */}
+          <div className="bg-white rounded-3xl shadow-2xl p-8 relative w-full overflow-hidden min-h-[75vh] md:min-h-[80vh] pb-20">
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 mt-10 md:mt-12 items-center">
-            <div>
-              <h1 className="text-5xl md:text-6xl font-extrabold text-[#3B82F6] leading-none">
-                SOMA <span className="text-black text-4xl md:text-5xl font-semibold">Health</span>
-              </h1>
-              <div className="mt-4 text-gray-500 text-lg">
-                <span className="inline-block border-t-2 border-dotted border-gray-400 w-56 align-middle mr-3" />
-                <span className="align-middle">Segmentation</span>
-                <span className="inline-block border-t-2 border-dotted border-gray-400 w-56 align-middle ml-3" />
+            {/* Header */}
+            <Header 
+              activeTab="segmentation"
+              showLogout={true}
+              // showAddPatient={true}
+              onAddPatientClick={() => document.getElementById("add_patient_modal").showModal()}
+            />
+            
+            {isRunning && (
+              <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-30 rounded-3xl">
+                <div className="mr-3 h-7 w-7 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+                <span className="text-blue-700 font-medium">Working…</span>
               </div>
-            </div>
-            <img src={main} alt="Illustration" className="w-[450px] object-contain justify-self-end pointer-events-none select-none" />
-          </div>
+            )}
 
-          <div className="mt-10 flex flex-col md:flex-row gap-6">
-            {/* Left */}
-            <div className="md:basis-3/5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-              {/* Tabs */}
-              <div className="mb-3 flex items-center gap-2">
-                <button
-                  onClick={() => setActiveTab("segmentation")}
-                  className={`rounded-md px-3 py-1 text-xs font-semibold shadow-sm transition-all duration-200 ease-out active:scale-95 ${
-                    activeTab === "segmentation" 
-                      ? "bg-blue-600/90 text-white shadow-md" 
-                      : "bg-gray-300 text-gray-700 hover:bg-gray-400 hover:shadow"
-                  }`}
-                >
-                  Segmentation
-                </button>
-                <button
-                  onClick={() => setActiveTab("report")}
-                  className={`rounded-md px-3 py-1 text-xs font-semibold shadow-sm transition-all duration-200 ease-out active:scale-95 ${
-                    activeTab === "report" 
-                      ? "bg-blue-600/90 text-white shadow-md" 
-                      : "bg-gray-300 text-gray-700 hover:bg-gray-400 hover:shadow"
-                  }`}
-                >
-                  Report
-                </button>
+            {/* ---------------- Hero Section (Title + Main Image) ---------------- */}
+            <div className="relative flex items-center justify-between mt-10 md:mt-12 h-[150px]">
+              {/* Title */}
+              <div className="flex-1">
+                <h1 className="text-5xl md:text-6xl font-extrabold text-[#3B82F6] leading-none">
+                  SOMA <span className="text-black text-4xl md:text-5xl font-semibold">Health</span>
+                </h1>
+                <div className="mt-4 text-gray-500 text-lg">
+                  <span className="inline-block border-t-2 border-dotted border-gray-400 w-56 align-middle mr-3" />
+                  <span className="align-middle">Description</span>
+                  <span className="inline-block border-t-2 border-dotted border-gray-400 w-56 align-middle ml-3" />
+                </div>
               </div>
 
-              {activeTab === "segmentation" ? (
-                <>
-                  {/* 上传区 */}
-                  <div
-                    ref={dropZoneRef}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={handleDrop}
-                    onClick={handleContainerClick}
-                    className="group relative flex h-[360px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-200 ease-out"
-                    title={uploadedImage ? "Click to add a point (Point tool)." : "Click to choose a file or drag an image here"}
+              {/* Main image */}
+              <div className="flex-shrink-0 relative">
+                <img
+                  src={main}
+                  alt="Login illustration"
+                  className="w-[450px] object-contain pointer-events-none select-none"
+                />
+              </div>
+            </div>
+
+
+            {/* <div className="mt-10 flex flex-col md:flex-row gap-6"> */}
+            <div className="mt-20 md:mt-28 relative z-10 flex flex-col md:flex-row gap-6">
+
+              {/* Left */}
+              {/* <div className="md:basis-3/5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"> */}
+              <div className="md:basis-3/5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm flex flex-col">
+
+                {/* Tabs */}
+                <div className="mb-3 flex items-center gap-2">
+                  <button
+                    onClick={() => setActiveTab("segmentation")}
+                    className={`rounded-md px-3 py-1 text-xs font-semibold shadow-sm transition-all duration-200 ease-out active:scale-95 ${
+                      activeTab === "segmentation" 
+                        ? "bg-blue-600/90 text-white shadow-md" 
+                        : "bg-gray-300 text-gray-700 hover:bg-gray-400 hover:shadow"
+                    }`}
                   >
-                    <input
-                      ref={inputRef}
-                      type="file"
-                      accept="image/png,image/jpeg"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) handleFile(f);
-                      }}
-                    />
-                    {uploadedImage ? (
-                      <>
-                        <img src={uploadedImage} alt="Uploaded Preview" className="absolute inset-0 h-full w-full object-contain rounded-2xl" />
-                        <canvas ref={canvasRef} className="absolute inset-0 rounded-2xl pointer-events-none" />
-                        {clickPoints.map((p, i) => (
-                          <div key={i} className={`absolute w-2 h-2 rounded-full ${pointDotClass(i)}`} style={styleForPoint(p)} />
-                        ))}
-                      </>
-                    ) : (
-                      <>
-                        <div className="mb-2 text-gray-600">Drag the image here to upload</div>
-                        <button className="rounded-full bg-blue-600 px-4 py-1.5 text-white text-sm font-semibold shadow hover:bg-blue-700 hover:shadow-md transition-all duration-200 ease-out active:scale-95 group-hover:scale-105">
-                          File
-                        </button>
-                      </>
-                    )}
-                    {fileName && <p className="mt-2 line-clamp-1 text-xs text-gray-500 animate-fade-in">{fileName}</p>}
-                  </div>
+                    Segmentation
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("report")}
+                    className={`rounded-md px-3 py-1 text-xs font-semibold shadow-sm transition-all duration-200 ease-out active:scale-95 ${
+                      activeTab === "report" 
+                        ? "bg-blue-600/90 text-white shadow-md" 
+                        : "bg-gray-300 text-gray-700 hover:bg-gray-400 hover:shadow"
+                    }`}
+                  >
+                    Report
+                  </button>
+                </div>
 
-                  {/* 选项 + 按钮 */}
-                  <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-                    <fieldset className="col-span-2 flex flex-wrap items-center gap-3">
-                      <legend className="mr-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Segmentation</legend>
-                      {segOptions.map((opt) => (
-                        <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-900 transition-colors duration-150">
-                          <input type="radio" name="mode" value={opt.id} checked={mode === opt.id} onChange={() => setMode(opt.id)} className="h-4 w-4 accent-blue-600 cursor-pointer transition-transform duration-150 hover:scale-110" />
-                          <span className="select-none">{opt.label}</span>
-                        </label>
-                      ))}
-                    </fieldset>
-
-                    <fieldset className="col-span-2 flex flex-wrap items-center gap-3">
-                      <legend className="mr-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Tool</legend>
-                      {toolOptions.map((opt) => (
-                        <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-900 transition-colors duration-150">
-                          <input type="radio" name="tool" value={opt.id} checked={tool === opt.id} onChange={() => setTool(opt.id)} className="h-4 w-4 accent-blue-600 cursor-pointer transition-transform duration-150 hover:scale-110" />
-                          <span className="select-none">{opt.label}</span>
-                        </label>
-                      ))}
-                    </fieldset>
-
-                    {/* 行内按钮（重构为工具栏组件） */}
-                    <div className="col-span-2 md:col-span-4">
-                      <SegmentationActionsBar
-                        onRunModel={runModel}
-                        onUndoPoints={undoPoints}
-                        onStartNextMask={startNextMask}
-                        onResetImage={resetImage}
-                        onExportOverlay={handleExportOverlay}
-                        isRunning={isRunning}
-                        disableRunModel={!fileName || clickPoints.length === 0}
-                        disableUndoPoints={clickPoints.length === 0}
-                        showExport={uploadedImage && masks && masks.length > 0}
+                {activeTab === "segmentation" ? (
+                  <>
+                    {/* 上传区 */}
+                    <div
+                      ref={dropZoneRef}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={handleDrop}
+                      onClick={handleContainerClick}
+                      className="group relative flex h-[360px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-200 ease-out"
+                      title={uploadedImage ? "Click to add a point (Point tool)." : "Click to choose a file or drag an image here"}
+                    >
+                      <input
+                        ref={inputRef}
+                        type="file"
+                        accept="image/png,image/jpeg"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleFile(f);
+                        }}
                       />
+                      {uploadedImage ? (
+                        <>
+                          <img src={uploadedImage} alt="Uploaded Preview" className="absolute inset-0 h-full w-full object-contain rounded-2xl" />
+                          <canvas ref={canvasRef} className="absolute inset-0 rounded-2xl pointer-events-none" />
+                          {clickPoints.map((p, i) => (
+                            <div key={i} className={`absolute w-2 h-2 rounded-full ${pointDotClass(i)}`} style={styleForPoint(p)} />
+                          ))}
+                        </>
+                      ) : (
+                        <>
+                          <div className="mb-2 text-gray-600">Drag the image here to upload</div>
+                          <button className="rounded-full bg-blue-600 px-4 py-1.5 text-white text-sm font-semibold shadow hover:bg-blue-700 hover:shadow-md transition-all duration-200 ease-out active:scale-95 group-hover:scale-105">
+                            File
+                          </button>
+                        </>
+                      )}
+                      {fileName && <p className="mt-2 line-clamp-1 text-xs text-gray-500 animate-fade-in">{fileName}</p>}
                     </div>
 
-                    {/* ======= 新：折叠式 Masks List（默认关闭；最多显示 2 项） ======= */}
-                    <div className="col-span-2 md:col-span-4">
-                      <div
-                        ref={listWrapRef}
-                        className="rounded-2xl border border-gray-300 bg-white overflow-hidden"
-                        role="region"
-                        aria-label="Masks list"
-                      >
-                        {/* Header */}
-                        <button
-                          type="button"
-                          onClick={() => setMaskListOpen((o) => !o)}
-                          aria-expanded={maskListOpen}
-                          aria-controls="masks-panel"
-                          className="w-full flex items-center justify-between px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 focus:outline-none transition-colors duration-150 active:bg-gray-100"
-                        >
-                          <span className="transition-all duration-200">{maskListOpen ? '▼' : '▶'} Masks</span>
-                          <ChevronDown
-                            className={`h-4 w-4 transition-transform duration-300 ease-out ${maskListOpen ? "rotate-180" : "rotate-0"}`}
-                            aria-hidden="true"
-                          />
-                        </button>
+                    {/* 选项 + 按钮 */}
+                    <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+                      <fieldset className="col-span-2 flex flex-wrap items-center gap-3">
+                        <legend className="mr-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Segmentation</legend>
+                        {segOptions.map((opt) => (
+                          <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-900 transition-colors duration-150">
+                            <input type="radio" name="mode" value={opt.id} checked={mode === opt.id} onChange={() => setMode(opt.id)} className="h-4 w-4 accent-blue-600 cursor-pointer transition-transform duration-150 hover:scale-110" />
+                            <span className="select-none">{opt.label}</span>
+                          </label>
+                        ))}
+                      </fieldset>
 
-                        {/* Content (animated) */}
+                      <fieldset className="col-span-2 flex flex-wrap items-center gap-3">
+                        <legend className="mr-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Tool</legend>
+                        {toolOptions.map((opt) => (
+                          <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-900 transition-colors duration-150">
+                            <input type="radio" name="tool" value={opt.id} checked={tool === opt.id} onChange={() => setTool(opt.id)} className="h-4 w-4 accent-blue-600 cursor-pointer transition-transform duration-150 hover:scale-110" />
+                            <span className="select-none">{opt.label}</span>
+                          </label>
+                        ))}
+                      </fieldset>
+
+                      {/* 行内按钮（重构为工具栏组件） */}
+                      <div className="col-span-2 md:col-span-4">
+                        <SegmentationActionsBar
+                          onRunModel={runModel}
+                          onUndoPoints={undoPoints}
+                          onStartNextMask={startNextMask}
+                          onResetImage={resetImage}
+                          onExportOverlay={handleExportOverlay}
+                          isRunning={isRunning}
+                          disableRunModel={!fileName || clickPoints.length === 0}
+                          disableUndoPoints={clickPoints.length === 0}
+                          showExport={uploadedImage && masks && masks.length > 0}
+                        />
+                      </div>
+
+                      {/* ======= 新：折叠式 Masks List（默认关闭；最多显示 2 项） ======= */}
+                      <div className="col-span-2 md:col-span-4">
                         <div
-                          id="masks-panel"
-                          style={{
-                            maxHeight: maskListOpen ? `${listMaxHeight}px` : 0,
-                          }}
-                          className="transition-[max-height] duration-300 ease-in-out"
+                          ref={listWrapRef}
+                          className="rounded-2xl border border-gray-300 bg-white overflow-hidden"
+                          role="region"
+                          aria-label="Masks list"
                         >
-                          <ul ref={listULRef} className="divide-y overflow-y-auto" style={{ maxHeight: listMaxHeight, WebkitOverflowScrolling: 'touch' }}>
-                            {renderMasks.length === 0 ? (
-                              <li className="px-4 py-3 text-sm text-gray-500">No masks</li>
-                            ) : (
-                              renderMasks.map((mObj) => {
-                                const idx = mObj.__idx;
-                                const selected = currentMaskIndex === idx;
-                                return (
-                                  <li key={idx} className={`flex items-center justify-between px-4 py-2 transition-all duration-200 ease-out ${selected ? "bg-blue-50 shadow-sm" : "hover:bg-gray-50"}`}>
-                                    <button
-                                      onClick={() => setCurrentMaskIndex(idx)}
-                                      className="min-w-0 text-left flex items-center gap-2 hover:gap-3 transition-all duration-200 group"
-                                      title={mObj.__name}
-                                    >
-                                      <span className="inline-block w-3 h-3 rounded-sm shrink-0 transition-transform duration-200 group-hover:scale-125" style={{ background: mObj?.color }} />
-                                      <span className="truncate text-sm text-gray-800 group-hover:text-gray-900 transition-colors duration-150">{mObj.__name}</span>
-                                    </button>
-                                    <div className="flex items-center gap-2 shrink-0">
+                          {/* Header */}
+                          <button
+                            type="button"
+                            onClick={() => setMaskListOpen((o) => !o)}
+                            aria-expanded={maskListOpen}
+                            aria-controls="masks-panel"
+                            className="w-full flex items-center justify-between px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 focus:outline-none transition-colors duration-150 active:bg-gray-100"
+                          >
+                            <span className="transition-all duration-200">{maskListOpen ? '▼' : '▶'} Masks</span>
+                            <ChevronDown
+                              className={`h-4 w-4 transition-transform duration-300 ease-out ${maskListOpen ? "rotate-180" : "rotate-0"}`}
+                              aria-hidden="true"
+                            />
+                          </button>
+
+                          {/* Content (animated) */}
+                          <div
+                            id="masks-panel"
+                            style={{
+                              maxHeight: maskListOpen ? `${listMaxHeight}px` : 0,
+                            }}
+                            className="transition-[max-height] duration-300 ease-in-out"
+                          >
+                            <ul ref={listULRef} className="divide-y overflow-y-auto" style={{ maxHeight: listMaxHeight, WebkitOverflowScrolling: 'touch' }}>
+                              {renderMasks.length === 0 ? (
+                                <li className="px-4 py-3 text-sm text-gray-500">No masks</li>
+                              ) : (
+                                renderMasks.map((mObj) => {
+                                  const idx = mObj.__idx;
+                                  const selected = currentMaskIndex === idx;
+                                  return (
+                                    <li key={idx} className={`flex items-center justify-between px-4 py-2 transition-all duration-200 ease-out ${selected ? "bg-blue-50 shadow-sm" : "hover:bg-gray-50"}`}>
                                       <button
-                                        type="button"
-                                        aria-label={mObj?.visible ? "Hide" : "Show"}
-                                        onClick={() => {
-                                          setMasks((prev) => prev.map((m, j) => (j === idx ? { ...m, visible: !m.visible } : m)));
-                                          setRedrawTick((t) => t + 1);
-                                        }}
-                                        className="rounded-md border px-2 py-1 hover:bg-white hover:shadow-sm transition-all duration-150 active:scale-90"
+                                        onClick={() => setCurrentMaskIndex(idx)}
+                                        className="min-w-0 text-left flex items-center gap-2 hover:gap-3 transition-all duration-200 group"
+                                        title={mObj.__name}
                                       >
-                                        {mObj?.visible ? <Eye className="h-4 w-4 transition-transform duration-200 hover:scale-110" /> : <EyeOff className="h-4 w-4 transition-transform duration-200 hover:scale-110" />}
+                                        <span className="inline-block w-3 h-3 rounded-sm shrink-0 transition-transform duration-200 group-hover:scale-125" style={{ background: mObj?.color }} />
+                                        <span className="truncate text-sm text-gray-800 group-hover:text-gray-900 transition-colors duration-150">{mObj.__name}</span>
                                       </button>
-                                      <button
-                                        type="button"
-                                        aria-label="Delete"
-                                        onClick={() => {
-                                          setMasks((prev) => {
-                                            const next = prev.filter((_, j) => j !== idx);
-                                            setCurrentMaskIndex((ci) => {
-                                              if (next.length === 0) return 0;
-                                              if (ci === idx) return Math.max(0, idx - 1);
-                                              if (ci > idx) return ci - 1;
-                                              return ci;
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <button
+                                          type="button"
+                                          aria-label={mObj?.visible ? "Hide" : "Show"}
+                                          onClick={() => {
+                                            setMasks((prev) => prev.map((m, j) => (j === idx ? { ...m, visible: !m.visible } : m)));
+                                            setRedrawTick((t) => t + 1);
+                                          }}
+                                          className="rounded-md border px-2 py-1 hover:bg-white hover:shadow-sm transition-all duration-150 active:scale-90"
+                                        >
+                                          {mObj?.visible ? <Eye className="h-4 w-4 transition-transform duration-200 hover:scale-110" /> : <EyeOff className="h-4 w-4 transition-transform duration-200 hover:scale-110" />}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          aria-label="Delete"
+                                          onClick={() => {
+                                            setMasks((prev) => {
+                                              const next = prev.filter((_, j) => j !== idx);
+                                              setCurrentMaskIndex((ci) => {
+                                                if (next.length === 0) return 0;
+                                                if (ci === idx) return Math.max(0, idx - 1);
+                                                if (ci > idx) return ci - 1;
+                                                return ci;
+                                              });
+                                              return next;
                                             });
-                                            return next;
-                                          });
-                                          setRedrawTick((t) => t + 1);
-                                        }}
-                                        className="rounded-md border px-2 py-1 hover:bg-red-50 hover:border-red-300 hover:shadow-sm text-red-600 transition-all duration-150 active:scale-90"
-                                      >
-                                        <Trash2 className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
-                                      </button>
-                                    </div>
-                                  </li>
-                                );
-                              })
-                            )}
-                          </ul>
+                                            setRedrawTick((t) => t + 1);
+                                          }}
+                                          className="rounded-md border px-2 py-1 hover:bg-red-50 hover:border-red-300 hover:shadow-sm text-red-600 transition-all duration-150 active:scale-90"
+                                        >
+                                          <Trash2 className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
+                                        </button>
+                                      </div>
+                                    </li>
+                                  );
+                                })
+                              )}
+                            </ul>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    {/* ======= /Masks List ======= */}
-                  </div>
-                </>
-              ) : (
-                <ReportPanel
-                  reportText={reportText}
-                  onChangeText={setReportText}
-                  model={model}
-                  onChangeModel={setModel}
-                  samples={{ medical: sampleGeneratedReport, formal: defaultReport }}
-                  uploadedImage={uploadedImage}
-                  masks={masks}
-                  origImSize={origImSize}
-                />
-              )}
-            </div>
-
-            {/* Right: Chat */}
-            <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col h-[560px]">
-              <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3">
-                {messages.length === 0 ? (
-                  <>
-                    <div className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
-                      <div className="max-w-[75%] rounded-full bg-blue-100 px-4 py-2 text-sm text-gray-800 transition-transform duration-200 hover:scale-[1.02]">
-                        Can you generate report for this CT
-                      </div>
-                    </div>
-                    <div className="mb-2 flex justify-start">
-                      <div className="max-w-[75%] w-full rounded-2xl bg-white px-4 py-2 text-sm text-gray-900 border text-left">
-                        All set! I’ve created a report for this CT.
-                      </div>
+                      {/* ======= /Masks List ======= */}
                     </div>
                   </>
                 ) : (
-                  messages.map((m, i) =>
-                    m.role === "user" ? (
-                      <div key={i} className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
-                        <div className="max-w-[75%] rounded-full bg-blue-100 px-4 py-2 text-sm text-gray-800 transition-transform duration-200 hover:scale-[1.02]">{m.text}</div>
-                      </div>
-                    ) : (
-                      <div key={i} className="mb-2 flex justify-start animate-[fadeIn_300ms_ease-out]">
-                        <div className="max-w-[75%] w-full rounded-2xl bg-white px-4 py-2 text-sm text-gray-900 border text-left transition-transform duration-200 hover:scale-[1.02]">
-                          {m.text === "loading" ? "…" : m.text}
-                        </div>
-                      </div>
-                    )
-                  )
+                  <ReportPanel
+                    reportText={reportText}
+                    onChangeText={setReportText}
+                    model={model}
+                    onChangeModel={setModel}
+                    samples={{ medical: sampleGeneratedReport, formal: defaultReport }}
+                    uploadedImage={uploadedImage}
+                    masks={masks}
+                    origImSize={origImSize}
+                  />
                 )}
               </div>
 
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Add">+</button>
-                    <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Settings">⚙</button>
-                    Models
-                  </span>
-                  <select value={model} onChange={(e) => setModel(e.target.value)} className="rounded-md border px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150 cursor-pointer">
-                    <option value="SOMA-CT-v1">SOMA-CT-v1</option>
-                    <option value="SOMA-CT-v2">SOMA-CT-v2</option>
-                    <option value="General-4o-mini">General-4o-mini</option>
-                  </select>
+              {/* Right: Chat */}
+              {/* <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col h-[560px]"> */}
+                <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col md:self-stretch">
+
+                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3">
+                  {messages.length === 0 ? (
+                    <>
+                      <div className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
+                        <div className="max-w-[75%] rounded-full bg-blue-100 px-4 py-2 text-sm text-gray-800 transition-transform duration-200 hover:scale-[1.02]">
+                          Can you generate report for this CT
+                        </div>
+                      </div>
+                      <div className="mb-2 flex justify-start">
+                        <div className="max-w-[75%] w-full rounded-2xl bg-white px-4 py-2 text-sm text-gray-900 border text-left">
+                          All set! I’ve created a report for this CT.
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    messages.map((m, i) =>
+                      m.role === "user" ? (
+                        <div key={i} className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
+                          <div className="max-w-[75%] rounded-full bg-blue-100 px-4 py-2 text-sm text-gray-800 transition-transform duration-200 hover:scale-[1.02]">{m.text}</div>
+                        </div>
+                      ) : (
+                        <div key={i} className="mb-2 flex justify-start animate-[fadeIn_300ms_ease-out]">
+                          <div className="max-w-[75%] w-full rounded-2xl bg-white px-4 py-2 text-sm text-gray-900 border text-left transition-transform duration-200 hover:scale-[1.02]">
+                            {m.text === "loading" ? "…" : m.text}
+                          </div>
+                        </div>
+                      )
+                    )
+                  )}
                 </div>
 
-                <button onClick={handleAnalysis} className="ml-3 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-blue-700 hover:shadow-md transition-all duration-200 ease-out active:scale-95" title="Generate report from current mask">
-                  Analyse
-                </button>
-              </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Add">+</button>
+                      <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Settings">⚙</button>
+                      Models
+                    </span>
+                    <select value={model} onChange={(e) => setModel(e.target.value)} className="rounded-md border px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150 cursor-pointer">
+                      <option value="SOMA-CT-v1">SOMA-CT-v1</option>
+                      <option value="SOMA-CT-v2">SOMA-CT-v2</option>
+                      <option value="General-4o-mini">General-4o-mini</option>
+                    </select>
+                  </div>
 
-              <div className="mt-3 flex items-start gap-2">
-                <textarea
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="Enter your questions…"
-                  className="flex-1 h-28 resize-none rounded-xl border bg-blue-50 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150"
-                />
-                <button onClick={sendMessage} className="h-10 shrink-0 rounded-md border px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-200 ease-out active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100" title="Send" disabled={isRunning}>
-                  Send
-                </button>
+                  <button onClick={handleAnalysis} className="ml-3 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-blue-700 hover:shadow-md transition-all duration-200 ease-out active:scale-95" title="Generate report from current mask">
+                    Analyse
+                  </button>
+                </div>
+
+                <div className="mt-3 flex items-start gap-2">
+                  <textarea
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    placeholder="Enter your questions…"
+                    className="flex-1 h-28 resize-none rounded-xl border bg-blue-50 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150"
+                  />
+                  <button onClick={sendMessage} className="h-10 shrink-0 rounded-md border px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-200 ease-out active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100" title="Send" disabled={isRunning}>
+                    Send
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+     </div>
   );
 };
 

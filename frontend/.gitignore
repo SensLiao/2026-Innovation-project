@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+src/pages/test.jsx
+../node_modules/
+../package-lock.json
+../package.json
+
