@@ -73,16 +73,19 @@ const PatientProfilePage = () => {
   } = currentPatient;
 
   return (
-    <div className="min-h-screen bg-[#C2DCE7] p-6 md:p-10 flex justify-center">
-      
+    <div className="min-h-screen bg-[#C2DCE7] py-8">
+
       {/* Success popup */}
       {showSuccess && (
         <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           Update Successful
         </div>
       )}
+      
 
-      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-3xl relative">
+      {/* White sheet */}
+      <div className="bg-white rounded-3xl shadow-2xl p-8 relative w-full overflow-hidden min-h-[75vh] md:min-h-[80vh] pb-20">
+   
 
         {/*---------------------------------------- Header Section ------------------------------------- */}
         <div className="flex justify-between items-center border-b pb-3 mb-6 relative">
@@ -102,7 +105,7 @@ const PatientProfilePage = () => {
           {/*--------------------------------------------- Logo -------------------------------------*/}
           <img src={Logo} 
             alt="Logo" 
-            className="w-[100px] object-contain absolute right-10 top-7 -translate-y-1/2 pointer-events-none select-none" 
+            className="w-[170px] object-contain absolute right-0 top-7 -translate-y-1/2 pointer-events-none select-none" 
           />
         </div>
 

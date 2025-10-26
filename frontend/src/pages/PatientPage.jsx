@@ -138,7 +138,10 @@ const PatientPage = () => {
 
 
   return (
-    <div className="min-h-screen bg-[#C2DCE7] p-6 md:p-10 flex justify-center">
+    // <div className="min-h-screen bg-[#C2DCE7] p-6 md:p-10 flex justify-center">
+    // <div className="min-h-screen bg-[#C2DCE7] py-6 md:py-10">
+    <div className="min-h-screen bg-[#C2DCE7] py-8">
+
       
       {/* Decorative blobs */}
       <div className="relative w-full max-w-6xl">
@@ -149,24 +152,36 @@ const PatientPage = () => {
           className="w-[400px] object-contain absolute -bottom-10 -left-60 z-0 pointer-events-none select-none"
         />
 
+        {/* Fixed-width wrapper */}
+        <div className="mx-auto w-[1200px]"> {/* <- fixed width, not max-w */}
+
         {/* White sheet */}
-        <div className="bg-white rounded-3xl shadow-2xl px-6 md:px-12 py-8 md:py-10 pb-16 relative">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 relative w-full overflow-hidden"> {/* <- stop width blow-ups */}
           
           {/* Header */}
           <Header 
             activeTab="patient"
             showLogout={true}
-            showAddPatient={true}
+            // showAddPatient={true}
             onAddPatientClick={() => document.getElementById("add_patient_modal").showModal()}
           />
           {/* Add Patient Modal */}
           <AddPatientModal />
-
-
-
-          {/* Title */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 mt-10 md:mt-12 items-center">
-            <div>
+          
+          {/* Add Patient */}
+          <div className="absolute bottom-3 left-40 z-10">
+            <button
+              onClick={() => document.getElementById("add_patient_modal").showModal()}
+              className="px-3 py-2 rounded-lg text-xs md:text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 shadow-md leading-none whitespace-nowrap"
+            >
+              + Add Patient
+            </button>
+          </div>
+          
+          {/* ---------------- Hero Section (Title + Main Image) ---------------- */}
+          <div className="relative flex items-center justify-between mt-10 md:mt-12 h-[150px]">
+            {/* Title */}
+            <div className="flex-1">
               <h1 className="text-5xl md:text-6xl font-extrabold text-[#3B82F6] leading-none">
                 SOMA <span className="text-black text-4xl md:text-5xl font-semibold">Health</span>
               </h1>
@@ -176,15 +191,17 @@ const PatientPage = () => {
                 <span className="inline-block border-t-2 border-dotted border-gray-400 w-56 align-middle ml-3" />
               </div>
             </div>
+          
+            {/* Main image */}
+            <div className="flex-shrink-0 relative">
+              <img
+                src={main}
+                alt="Login illustration"
+                className="w-[450px] object-contain pointer-events-none select-none"
+              />
+            </div>
           </div>
-
-          {/* main image */}
-          <img
-            src={main}
-            alt="Login illustration"
-            className="w-[450px] object-contain absolute right-12 top-1/3 -translate-y-1/2 pointer-events-none select-none"
-          />
-
+          
           {/* Search */}
           <div className="mt-10">
             <div className="relative max-w-xl">
@@ -477,10 +494,12 @@ const PatientPage = () => {
                 />
               </svg>
             </button>
+            
           </div>
         </div>
       </div>
     </div>
+     </div>
   );
 };
 
