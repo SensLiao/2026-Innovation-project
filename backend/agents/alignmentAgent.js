@@ -1,0 +1,280 @@
+/**
+ * AlignmentAgent - 医生对齐 Agent
+ *
+ * 职责：
+ * - 理解医生的反馈意图
+ * - 路由反馈到合适的专业 Agent
+ * - 处理简单的修改请求 (格式、错字等)
+ * - 与医生进行对话交流
+ * - 解释 AI 分析结果
+ */
+
+import { BaseAgent } from './baseAgent.js';
+
+// 反馈意图类型
+export const FeedbackIntent = {
+  // 小修改 - Alignment 自己处理
+  TYPO_FIX: 'typo_fix',
+  FORMAT_CHANGE: 'format_change',
+  ADD_DISCLAIMER: 'add_disclaimer',
+  CLARIFY_WORDING: 'clarify_wording',
+
+  // 影像描述问题 - 路由到 Radiologist
+  LESION_DETAIL: 'lesion_detail',
+  MEASUREMENT_ERROR: 'measurement_error',
+  MISSING_FINDING: 'missing_finding',
+  LOCATION_CORRECTION: 'location_correction',
+
+  // 诊断问题 - 路由到 Pathologist
+  WRONG_DIAGNOSIS: 'wrong_diagnosis',
+  ADD_DIFFERENTIAL: 'add_differential',
+  NEED_EVIDENCE: 'need_evidence',
+  RECONSIDER_DIAGNOSIS: 'reconsider_diagnosis',
+
+  // 报告结构问题 - 路由到 Report Writer
+  RESTRUCTURE: 'restructure',
+  CHANGE_TONE: 'change_tone',
+  ADD_SECTION: 'add_section',
+  REWRITE_IMPRESSION: 'rewrite_impression',
+
+  // 质量问题 - 路由到 QC
+  INCONSISTENCY: 'inconsistency',
+  TERMINOLOGY: 'terminology',
+  COMPLETENESS: 'completeness',
+
+  // 需要澄清
+  UNCLEAR: 'unclear',
+
+  // 一般问题/对话
+  QUESTION: 'question',
+  APPROVAL: 'approval'
+};
+
+// 路由映射
+const INTENT_ROUTING = {
+  [FeedbackIntent.TYPO_FIX]: 'SELF',
+  [FeedbackIntent.FORMAT_CHANGE]: 'SELF',
+  [FeedbackIntent.ADD_DISCLAIMER]: 'SELF',
+  [FeedbackIntent.CLARIFY_WORDING]: 'SELF',
+
+  [FeedbackIntent.LESION_DETAIL]: 'RADIOLOGIST',
+  [FeedbackIntent.MEASUREMENT_ERROR]: 'RADIOLOGIST',
+  [FeedbackIntent.MISSING_FINDING]: 'RADIOLOGIST',
+  [FeedbackIntent.LOCATION_CORRECTION]: 'RADIOLOGIST',
+
+  [FeedbackIntent.WRONG_DIAGNOSIS]: 'PATHOLOGIST',
+  [FeedbackIntent.ADD_DIFFERENTIAL]: 'PATHOLOGIST',
+  [FeedbackIntent.NEED_EVIDENCE]: 'PATHOLOGIST',
+  [FeedbackIntent.RECONSIDER_DIAGNOSIS]: 'PATHOLOGIST',
+
+  [FeedbackIntent.RESTRUCTURE]: 'REPORT_WRITER',
+  [FeedbackIntent.CHANGE_TONE]: 'REPORT_WRITER',
+  [FeedbackIntent.ADD_SECTION]: 'REPORT_WRITER',
+  [FeedbackIntent.REWRITE_IMPRESSION]: 'REPORT_WRITER',
+
+  [FeedbackIntent.INCONSISTENCY]: 'QC_REVIEWER',
+  [FeedbackIntent.TERMINOLOGY]: 'QC_REVIEWER',
+  [FeedbackIntent.COMPLETENESS]: 'QC_REVIEWER',
+
+  [FeedbackIntent.UNCLEAR]: 'ASK_CLARIFICATION',
+  [FeedbackIntent.QUESTION]: 'SELF',
+  [FeedbackIntent.APPROVAL]: 'NONE'
+};
+
+const SYSTEM_PROMPT = `You are a medical AI assistant that helps physicians review and refine medical reports.
+
+Your responsibilities:
+1. Understand physician feedback and determine its intent
+2. Make minor corrections yourself (typos, formatting, wording)
+3. Route complex medical requests to appropriate specialist systems
+4. Provide clear explanations when asked
+5. Be respectful and professional
+
+When analyzing feedback, classify it into one of these categories:
+- SELF: Minor edits you can handle (typos, formatting, wording)
+- RADIOLOGIST: Issues with imaging findings description
+- PATHOLOGIST: Issues with diagnosis or differential
+- REPORT_WRITER: Issues with report structure or style
+- QC_REVIEWER: Issues with consistency or terminology
+- ASK_CLARIFICATION: Need more information from physician
+- NONE: Approval or acknowledgment
+
+Output format (JSON):
+{
+  "intent": "primary intent classification",
+  "confidence": 0.0-1.0,
+  "handlers": [
+    {
+      "name": "SELF|RADIOLOGIST|PATHOLOGIST|REPORT_WRITER|QC_REVIEWER",
+      "context": "specific issue to address"
+    }
+  ],
+  "needsRegeneration": true/false,
+  "modifiedReport": "if SELF handling, include corrected report",
+  "responseToDoctor": "natural language response to the physician",
+  "changes": ["list of changes made or to be made"]
+}
+
+Be helpful and efficient. Make safe corrections directly when possible.`;
+
+export class AlignmentAgent extends BaseAgent {
+  constructor() {
+    super({
+      name: 'AlignmentAgent',
+      model: 'claude-sonnet-4-20250514',
+      maxTokens: 3000,
+      systemPrompt: SYSTEM_PROMPT
+    });
+  }
+
+  /**
+   * 分析医生反馈并确定路由
+   * @param {Object} input - 输入数据
+   * @param {string} input.feedback - 医生反馈内容
+   * @param {string} input.currentReport - 当前报告内容
+   * @param {Object} input.agentResults - 各 Agent 的原始结果
+   */
+  async analyzeFeedback(input) {
+    const { feedback, currentReport, agentResults = {} } = input;
+
+    const prompt = this.buildAnalysisPrompt(feedback, currentReport, agentResults);
+
+    this.log('Analyzing physician feedback...');
+    const result = await this.callLLM(prompt);
+
+    try {
+      const parsed = this.parseJSONResponse(result.text);
+      return {
+        success: true,
+        intent: parsed.intent || FeedbackIntent.UNCLEAR,
+        confidence: parsed.confidence || 0.5,
+        handlers: parsed.handlers || [],
+        needsRegeneration: parsed.needsRegeneration || false,
+        modifiedReport: parsed.modifiedReport || null,
+        responseToDoctor: parsed.responseToDoctor || 'I understand your feedback. Let me process that.',
+        changes: parsed.changes || [],
+        rawResponse: result.text
+      };
+    } catch (parseError) {
+      this.log(`JSON parse error: ${parseError.message}`, 'warn');
+      return {
+        success: false,
+        intent: FeedbackIntent.UNCLEAR,
+        handlers: [{ name: 'ASK_CLARIFICATION', context: 'Could not parse feedback intent' }],
+        responseToDoctor: 'I apologize, but I need clarification on your feedback. Could you please rephrase?',
+        rawResponse: result.text
+      };
+    }
+  }
+
+  /**
+   * 流式对话响应
+   * @param {Object} input - 输入数据
+   * @param {Function} onChunk - chunk 回调
+   */
+  async streamResponse(input, onChunk) {
+    const { feedback, currentReport, conversationHistory = [] } = input;
+
+    // 构建对话消息
+    const messages = [
+      ...conversationHistory.map(m => ({
+        role: m.role,
+        content: m.content
+      })),
+      { role: 'user', content: feedback }
+    ];
+
+    // 添加当前报告上下文
+    const contextPrompt = `Current report being discussed:\n\`\`\`\n${currentReport}\n\`\`\`\n\nPhysician's message: ${feedback}`;
+
+    this.log('Streaming response to physician...');
+    const fullText = await this.callLLMStream(contextPrompt, onChunk);
+
+    return {
+      success: true,
+      response: fullText
+    };
+  }
+
+  /**
+   * 直接执行小修改
+   * @param {string} report - 当前报告
+   * @param {string} instruction - 修改指令
+   */
+  async applyMinorEdit(report, instruction) {
+    const prompt = `Current report:
+\`\`\`markdown
+${report}
+\`\`\`
+
+Edit instruction: ${instruction}
+
+Apply the requested edit and return ONLY the modified report in markdown format.
+Do not add any explanations, just the corrected report.`;
+
+    this.log('Applying minor edit...');
+    const result = await this.callLLM(prompt, {
+      systemPrompt: 'You are a precise text editor. Apply edits exactly as requested. Return only the modified text.'
+    });
+
+    return {
+      success: true,
+      modifiedReport: result.text
+    };
+  }
+
+  /**
+   * 构建分析提示
+   */
+  buildAnalysisPrompt(feedback, currentReport, agentResults) {
+    const parts = ['Analyze the following physician feedback and determine how to handle it:'];
+
+    parts.push('\n## Current Report:');
+    parts.push('```markdown');
+    parts.push(typeof currentReport === 'string' ? currentReport : (currentReport?.content || 'No report available'));
+    parts.push('```');
+
+    parts.push('\n## Physician Feedback:');
+    parts.push(`"${feedback}"`);
+
+    // 提供原始分析结果摘要以便更好理解上下文
+    if (agentResults.radiologist) {
+      parts.push('\n## Original Imaging Findings (summary):');
+      const findings = agentResults.radiologist.findings || [];
+      parts.push(`- ${findings.length} findings identified`);
+    }
+
+    if (agentResults.pathologist) {
+      parts.push('\n## Original Diagnosis (summary):');
+      if (agentResults.pathologist.primaryDiagnosis) {
+        parts.push(`- Primary: ${agentResults.pathologist.primaryDiagnosis.name}`);
+      }
+    }
+
+    parts.push('\n## Task:');
+    parts.push('1. Identify the intent of the feedback');
+    parts.push('2. Determine which agent(s) should handle it');
+    parts.push('3. If minor edit (typo, format), apply it directly');
+    parts.push('4. Prepare a professional response to the physician');
+    parts.push('\nOutput in JSON format.');
+
+    return parts.join('\n');
+  }
+
+  /**
+   * 解析 JSON 响应
+   */
+  parseJSONResponse(text) {
+    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) ||
+                      text.match(/\{[\s\S]*\}/);
+
+    if (jsonMatch) {
+      const jsonStr = jsonMatch[1] || jsonMatch[0];
+      return JSON.parse(jsonStr);
+    }
+
+    throw new Error('No valid JSON found in response');
+  }
+}
+
+export default AlignmentAgent;
