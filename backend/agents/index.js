@@ -13,6 +13,7 @@
  */
 
 import { AgentStatus } from './baseAgent.js';
+import { ragService } from '../services/ragService.js';
 
 // 会话状态枚举
 export const SessionState = {
@@ -238,42 +239,122 @@ export class Orchestrator {
    * iter5: 实现实际的向量检索
    */
   async preloadRAGContext(input) {
-    // TODO (iter5): 实现 RAG 服务集成
-    // 根据临床上下文检索相关医学知识
-    //
-    // 检索触发条件:
-    // - clinicalContext.smokingHistory + 结节 → Fleischner 指南
-    // - clinicalContext.clinicalIndication + 影像特征 → 鉴别诊断
-    // - patientInfo.age + 影像特征 → 年龄相关流行病学
-
+    // iter5: 实现 RAG 服务集成
     const clinicalContext = input.clinicalContext || this.clinicalContext || {};
     const patientInfo = input.patientInfo || this.patientInfo || {};
 
-    // 构建检索提示 (iter5 将使用这些生成 embedding 查询)
-    const ragHints = {
-      // 吸烟相关
-      smokingRelated: clinicalContext.smokingHistory?.status === 'current' ||
-                      clinicalContext.smokingHistory?.status === 'former',
-      packYears: clinicalContext.smokingHistory?.packYears || 0,
+    // 构建检索查询
+    const queryParts = [];
 
-      // 临床指征
-      indication: clinicalContext.clinicalIndication || '',
+    // 临床指征
+    if (clinicalContext.clinicalIndication) {
+      queryParts.push(clinicalContext.clinicalIndication);
+    }
 
-      // 病人特征
-      patientAge: patientInfo.age || null,
-      patientGender: patientInfo.gender || null,
+    // 吸烟相关查询
+    const smokingRelated = clinicalContext.smokingHistory?.status === 'current' ||
+                           clinicalContext.smokingHistory?.status === 'former';
+    const packYears = clinicalContext.smokingHistory?.packYears || 0;
 
-      // 检查类型
-      examType: clinicalContext.examType || input.metadata?.modality || 'Unknown'
-    };
+    if (smokingRelated && packYears >= 20) {
+      queryParts.push('lung nodule management smoking history Fleischner guidelines');
+    }
 
-    // 占位返回 (iter5 将返回实际检索结果)
-    return {
-      relevantCases: [],
-      guidelines: [],
-      anatomyInfo: [],
-      ragHints  // 传递给 Agents 供日后 RAG 使用
-    };
+    // 检查类型
+    const examType = clinicalContext.examType || input.metadata?.modality || 'CT';
+    if (examType.toLowerCase().includes('ct')) {
+      queryParts.push('chest CT findings differential diagnosis');
+    }
+
+    // 默认查询 (如果没有具体上下文)
+    if (queryParts.length === 0) {
+      queryParts.push('pulmonary nodule differential diagnosis Lung-RADS');
+    }
+
+    // 执行 RAG 查询
+    const queryText = queryParts.join(' ');
+    console.log(`[Orchestrator] RAG query: "${queryText.slice(0, 60)}..."`);
+
+    try {
+      // 并行查询不同类别
+      const [guidelines, terminology, ddx] = await Promise.all([
+        ragService.query({
+          text: queryText + ' guideline management recommendation',
+          topK: 3,
+          minSimilarity: 0.45,
+          category: 'classification'  // Lung-RADS, Fleischner, etc.
+        }),
+        ragService.query({
+          text: queryText + ' terminology definition',
+          topK: 3,
+          minSimilarity: 0.45,
+          category: 'terminology'  // RadLex terms
+        }),
+        ragService.query({
+          text: queryText + ' differential diagnosis ICD-10',
+          topK: 3,
+          minSimilarity: 0.45,
+          category: 'coding'  // ICD-10 codes
+        })
+      ]);
+
+      // 整合结果
+      const relevantCases = [...guidelines, ...terminology, ...ddx]
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, 8)  // 最多 8 条最相关的
+        .map(r => ({
+          title: r.title,
+          content: r.content,
+          summary: r.content.slice(0, 200),
+          category: r.category,
+          similarity: r.similarity
+        }));
+
+      // 提取指南引用
+      const guidelineRefs = guidelines
+        .filter(g => g.similarity >= 0.5)
+        .map(g => g.title);
+
+      // 提取 ICD-10 编码
+      const icdCodes = ddx
+        .filter(d => d.metadata?.icd_code)
+        .map(d => `${d.metadata.icd_code}: ${d.title}`);
+
+      console.log(`[Orchestrator] RAG found: ${relevantCases.length} cases, ${guidelineRefs.length} guidelines, ${icdCodes.length} ICD codes`);
+
+      return {
+        relevantCases,
+        guidelines: guidelineRefs,
+        icdCodes,
+        references: relevantCases.map(r => r.title),
+        ragHints: {
+          smokingRelated,
+          packYears,
+          indication: clinicalContext.clinicalIndication || '',
+          patientAge: patientInfo.age || null,
+          patientGender: patientInfo.gender || null,
+          examType
+        }
+      };
+    } catch (error) {
+      console.error('[Orchestrator] RAG query failed:', error.message);
+      // 降级处理 - 返回空结果但不阻塞流程
+      return {
+        relevantCases: [],
+        guidelines: [],
+        icdCodes: [],
+        references: [],
+        ragHints: {
+          smokingRelated,
+          packYears,
+          indication: clinicalContext.clinicalIndication || '',
+          patientAge: patientInfo.age || null,
+          patientGender: patientInfo.gender || null,
+          examType
+        },
+        error: error.message
+      };
+    }
   }
 
   /**
