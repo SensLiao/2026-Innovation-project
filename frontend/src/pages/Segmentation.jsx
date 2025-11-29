@@ -646,12 +646,32 @@ const SegmentationPage = () => {
 
   // 生成报告 (支持 SSE 流式进度)
   async function handleAnalysis(useStreaming = true) {
+    // Validation: Check if patient is selected (show friendly animation instead of alert)
+    if (!selectedPatient) {
+      setAnalysisStatus('no_patient');
+      setShowCompletion(true);
+      setTimeout(() => {
+        setShowCompletion(false);
+        setAnalysisStatus(null);
+      }, 2500);
+      return;
+    }
     if (!imageEmbeddings.length) {
-      alert("Please upload an image and wait for embeddings before analyzing.");
+      setAnalysisStatus('no_image');
+      setShowCompletion(true);
+      setTimeout(() => {
+        setShowCompletion(false);
+        setAnalysisStatus(null);
+      }, 2500);
       return;
     }
     if (!imgElRef.current || !masks || masks.length === 0) {
-      alert("No segmentation mask found. Please run the model first.");
+      setAnalysisStatus('no_mask');
+      setShowCompletion(true);
+      setTimeout(() => {
+        setShowCompletion(false);
+        setAnalysisStatus(null);
+      }, 2500);
       return;
     }
     setIsRunning(true);
@@ -1126,6 +1146,48 @@ const SegmentationPage = () => {
                           </div>
                           <h3 className="text-xl font-bold text-amber-700 mb-1">Analysis Canceled</h3>
                           <p className="text-gray-500 text-sm">You can restart anytime</p>
+                        </>
+                      ) : analysisStatus === 'no_patient' ? (
+                        /* No Patient Selected - Purple Warning */
+                        <>
+                          <div className="relative mb-4">
+                            <div className="h-16 w-16 rounded-full bg-purple-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                              <svg className="h-10 w-10 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 h-16 w-16 rounded-full bg-purple-400 animate-ping opacity-20" />
+                          </div>
+                          <h3 className="text-xl font-bold text-purple-700 mb-1">Patient Required</h3>
+                          <p className="text-gray-500 text-sm">Please select a patient before generating report</p>
+                        </>
+                      ) : analysisStatus === 'no_image' ? (
+                        /* No Image - Blue Warning */
+                        <>
+                          <div className="relative mb-4">
+                            <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                              <svg className="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 h-16 w-16 rounded-full bg-blue-400 animate-ping opacity-20" />
+                          </div>
+                          <h3 className="text-xl font-bold text-blue-700 mb-1">Image Required</h3>
+                          <p className="text-gray-500 text-sm">Please upload an image and wait for processing</p>
+                        </>
+                      ) : analysisStatus === 'no_mask' ? (
+                        /* No Mask - Teal Warning */
+                        <>
+                          <div className="relative mb-4">
+                            <div className="h-16 w-16 rounded-full bg-teal-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                              <svg className="h-10 w-10 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 h-16 w-16 rounded-full bg-teal-400 animate-ping opacity-20" />
+                          </div>
+                          <h3 className="text-xl font-bold text-teal-700 mb-1">Segmentation Required</h3>
+                          <p className="text-gray-500 text-sm">Please click on the image to create a mask first</p>
                         </>
                       ) : (
                         /* Failed - Red X */
