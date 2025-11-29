@@ -7,7 +7,7 @@ import axios from "axios";
 import ReportPanel from "../components/ReportPanel";
 import SegmentationActionsBar from "../components/SegmentationActionsBar";
 import { Eye, EyeOff, Trash2, ChevronDown } from "lucide-react";
-import { streamRequest, ANALYSIS_PHASES } from "../lib/api";
+import { streamRequest, streamChat, ANALYSIS_PHASES } from "../lib/api";
 
 const SegmentationPage = () => {
   const [activeTab, setActiveTab] = useState("segmentation");
@@ -48,7 +48,10 @@ const SegmentationPage = () => {
 
   // SSE Progress tracking
   const [analysisProgress, setAnalysisProgress] = useState(null); // { step, label, progress }
-  const [sessionId, setSessionId] = useState(null);
+  const [sessionId, setSessionId] = useState(() => {
+    // Initialize from localStorage
+    return localStorage.getItem('medicalReportSessionId') || null;
+  });
 
   const inputRef = useRef(null);
 
@@ -76,6 +79,13 @@ const SegmentationPage = () => {
   useEffect(() => {
     if (activeTab === "segmentation") setRedrawTick((t) => t + 1);
   }, [activeTab]);
+
+  // Persist sessionId to localStorage
+  useEffect(() => {
+    if (sessionId) {
+      localStorage.setItem('medicalReportSessionId', sessionId);
+    }
+  }, [sessionId]);
 
   // ======= 文件处理 =======
   async function handleFile(f) {
@@ -545,7 +555,7 @@ const SegmentationPage = () => {
     }
   }
 
-  // Chat Reinforce
+  // Chat Reinforce - Streaming implementation
   async function sendMessage() {
     if (!imageEmbeddings.length) {
       alert("Please upload an image and wait for embeddings before sending a message.");
@@ -561,35 +571,71 @@ const SegmentationPage = () => {
     setMessages((prev) => [...prev, { role: "user", text: content }]);
     setQuestion("");
     setIsRunning(true);
-    try {
-      setMessages((prev) => [...prev, { role: "assistant", text: "loading" }]);
-      // 包含 sessionId 以支持会话连续性
-      const res = await axios.post("http://localhost:3000/api/medical_report_rein", {
-        userMessage: content,
-        sessionId: sessionId || undefined
-      });
-      const reply = res.data?.reply || "Service is temporarily unavailable.";
-      // 如果返回了更新的报告，更新显示
-      if (res.data?.updatedReport) {
-        const reportContent = typeof res.data.updatedReport === 'object'
-          ? res.data.updatedReport?.content
-          : res.data.updatedReport;
-        if (reportContent) setReportText(reportContent);
-      }
-      // 更新 sessionId（如果后端返回了新的）
-      if (res.data?.sessionId) setSessionId(res.data.sessionId);
 
-      setMessages((prev) => {
-        const arr = [...prev];
-        const idx = arr.findIndex((m) => m.role === "assistant" && m.text === "loading");
-        if (idx !== -1) arr[idx] = { role: "assistant", text: reply };
-        return arr;
-      });
+    // Add streaming placeholder message
+    const streamMsgId = Date.now();
+    setMessages((prev) => [...prev, { role: "assistant", text: "", id: streamMsgId, isStreaming: true }]);
+
+    try {
+      await streamChat(
+        { message: content, sessionId: sessionId || undefined },
+        {
+          onIntent: (data) => {
+            console.log("[Chat] Intent:", data.intent, data.confidence);
+          },
+          onChunk: (chunk, fullText) => {
+            // Update streaming message with accumulated text
+            setMessages((prev) => {
+              const arr = [...prev];
+              const idx = arr.findIndex((m) => m.id === streamMsgId);
+              if (idx !== -1) arr[idx] = { ...arr[idx], text: fullText };
+              return arr;
+            });
+          },
+          onRevision: (data) => {
+            // Report was revised
+            if (data.updatedReport) {
+              const reportContent = typeof data.updatedReport === 'object'
+                ? data.updatedReport?.content
+                : data.updatedReport;
+              if (reportContent) setReportText(reportContent);
+            }
+            // Show response message
+            if (data.response) {
+              setMessages((prev) => {
+                const arr = [...prev];
+                const idx = arr.findIndex((m) => m.id === streamMsgId);
+                if (idx !== -1) arr[idx] = { ...arr[idx], text: data.response, isStreaming: false };
+                return arr;
+              });
+            }
+          },
+          onError: (err) => {
+            console.error("[Chat] Error:", err);
+            setMessages((prev) => {
+              const arr = [...prev];
+              const idx = arr.findIndex((m) => m.id === streamMsgId);
+              if (idx !== -1) arr[idx] = { ...arr[idx], text: "Service is temporarily unavailable.", isStreaming: false };
+              return arr;
+            });
+          },
+          onDone: () => {
+            // Mark streaming as complete
+            setMessages((prev) => {
+              const arr = [...prev];
+              const idx = arr.findIndex((m) => m.id === streamMsgId);
+              if (idx !== -1) arr[idx] = { ...arr[idx], isStreaming: false };
+              return arr;
+            });
+            setIsRunning(false);
+          }
+        }
+      );
     } catch {
       setMessages((prev) => {
         const arr = [...prev];
-        const idx = arr.findIndex((m) => m.role === "assistant" && m.text === "loading");
-        if (idx !== -1) arr[idx] = { role: "assistant", text: "Service is temporarily unavailable." };
+        const idx = arr.findIndex((m) => m.id === streamMsgId);
+        if (idx !== -1) arr[idx] = { ...arr[idx], text: "Service is temporarily unavailable.", isStreaming: false };
         return arr;
       });
     } finally {
@@ -1089,9 +1135,20 @@ const SegmentationPage = () => {
                           <div className="max-w-[75%] rounded-full bg-blue-100 px-4 py-2 text-sm text-gray-800 transition-transform duration-200 hover:scale-[1.02]">{m.text}</div>
                         </div>
                       ) : (
-                        <div key={i} className="mb-2 flex justify-start animate-[fadeIn_300ms_ease-out]">
+                        <div key={m.id || i} className="mb-2 flex justify-start animate-[fadeIn_300ms_ease-out]">
                           <div className="max-w-[75%] w-full rounded-2xl bg-white px-4 py-2 text-sm text-gray-900 border text-left transition-transform duration-200 hover:scale-[1.02]">
-                            {m.text === "loading" ? "…" : m.text}
+                            {m.isStreaming && !m.text ? (
+                              <span className="inline-flex items-center gap-1">
+                                <span className="animate-pulse">●</span>
+                                <span className="animate-pulse delay-100">●</span>
+                                <span className="animate-pulse delay-200">●</span>
+                              </span>
+                            ) : (
+                              <>
+                                {m.text || "…"}
+                                {m.isStreaming && <span className="ml-1 animate-pulse">▌</span>}
+                              </>
+                            )}
                           </div>
                         </div>
                       )
