@@ -1,6 +1,5 @@
-# Claude Code (local only - do not commit)
+# Claude Code (local config - do not commit)
 .claude/
-CLAUDE.md
 
 # Dependencies
 node_modules/
