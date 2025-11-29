@@ -228,6 +228,164 @@ iter4/Steven/feat(db): store dual report versions
 
 ---
 
+### 4.4 Report Revision Diff View (VS Code 风格对比视图)
+**描述**: 医生修改报告时，以 VS Code diff 风格展示修改前后对比
+
+**问题**:
+- 当前修改后直接替换报告，医生无法直观看到哪些内容被修改
+- 对于关键医学信息的变更，需要明确高亮显示
+
+**设计方案**:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Report Revision                              [View: Diff ▼] │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Findings:                                                  │
+│  - Multiple bilateral pulmonary cystic lesions              │
+│  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+│  │ - Size: 25-30 mm                          (removed)  │  │
+│  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓│
+│  │ + Size: 28 mm (measured on axial images)  (added)    │  │
+│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓│
+│                                                             │
+│  [Accept All] [Reject All] [Edit Manually]                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**任务**:
+- [ ] 安装 diff 库 (`npm install diff` 或 `jsdiff`)
+- [ ] 创建 `DiffView.jsx` 组件
+- [ ] 存储报告历史版本 (至少保留上一版)
+- [ ] 实现红色删除行/绿色添加行样式
+- [ ] 添加 View 切换按钮 (Diff / Clean)
+- [ ] 可选: Accept/Reject 单行修改功能
+
+**涉及文件**:
+```
+frontend/src/components/DiffView.jsx     # 新建 - Diff 渲染组件
+frontend/src/components/ReportPanel.jsx  # 集成 DiffView
+frontend/src/pages/Segmentation.jsx      # 存储 previousReport 状态
+```
+
+**技术方案**:
+```javascript
+// 使用 jsdiff 库计算差异
+import { diffLines } from 'diff';
+
+const changes = diffLines(previousReport, currentReport);
+// changes: [{ value: '...', added: true/false, removed: true/false }]
+```
+
+**样式参考** (Tailwind):
+```jsx
+{changes.map((part, i) => (
+  <span
+    key={i}
+    className={cn(
+      part.added && 'bg-green-100 text-green-800 border-l-4 border-green-500',
+      part.removed && 'bg-red-100 text-red-800 line-through border-l-4 border-red-500'
+    )}
+  >
+    {part.value}
+  </span>
+))}
+```
+
+---
+
+### 4.5 Agent Display Names (用户友好的 Agent 名称)
+**描述**: 将技术性 Agent 名称改为医生能理解的专业术语
+
+**问题**:
+- 当前显示: `RadiologistAgent`, `PathologistAgent`, `QCReviewerAgent`
+- 医生不理解: "QC" 是什么? "Agent" 是什么?
+- 缺少空格: `ReportWriterAgent` 应为 `Report Writer`
+
+**名称映射方案**:
+
+| 内部名称 | 当前显示 | 优化后显示 (English) | 优化后显示 (中文) |
+|----------|----------|---------------------|------------------|
+| `RadiologistAgent` | RadiologistAgent | 🔬 Radiology Analysis | 影像分析 |
+| `PathologistAgent` | PathologistAgent | 🧬 Pathology Diagnosis | 病理诊断 |
+| `ReportWriterAgent` | ReportWriterAgent | 📝 Report Drafting | 报告撰写 |
+| `QCReviewerAgent` | QCReviewerAgent | ✅ Quality Review | 质量审核 |
+| `AlignmentAgent` | AlignmentAgent | 💬 Medical Assistant | 医疗助手 |
+
+**任务**:
+- [ ] 创建 `agentDisplayNames.js` 常量文件
+- [ ] 更新 SSE progress handler 使用 display names
+- [ ] 更新 Chat 消息显示使用友好名称
+- [ ] 可选: 添加语言切换 (中/英)
+- [ ] 添加 Agent 图标 (emoji 或 SVG)
+
+**涉及文件**:
+```
+frontend/src/constants/agentDisplayNames.js  # 新建 - 名称映射
+frontend/src/pages/Segmentation.jsx          # 更新 progress 显示
+frontend/src/components/ChatMessage.jsx      # 更新消息显示 (如有)
+```
+
+**实现代码**:
+```javascript
+// frontend/src/constants/agentDisplayNames.js
+export const AGENT_DISPLAY_NAMES = {
+  RadiologistAgent: {
+    en: 'Radiology Analysis',
+    zh: '影像分析',
+    icon: '🔬',
+    description: 'Analyzing medical images for abnormalities'
+  },
+  PathologistAgent: {
+    en: 'Pathology Diagnosis',
+    zh: '病理诊断',
+    icon: '🧬',
+    description: 'Providing differential diagnosis'
+  },
+  ReportWriterAgent: {
+    en: 'Report Drafting',
+    zh: '报告撰写',
+    icon: '📝',
+    description: 'Generating structured medical report'
+  },
+  QCReviewerAgent: {
+    en: 'Quality Review',
+    zh: '质量审核',
+    icon: '✅',
+    description: 'Reviewing report for accuracy and completeness'
+  },
+  AlignmentAgent: {
+    en: 'Medical Assistant',
+    zh: '医疗助手',
+    icon: '💬',
+    description: 'Processing your feedback'
+  }
+};
+
+// 使用方式
+const getAgentDisplayName = (agentName, lang = 'en') => {
+  const agent = AGENT_DISPLAY_NAMES[agentName];
+  if (!agent) return agentName;
+  return `${agent.icon} ${agent[lang]}`;
+};
+```
+
+**UI 效果** (优化后):
+```
+┌──────────────────────────────────────┐
+│  🔬 Radiology Analysis               │
+│  ○━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━○    │
+│  Analyzing CT scan for lesions...    │
+├──────────────────────────────────────┤
+│  🧬 Pathology Diagnosis              │
+│  ○━━━━━━━━━━━━○                      │
+│  Evaluating findings...              │
+└──────────────────────────────────────┘
+```
+
+---
+
 ## ⏳ iter5: Knowledge Base - RAG (计划中)
 
 **目标**: 集成医学知识库，提供循证诊断支持
