@@ -51,6 +51,8 @@ const SegmentationPage = () => {
   const [analysisProgress, setAnalysisProgress] = useState(null); // { step, label, progress }
   const [agentLogs, setAgentLogs] = useState([]); // [{agent, message, level, timestamp}]
   const [showCompletion, setShowCompletion] = useState(false); // Completion animation state
+  const [analysisStatus, setAnalysisStatus] = useState(null); // 'completed' | 'canceled' | 'failed' | null
+  const abortControllerRef = useRef(null); // For canceling SSE requests
   const [sessionId, setSessionId] = useState(() => {
     // Initialize from localStorage
     return localStorage.getItem('medicalReportSessionId') || null;
@@ -626,6 +628,22 @@ const SegmentationPage = () => {
     setRedrawTick((t) => t + 1);
   }
 
+  // 取消分析
+  function cancelAnalysis() {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setAnalysisStatus('canceled');
+    setShowCompletion(true);
+    setTimeout(() => {
+      setShowCompletion(false);
+      setAnalysisStatus(null);
+      setAnalysisProgress(null);
+      setIsRunning(false);
+    }, 2000);
+  }
+
   // 生成报告 (支持 SSE 流式进度)
   async function handleAnalysis(useStreaming = true) {
     if (!imageEmbeddings.length) {
@@ -638,7 +656,9 @@ const SegmentationPage = () => {
     }
     setIsRunning(true);
     setAgentLogs([]); // Clear previous logs
+    setAnalysisStatus(null); // Reset status
     setAnalysisProgress({ step: 'preparing', label: 'Preparing image...', progress: 5, agent: null });
+    abortControllerRef.current = new AbortController(); // Create new abort controller
 
     try {
       // 准备叠加图像
@@ -730,11 +750,13 @@ const SegmentationPage = () => {
 
             // Show completion animation
             setAnalysisProgress({ step: 'complete', label: 'Report Generated', progress: 100, agent: null });
+            setAnalysisStatus('completed');
             setShowCompletion(true);
 
             // Hide completion animation after 2 seconds and switch to report tab
             setTimeout(() => {
               setShowCompletion(false);
+              setAnalysisStatus(null);
               setAnalysisProgress(null);
               setIsRunning(false);
               setActiveTab("report");
@@ -743,9 +765,18 @@ const SegmentationPage = () => {
           },
           onError: (err) => {
             console.error('[SSE Error]', err);
-            setAnalysisProgress(null);
-            setIsRunning(false);
-            alert("Report generation failed: " + err.message);
+            // Check if it was aborted (canceled)
+            if (err.name === 'AbortError' || abortControllerRef.current?.signal.aborted) {
+              return; // Already handled by cancelAnalysis
+            }
+            setAnalysisStatus('failed');
+            setShowCompletion(true);
+            setTimeout(() => {
+              setShowCompletion(false);
+              setAnalysisStatus(null);
+              setAnalysisProgress(null);
+              setIsRunning(false);
+            }, 2000);
           }
         });
       } else {
@@ -1064,40 +1095,67 @@ const SegmentationPage = () => {
             
             {((isRunning && analysisProgress) || showCompletion) && (
               <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-30 rounded-3xl">
-                <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg w-full mx-4">
+                <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg w-full mx-4 relative">
                   {showCompletion ? (
-                    /* Completion Animation */
+                    /* Status Animation (Success/Canceled/Failed) */
                     <div className="flex flex-col items-center justify-center py-4 animate-[fadeIn_300ms_ease-out]">
-                      {/* Animated Blue Checkmark */}
-                      <div className="relative mb-4">
-                        <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
-                          <svg
-                            className="h-10 w-10 text-blue-600 animate-[checkDraw_500ms_ease-out_200ms_forwards]"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={3}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M5 13l4 4L19 7"
-                              style={{
-                                strokeDasharray: 30,
-                                strokeDashoffset: 0,
-                              }}
-                            />
-                          </svg>
-                        </div>
-                        {/* Pulse ring effect */}
-                        <div className="absolute inset-0 h-16 w-16 rounded-full bg-blue-400 animate-ping opacity-20" />
-                      </div>
-                      <h3 className="text-xl font-bold text-blue-700 mb-1">Report Generated</h3>
-                      <p className="text-gray-500 text-sm">Completed successfully</p>
+                      {analysisStatus === 'completed' ? (
+                        /* Success - Blue Checkmark */
+                        <>
+                          <div className="relative mb-4">
+                            <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                              <svg className="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 h-16 w-16 rounded-full bg-blue-400 animate-ping opacity-20" />
+                          </div>
+                          <h3 className="text-xl font-bold text-blue-700 mb-1">Report Generated</h3>
+                          <p className="text-gray-500 text-sm">Completed successfully</p>
+                        </>
+                      ) : analysisStatus === 'canceled' ? (
+                        /* Canceled - Orange/Yellow X */
+                        <>
+                          <div className="relative mb-4">
+                            <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                              <svg className="h-10 w-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 h-16 w-16 rounded-full bg-amber-400 animate-ping opacity-20" />
+                          </div>
+                          <h3 className="text-xl font-bold text-amber-700 mb-1">Analysis Canceled</h3>
+                          <p className="text-gray-500 text-sm">You can restart anytime</p>
+                        </>
+                      ) : (
+                        /* Failed - Red X */
+                        <>
+                          <div className="relative mb-4">
+                            <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                              <svg className="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 h-16 w-16 rounded-full bg-red-400 animate-ping opacity-20" />
+                          </div>
+                          <h3 className="text-xl font-bold text-red-700 mb-1">Generation Failed</h3>
+                          <p className="text-gray-500 text-sm">Please try again</p>
+                        </>
+                      )}
                     </div>
                   ) : (
                     /* Progress Animation - Clean & Minimal */
                     <div className="py-2">
+                      {/* Cancel button - top right */}
+                      <button
+                        onClick={cancelAnalysis}
+                        className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Cancel analysis"
+                      >
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                       {/* Spinner + Text row */}
                       <div className="flex items-center gap-4 mb-5">
                         <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600 flex-shrink-0" />
