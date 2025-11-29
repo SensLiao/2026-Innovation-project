@@ -6,6 +6,11 @@
  * - POST /medical_report_rein - Doctor feedback / report revision
  * - POST /medical_report_stream - SSE streaming report generation
  * - POST /chat_stream - SSE streaming chat (questions/info requests)
+ * - GET /patients - Get all patients for selection
+ * - GET /patients/search - Search patients by name/MRN
+ * - GET /patients/:id - Get patient by ID
+ *
+ * iter4: Added patientInfo and clinicalContext support
  *
  * Replaces the original n8n webhook calls
  */
@@ -22,20 +27,36 @@ const router = express.Router();
  * POST /medical_report_init
  * 初始化医学报告生成
  *
- * Body: { final_image: string (base64) }
- * Response: { report: string, sessionId: string }
+ * Body: {
+ *   final_image: string (base64),
+ *   metadata?: object,
+ *   patientInfo?: { name, age, gender, mrn },
+ *   clinicalContext?: { clinicalIndication, smokingHistory, relevantHistory, priorImagingDate, examType }
+ * }
+ * Response: { report: string, sessionId: string, diagnosisId: number }
  */
 router.post('/medical_report_init', async (req, res) => {
   const startTime = Date.now();
 
   try {
-    const { final_image, metadata = {} } = req.body;
+    const {
+      final_image,
+      metadata = {},
+      patientInfo = {},
+      clinicalContext = {}
+    } = req.body;
 
     if (!final_image) {
       return res.status(400).json({ error: 'No final_image provided' });
     }
 
     console.log('[AgentRoute] Starting medical report generation...');
+    if (patientInfo.name) {
+      console.log(`[AgentRoute] Patient: ${patientInfo.name} (${patientInfo.mrn || 'no MRN'})`);
+    }
+    if (clinicalContext.clinicalIndication) {
+      console.log(`[AgentRoute] Indication: ${clinicalContext.clinicalIndication.substring(0, 50)}...`);
+    }
 
     // 创建新的 Orchestrator 实例
     const orchestrator = new Orchestrator();
@@ -45,14 +66,22 @@ router.post('/medical_report_init', async (req, res) => {
     sessionManager.set(sessionId, orchestrator);
 
     // === DATABASE PERSISTENCE ===
-    // Create diagnosis record
+    // Create diagnosis record with clinical context (iter4)
     let diagnosisId = null;
     try {
       diagnosisId = await diagnosisService.createDiagnosis({
-        patientId: metadata.patientId || null,
+        patientId: patientInfo.id || metadata.patientId || null,
         doctorId: metadata.doctorId || null,
         segmentationId: metadata.segmentationId || null,
-        status: 'ANALYZING'
+        status: 'ANALYZING',
+        clinicalContext: {
+          clinicalIndication: clinicalContext.clinicalIndication || null,
+          smokingHistory: clinicalContext.smokingHistory || null,
+          relevantHistory: clinicalContext.relevantHistory || null,
+          priorImagingDate: clinicalContext.priorImagingDate || null,
+          examType: clinicalContext.examType || metadata.modality || null,
+          examDate: clinicalContext.examDate || new Date().toISOString().split('T')[0]
+        }
       });
       orchestrator.diagnosisId = diagnosisId;  // Store for later updates
       console.log(`[AgentRoute] Created diagnosis record: ${diagnosisId}`);
@@ -60,16 +89,32 @@ router.post('/medical_report_init', async (req, res) => {
       console.warn('[AgentRoute] DB persistence failed (non-critical):', dbError.message);
     }
 
-    // 准备输入数据
+    // 准备输入数据 (包含病人信息和临床上下文用于 Agent 分析)
     const input = {
       imageData: final_image,
       segmentationMasks: metadata.masks || [],
       metadata: {
-        modality: metadata.modality || 'Unknown',
+        modality: metadata.modality || clinicalContext.examType || 'Unknown',
         bodyPart: metadata.bodyPart || 'Unknown',
         ...metadata
       },
-      patientInfo: metadata.patientInfo || {}
+      // iter4: 病人信息用于报告头部
+      patientInfo: {
+        name: patientInfo.name || null,
+        age: patientInfo.age || null,
+        gender: patientInfo.gender || null,
+        mrn: patientInfo.mrn || null,
+        dob: patientInfo.dob || null
+      },
+      // iter4: 临床上下文用于 AI 分析
+      clinicalContext: {
+        clinicalIndication: clinicalContext.clinicalIndication || null,
+        smokingHistory: clinicalContext.smokingHistory || null,
+        relevantHistory: clinicalContext.relevantHistory || null,
+        priorImagingDate: clinicalContext.priorImagingDate || null,
+        examType: clinicalContext.examType || null,
+        examDate: clinicalContext.examDate || new Date().toISOString().split('T')[0]
+      }
     };
 
     // 进度回调
@@ -533,9 +578,21 @@ router.get('/medical_report_stream', (req, res) => {
 /**
  * POST /medical_report_stream
  * SSE 流式报告生成
+ *
+ * Body: {
+ *   final_image: string (base64),
+ *   metadata?: object,
+ *   patientInfo?: { name, age, gender, mrn },
+ *   clinicalContext?: { clinicalIndication, smokingHistory, relevantHistory, priorImagingDate, examType }
+ * }
  */
 router.post('/medical_report_stream', async (req, res) => {
-  const { final_image, metadata = {} } = req.body;
+  const {
+    final_image,
+    metadata = {},
+    patientInfo = {},
+    clinicalContext = {}
+  } = req.body;
 
   if (!final_image) {
     return res.status(400).json({ error: 'No final_image provided' });
@@ -552,13 +609,22 @@ router.post('/medical_report_stream', async (req, res) => {
   sessionManager.set(sessionId, orchestrator);
 
   // === DATABASE PERSISTENCE ===
+  // Create diagnosis record with clinical context (iter4)
   let diagnosisId = null;
   try {
     diagnosisId = await diagnosisService.createDiagnosis({
-      patientId: metadata.patientId || null,
+      patientId: patientInfo.id || metadata.patientId || null,
       doctorId: metadata.doctorId || null,
       segmentationId: metadata.segmentationId || null,
-      status: 'ANALYZING'
+      status: 'ANALYZING',
+      clinicalContext: {
+        clinicalIndication: clinicalContext.clinicalIndication || null,
+        smokingHistory: clinicalContext.smokingHistory || null,
+        relevantHistory: clinicalContext.relevantHistory || null,
+        priorImagingDate: clinicalContext.priorImagingDate || null,
+        examType: clinicalContext.examType || metadata.modality || null,
+        examDate: clinicalContext.examDate || new Date().toISOString().split('T')[0]
+      }
     });
     orchestrator.diagnosisId = diagnosisId;
     console.log(`[ReportStream] Created diagnosis record: ${diagnosisId}`);
@@ -570,13 +636,31 @@ router.post('/medical_report_stream', async (req, res) => {
   res.write(`data: ${JSON.stringify({ type: 'session', sessionId, diagnosisId })}\n\n`);
 
   try {
+    // 准备输入数据 (包含病人信息和临床上下文用于 Agent 分析)
     const input = {
       imageData: final_image,
       segmentationMasks: metadata.masks || [],
       metadata: {
-        modality: metadata.modality || 'Unknown',
+        modality: metadata.modality || clinicalContext.examType || 'Unknown',
         bodyPart: metadata.bodyPart || 'Unknown',
         ...metadata
+      },
+      // iter4: 病人信息用于报告头部
+      patientInfo: {
+        name: patientInfo.name || null,
+        age: patientInfo.age || null,
+        gender: patientInfo.gender || null,
+        mrn: patientInfo.mrn || null,
+        dob: patientInfo.dob || null
+      },
+      // iter4: 临床上下文用于 AI 分析
+      clinicalContext: {
+        clinicalIndication: clinicalContext.clinicalIndication || null,
+        smokingHistory: clinicalContext.smokingHistory || null,
+        relevantHistory: clinicalContext.relevantHistory || null,
+        priorImagingDate: clinicalContext.priorImagingDate || null,
+        examType: clinicalContext.examType || null,
+        examDate: clinicalContext.examDate || new Date().toISOString().split('T')[0]
       }
     };
 
@@ -672,6 +756,122 @@ router.get('/health', (req, res) => {
     ...sessionManager.getStats(),
     timestamp: new Date().toISOString()
   });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// iter4: Patient API Endpoints
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /patients
+ * 获取所有病人列表 (用于下拉选择)
+ */
+router.get('/patients', async (req, res) => {
+  try {
+    const patients = await diagnosisService.getAllPatients();
+    return res.status(200).json({
+      success: true,
+      patients: patients.map(p => ({
+        id: p.pid,
+        name: p.name,
+        age: p.age,
+        gender: p.gender,
+        mrn: p.mrn
+      }))
+    });
+  } catch (error) {
+    console.error('[AgentRoute] Get patients error:', error);
+    return res.status(500).json({ error: 'Failed to fetch patients' });
+  }
+});
+
+/**
+ * GET /patients/search
+ * 搜索病人 (按姓名或 MRN)
+ *
+ * Query: { q: string }
+ */
+router.get('/patients/search', async (req, res) => {
+  const { q } = req.query;
+
+  if (!q || q.length < 2) {
+    return res.status(400).json({ error: 'Search query must be at least 2 characters' });
+  }
+
+  try {
+    const patients = await diagnosisService.searchPatients(q);
+    return res.status(200).json({
+      success: true,
+      query: q,
+      patients: patients.map(p => ({
+        id: p.pid,
+        name: p.name,
+        age: p.age,
+        gender: p.gender,
+        mrn: p.mrn
+      }))
+    });
+  } catch (error) {
+    console.error('[AgentRoute] Search patients error:', error);
+    return res.status(500).json({ error: 'Failed to search patients' });
+  }
+});
+
+/**
+ * GET /patients/:id
+ * 获取单个病人详情
+ */
+router.get('/patients/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const patient = await diagnosisService.getPatient(parseInt(id));
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      patient: {
+        id: patient.pid,
+        name: patient.name,
+        age: patient.age,
+        gender: patient.gender,
+        mrn: patient.mrn,
+        dob: patient.dateofbirth,
+        phone: patient.phone,
+        email: patient.email
+      }
+    });
+  } catch (error) {
+    console.error('[AgentRoute] Get patient error:', error);
+    return res.status(500).json({ error: 'Failed to fetch patient' });
+  }
+});
+
+/**
+ * GET /diagnosis/:id
+ * 获取诊断记录及病人信息
+ */
+router.get('/diagnosis/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const diagnosis = await diagnosisService.getDiagnosisWithPatient(parseInt(id));
+
+    if (!diagnosis) {
+      return res.status(404).json({ error: 'Diagnosis not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      diagnosis
+    });
+  } catch (error) {
+    console.error('[AgentRoute] Get diagnosis error:', error);
+    return res.status(500).json({ error: 'Failed to fetch diagnosis' });
+  }
 });
 
 export default router;

@@ -2,9 +2,18 @@
  * DiagnosisService - 诊断记录持久化服务
  *
  * 职责：
- * - 创建/更新诊断记录
+ * - 创建/更新诊断记录 (含临床上下文)
  * - 保存对话历史
  * - 管理医生-病人关联
+ * - 获取病人信息用于报告生成
+ *
+ * 临床上下文字段 (iter4):
+ * - clinical_indication: 检查原因
+ * - smoking_history: 吸烟史 (JSONB)
+ * - relevant_history: 相关病史
+ * - prior_imaging_date: 既往影像日期
+ * - exam_type: 检查类型
+ * - exam_date: 检查日期
  *
  * 注意：目前连接 dev 分支，生产环境需切换连接字符串
  */
@@ -25,8 +34,13 @@ class DiagnosisService {
   }
 
   /**
-   * 创建新的诊断记录
+   * 创建新的诊断记录 (含临床上下文)
    * @param {Object} data - 诊断数据
+   * @param {number} data.patientId - 病人 ID
+   * @param {number} data.doctorId - 医生 ID
+   * @param {number} data.segmentationId - 分割记录 ID
+   * @param {string} data.status - 状态
+   * @param {Object} data.clinicalContext - 临床上下文
    * @returns {number} - 新记录的 ID
    */
   async createDiagnosis(data) {
@@ -34,13 +48,46 @@ class DiagnosisService {
       patientId = null,
       doctorId = null,
       segmentationId = null,
-      status = 'CREATED'
+      status = 'CREATED',
+      clinicalContext = {}
     } = data;
+
+    // 解构临床上下文
+    const {
+      clinicalIndication = null,
+      smokingHistory = null,
+      relevantHistory = null,
+      priorImagingDate = null,
+      examType = null,
+      examDate = null
+    } = clinicalContext;
 
     try {
       const result = await sql`
-        INSERT INTO diagnosis_records (patient_id, doctor_id, segmentation_id, status)
-        VALUES (${patientId}, ${doctorId}, ${segmentationId}, ${status})
+        INSERT INTO diagnosis_records (
+          patient_id,
+          doctor_id,
+          segmentation_id,
+          status,
+          clinical_indication,
+          smoking_history,
+          relevant_history,
+          prior_imaging_date,
+          exam_type,
+          exam_date
+        )
+        VALUES (
+          ${patientId},
+          ${doctorId},
+          ${segmentationId},
+          ${status},
+          ${clinicalIndication},
+          ${smokingHistory ? JSON.stringify(smokingHistory) : '{}'}::jsonb,
+          ${relevantHistory},
+          ${priorImagingDate},
+          ${examType},
+          ${examDate || sql`CURRENT_DATE`}
+        )
         RETURNING id
       `;
       console.log(`[DiagnosisService] Created diagnosis ID: ${result[0].id}`);
@@ -256,6 +303,139 @@ class DiagnosisService {
     } catch (error) {
       console.error('[DiagnosisService] Delete error:', error.message);
       return false;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // iter4: Patient Info & Clinical Context Methods
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * 获取病人信息
+   * @param {number} patientId - 病人 ID
+   * @returns {Object|null} - 病人信息
+   */
+  async getPatient(patientId) {
+    try {
+      const result = await sql`
+        SELECT pid, name, age, gender, dateofbirth, mrn, phone, email
+        FROM patients
+        WHERE pid = ${patientId}
+      `;
+      return result[0] || null;
+    } catch (error) {
+      console.error('[DiagnosisService] Get patient error:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * 获取诊断记录及关联的病人信息 (用于报告生成)
+   * @param {number} diagnosisId - 诊断 ID
+   * @returns {Object|null} - 完整诊断信息 (含病人和临床上下文)
+   */
+  async getDiagnosisWithPatient(diagnosisId) {
+    try {
+      const result = await sql`
+        SELECT
+          dr.*,
+          p.name as patient_name,
+          p.age as patient_age,
+          p.gender as patient_gender,
+          p.dateofbirth as patient_dob,
+          p.mrn as patient_mrn,
+          u.name as doctor_name
+        FROM diagnosis_records dr
+        LEFT JOIN patients p ON dr.patient_id = p.pid
+        LEFT JOIN users u ON dr.doctor_id = u.uid
+        WHERE dr.id = ${diagnosisId}
+      `;
+
+      if (result.length === 0) return null;
+
+      const row = result[0];
+
+      // 格式化返回数据
+      return {
+        id: row.id,
+        status: row.status,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+
+        // 病人信息 (用于报告头部)
+        patientInfo: {
+          id: row.patient_id,
+          name: row.patient_name,
+          age: row.patient_age,
+          gender: row.patient_gender,
+          dob: row.patient_dob,
+          mrn: row.patient_mrn
+        },
+
+        // 医生信息
+        doctorInfo: {
+          id: row.doctor_id,
+          name: row.doctor_name
+        },
+
+        // 临床上下文 (用于 AI 分析)
+        clinicalContext: {
+          clinicalIndication: row.clinical_indication,
+          smokingHistory: row.smoking_history,
+          relevantHistory: row.relevant_history,
+          priorImagingDate: row.prior_imaging_date,
+          examType: row.exam_type,
+          examDate: row.exam_date
+        },
+
+        // 报告内容
+        reportContent: row.report_content,
+        reportPatient: row.report_patient,
+        icdCodes: row.icd_codes
+      };
+    } catch (error) {
+      console.error('[DiagnosisService] Get diagnosis with patient error:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * 搜索病人 (支持按姓名或 MRN 搜索)
+   * @param {string} query - 搜索关键词
+   * @returns {Array} - 匹配的病人列表
+   */
+  async searchPatients(query) {
+    try {
+      const searchTerm = `%${query}%`;
+      const result = await sql`
+        SELECT pid, name, age, gender, mrn
+        FROM patients
+        WHERE name ILIKE ${searchTerm} OR mrn ILIKE ${searchTerm}
+        ORDER BY name
+        LIMIT 10
+      `;
+      return result;
+    } catch (error) {
+      console.error('[DiagnosisService] Search patients error:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * 获取所有病人列表 (用于下拉选择)
+   * @returns {Array} - 病人列表
+   */
+  async getAllPatients() {
+    try {
+      const result = await sql`
+        SELECT pid, name, age, gender, mrn
+        FROM patients
+        ORDER BY name
+      `;
+      return result;
+    } catch (error) {
+      console.error('[DiagnosisService] Get all patients error:', error.message);
+      return [];
     }
   }
 }
