@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { Edit3, Save as SaveIcon, Download, Copy, Printer, Code2 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -73,7 +74,7 @@ export default function ReportPanel({
   ).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
   // ===== local states & refs =====
-  const [isEditing, setIsEditing] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);  // Default to view mode with markdown rendering
   const [showJSON, setShowJSON] = useState(false);
   const textAreaRef = useRef(null);
 
@@ -411,15 +412,20 @@ export default function ReportPanel({
           </div>
         </div>
 
-        <textarea
-          ref={textAreaRef}
-          value={reportText}
-          onChange={(e) => onChangeText(e.target.value)}
-          readOnly={!isEditing}
-          className={`h-64 w-full resize-none rounded-lg border p-3 text-sm text-gray-800 focus:ring-2 focus:ring-blue-200 ${
-            !isEditing ? "bg-gray-50" : "bg-white"
-          }`}
-        />
+        {isEditing ? (
+          <textarea
+            ref={textAreaRef}
+            value={reportText}
+            onChange={(e) => onChangeText(e.target.value)}
+            className="h-64 w-full resize-none rounded-lg border p-3 text-sm text-gray-800 focus:ring-2 focus:ring-blue-200 bg-white"
+          />
+        ) : (
+          <div className="h-64 w-full overflow-y-auto rounded-lg border bg-gray-50 p-3">
+            <div className="prose prose-sm prose-gray max-w-none [&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mb-2 [&>h2]:mt-4 [&>h3]:text-base [&>h3]:font-semibold [&>h3]:mb-2 [&>p]:mb-2 [&>ul]:my-2 [&>ol]:my-2 [&>li]:my-1 [&>strong]:font-semibold [&>hr]:my-3">
+              <ReactMarkdown>{reportText || "No report content"}</ReactMarkdown>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
