@@ -1187,7 +1187,7 @@ const SegmentationPage = () => {
               {/* <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col h-[560px]"> */}
                 <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col md:self-stretch">
 
-                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3">
+                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3 max-h-[350px]">
                   {messages.length === 0 ? (
                     <>
                       <div className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
@@ -1205,7 +1205,7 @@ const SegmentationPage = () => {
                     messages.map((m, i) =>
                       m.role === "user" ? (
                         <div key={i} className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
-                          <div className="max-w-[75%] rounded-full bg-blue-100 px-4 py-2 text-sm text-gray-800 transition-transform duration-200 hover:scale-[1.02]">{m.text}</div>
+                          <div className="max-w-[75%] rounded-2xl bg-blue-100 px-4 py-2 text-sm text-gray-800 text-right transition-transform duration-200 hover:scale-[1.02]">{m.text}</div>
                         </div>
                       ) : (
                         <div key={m.id || i} className="mb-2 flex justify-start animate-[fadeIn_300ms_ease-out]">
@@ -1243,7 +1243,15 @@ const SegmentationPage = () => {
                     </select>
                   </div>
 
-                  <button onClick={handleAnalysis} className="ml-3 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-blue-700 hover:shadow-md transition-all duration-200 ease-out active:scale-95" title="Generate report from current mask">
+                  <button
+                    onClick={handleAnalysis}
+                    className={`ml-3 rounded-md px-3 py-1.5 text-sm font-semibold transition-all duration-200 ease-out active:scale-95 ${
+                      isAnalysisTriggered
+                        ? 'border text-gray-700 hover:bg-gray-50 hover:shadow-sm'
+                        : 'bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md'
+                    }`}
+                    title="Generate report from current mask"
+                  >
                     Analyse
                   </button>
                 </div>
@@ -1252,10 +1260,25 @@ const SegmentationPage = () => {
                   <textarea
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="Enter your questions…"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey && !isRunning && question.trim()) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
+                    placeholder="Enter your questions… (Press Enter to send)"
                     className="flex-1 h-28 resize-none rounded-xl border bg-blue-50 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150"
                   />
-                  <button onClick={sendMessage} className="h-10 shrink-0 rounded-md border px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-200 ease-out active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100" title="Send" disabled={isRunning}>
+                  <button
+                    onClick={sendMessage}
+                    className={`h-10 shrink-0 rounded-md px-4 text-sm font-semibold transition-all duration-200 ease-out active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 ${
+                      isAnalysisTriggered
+                        ? 'bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md'
+                        : 'border text-gray-700 hover:bg-gray-50 hover:shadow-sm'
+                    }`}
+                    title="Send (Enter)"
+                    disabled={isRunning}
+                  >
                     Send
                   </button>
                 </div>

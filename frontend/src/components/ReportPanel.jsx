@@ -394,22 +394,7 @@ export default function ReportPanel({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-gray-600">Report</span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => samples?.medical && onChangeText(samples.medical)}
-              className="rounded-md border px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Medical Report
-            </button>
-            <button
-              type="button"
-              onClick={() => samples?.formal && onChangeText(samples.formal)}
-              className="rounded-md border px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Formal Report
-            </button>
-          </div>
+          {/* TODO: Implement dual report generation (patient + doctor versions) */}
         </div>
 
         {isEditing ? (
