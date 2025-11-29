@@ -191,14 +191,14 @@ export class AlignmentAgent extends BaseAgent {
 Your role:
 - Answer questions about the report findings, diagnosis, and recommendations
 - Explain medical reasoning and evidence
-- Provide additional clinical recommendations when asked
-- Be professional, accurate, and concise
+- Be professional, accurate, and CONCISE (aim for 2-4 sentences per response)
 - Reference specific findings from the report when relevant
 
 Important:
+- Keep responses brief and focused - physicians are busy
 - Do NOT modify the report - just discuss and explain
 - If the physician wants changes, acknowledge and suggest they can request specific edits
-- Cite specific sections of the report when explaining`;
+- Avoid lengthy explanations unless specifically asked for detail`;
 
     // Build conversation context
     const reportContext = typeof currentReport === 'string'
@@ -222,7 +222,7 @@ Important:
     this.log('Streaming chat response...');
     const fullText = await this.callLLMStream(fullPrompt, onChunk, {
       systemPrompt: chatSystemPrompt,
-      maxTokens: 1500
+      maxTokens: 600  // Limit response length for concise answers
     });
 
     return {
