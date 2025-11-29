@@ -874,7 +874,7 @@ const SegmentationPage = () => {
               onAddPatientClick={() => document.getElementById("add_patient_modal").showModal()}
             />
             
-            {(isRunning || showCompletion) && (
+            {((isRunning && analysisProgress) || showCompletion) && (
               <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-30 rounded-3xl">
                 <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg w-full mx-4">
                   {showCompletion ? (
@@ -1205,7 +1205,7 @@ const SegmentationPage = () => {
                     messages.map((m, i) =>
                       m.role === "user" ? (
                         <div key={i} className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
-                          <div className="max-w-[75%] rounded-2xl bg-blue-100 px-4 py-2 text-sm text-gray-800 text-right transition-transform duration-200 hover:scale-[1.02]">{m.text}</div>
+                          <div className="max-w-[75%] rounded-2xl bg-blue-100 px-4 py-2 text-sm text-gray-800 transition-transform duration-200 hover:scale-[1.02]">{m.text}</div>
                         </div>
                       ) : (
                         <div key={m.id || i} className="mb-2 flex justify-start animate-[fadeIn_300ms_ease-out]">
