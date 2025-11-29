@@ -7,6 +7,7 @@ import axios from "axios";
 import ReportPanel from "../components/ReportPanel";
 import SegmentationActionsBar from "../components/SegmentationActionsBar";
 import { Eye, EyeOff, Trash2, ChevronDown } from "lucide-react";
+import { streamRequest, ANALYSIS_PHASES } from "../lib/api";
 
 const SegmentationPage = () => {
   const [activeTab, setActiveTab] = useState("segmentation");
@@ -44,6 +45,10 @@ const SegmentationPage = () => {
   // Chat
   const [messages, setMessages] = useState([]);
   const [isAnalysisTriggered, setIsAnalysisTriggered] = useState(false);
+
+  // SSE Progress tracking
+  const [analysisProgress, setAnalysisProgress] = useState(null); // { step, label, progress }
+  const [sessionId, setSessionId] = useState(null);
 
   const inputRef = useRef(null);
 
@@ -443,8 +448,8 @@ const SegmentationPage = () => {
     setRedrawTick((t) => t + 1);
   }
 
-  // 生成报告
-  async function handleAnalysis() {
+  // 生成报告 (支持 SSE 流式进度)
+  async function handleAnalysis(useStreaming = true) {
     if (!imageEmbeddings.length) {
       alert("Please upload an image and wait for embeddings before analyzing.");
       return;
@@ -454,7 +459,10 @@ const SegmentationPage = () => {
       return;
     }
     setIsRunning(true);
+    setAnalysisProgress({ step: 'preparing', label: 'Preparing image...', progress: 0 });
+
     try {
+      // 准备叠加图像
       const natW = imgElRef.current.naturalWidth;
       const natH = imgElRef.current.naturalHeight;
       const out = document.createElement("canvas");
@@ -487,16 +495,52 @@ const SegmentationPage = () => {
                    (await new Promise((resolve) => out.toBlob(resolve, "image/png")));
       const image_base64 = await blobToDataURL(blob);
 
-      const res = await axios.post("http://localhost:3000/api/medical_report_init", { final_image: image_base64 });
-      const report = res.data?.report || sampleGeneratedReport;
-      setReportText(report);
-      setActiveTab("report");
-      setIsAnalysisTriggered(true);
+      if (useStreaming) {
+        // SSE 流式请求
+        await streamRequest('/medical_report_stream', { final_image: image_base64 }, {
+          onProgress: (data) => {
+            console.log('[SSE Progress]', data);
+            const phaseInfo = ANALYSIS_PHASES[data.step] || { label: data.message || 'Processing...', progress: 50 };
+            setAnalysisProgress({
+              step: data.step || data.type,
+              label: phaseInfo.label,
+              progress: phaseInfo.progress,
+            });
+            if (data.sessionId) {
+              setSessionId(data.sessionId);
+            }
+          },
+          onComplete: (data) => {
+            console.log('[SSE Complete]', data);
+            const reportContent = typeof data.report === 'object' ? data.report?.content : data.report;
+            setReportText(reportContent || sampleGeneratedReport);
+            setActiveTab("report");
+            setIsAnalysisTriggered(true);
+            setAnalysisProgress(null);
+            setIsRunning(false);
+          },
+          onError: (err) => {
+            console.error('[SSE Error]', err);
+            setAnalysisProgress(null);
+            setIsRunning(false);
+            alert("Report generation failed: " + err.message);
+          }
+        });
+      } else {
+        // Fallback: 普通 POST 请求
+        const res = await axios.post("http://localhost:3000/api/medical_report_init", { final_image: image_base64 });
+        const reportContent = typeof res.data?.report === 'object' ? res.data.report?.content : res.data?.report;
+        setReportText(reportContent || sampleGeneratedReport);
+        setActiveTab("report");
+        setIsAnalysisTriggered(true);
+        setAnalysisProgress(null);
+        setIsRunning(false);
+      }
     } catch (e) {
       console.error("medical_report_init error:", e);
-      alert("Report generation failed.");
-    } finally {
+      setAnalysisProgress(null);
       setIsRunning(false);
+      alert("Report generation failed.");
     }
   }
 
@@ -518,8 +562,22 @@ const SegmentationPage = () => {
     setIsRunning(true);
     try {
       setMessages((prev) => [...prev, { role: "assistant", text: "loading" }]);
-      const res = await axios.post("http://localhost:3000/api/medical_report_rein", { userMessage: content });
+      // 包含 sessionId 以支持会话连续性
+      const res = await axios.post("http://localhost:3000/api/medical_report_rein", {
+        userMessage: content,
+        sessionId: sessionId || undefined
+      });
       const reply = res.data?.reply || "Service is temporarily unavailable.";
+      // 如果返回了更新的报告，更新显示
+      if (res.data?.updatedReport) {
+        const reportContent = typeof res.data.updatedReport === 'object'
+          ? res.data.updatedReport?.content
+          : res.data.updatedReport;
+        if (reportContent) setReportText(reportContent);
+      }
+      // 更新 sessionId（如果后端返回了新的）
+      if (res.data?.sessionId) setSessionId(res.data.sessionId);
+
       setMessages((prev) => {
         const arr = [...prev];
         const idx = arr.findIndex((m) => m.role === "assistant" && m.text === "loading");
@@ -737,8 +795,28 @@ const SegmentationPage = () => {
             
             {isRunning && (
               <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-30 rounded-3xl">
-                <div className="mr-3 h-7 w-7 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
-                <span className="text-blue-700 font-medium">Working…</span>
+                <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
+                  <div className="flex items-center mb-4">
+                    <div className="mr-3 h-7 w-7 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+                    <span className="text-blue-700 font-medium">
+                      {analysisProgress?.label || 'Working…'}
+                    </span>
+                  </div>
+                  {analysisProgress && (
+                    <div className="space-y-2">
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+                          style={{ width: `${analysisProgress.progress || 0}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>{analysisProgress.step}</span>
+                        <span>{analysisProgress.progress || 0}%</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
