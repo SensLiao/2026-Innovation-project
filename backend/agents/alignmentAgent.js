@@ -10,6 +10,7 @@
  */
 
 import { BaseAgent } from './baseAgent.js';
+import { ragService } from '../services/ragService.js';
 
 // 反馈意图类型
 export const FeedbackIntent = {
@@ -178,6 +179,8 @@ export class AlignmentAgent extends BaseAgent {
 
   /**
    * Streaming chat for questions and info requests (no report modification)
+   * Enhanced with RAG knowledge base queries (iter6)
+   *
    * @param {Object} input - Input data
    * @param {string} input.message - User message
    * @param {string} input.currentReport - Current report content
@@ -188,6 +191,16 @@ export class AlignmentAgent extends BaseAgent {
   async streamChat(input, onChunk) {
     const { message, currentReport, conversationHistory = [] } = input;
 
+    // Build conversation context
+    const reportContext = typeof currentReport === 'string'
+      ? currentReport
+      : (currentReport?.content || 'No report available');
+
+    // Query RAG for relevant knowledge (iter6 enhancement)
+    const ragResults = await this.queryRAGForChat(message, reportContext);
+    const ragContext = this.formatRAGContext(ragResults);
+
+    // System prompt - updated to reference RAG knowledge
     const chatSystemPrompt = `You are a helpful medical AI assistant discussing a radiology report with a physician.
 
 Your role:
@@ -195,20 +208,22 @@ Your role:
 - Explain medical reasoning and evidence
 - Be professional, accurate, and CONCISE (aim for 2-4 sentences per response)
 - Reference specific findings from the report when relevant
+- When Reference Knowledge is provided from the medical database, cite it to give authoritative answers
 
 Important:
 - Keep responses brief and focused - physicians are busy
 - Do NOT modify the report - just discuss and explain
+- If Reference Knowledge (Lung-RADS, ICD codes, terminology) is provided, USE IT to support your answers
 - If the physician wants changes, acknowledge and suggest they can request specific edits
 - Avoid lengthy explanations unless specifically asked for detail`;
 
-    // Build conversation context
-    const reportContext = typeof currentReport === 'string'
-      ? currentReport
-      : (currentReport?.content || 'No report available');
-
     // Build full prompt with context
     let fullPrompt = `## Current Medical Report:\n\`\`\`\n${reportContext}\n\`\`\`\n\n`;
+
+    // Add RAG context if available (iter6)
+    if (ragContext) {
+      fullPrompt += `${ragContext}\n\n`;
+    }
 
     // Add conversation history
     if (conversationHistory.length > 0) {
@@ -219,17 +234,18 @@ Important:
       fullPrompt += '\n';
     }
 
-    fullPrompt += `## Physician's Question:\n${message}\n\nProvide a helpful, professional response:`;
+    fullPrompt += `## Physician's Question:\n${message}\n\nProvide a helpful, professional response${ragContext ? ' (reference the provided knowledge when applicable)' : ''}:`;
 
     this.log('Streaming chat response...');
     const fullText = await this.callLLMStream(fullPrompt, onChunk, {
       systemPrompt: chatSystemPrompt,
-      maxTokens: 600  // Limit response length for concise answers
+      maxTokens: 800  // Slightly higher to accommodate RAG citations
     });
 
     return {
       success: true,
-      response: fullText
+      response: fullText,
+      ragUsed: !!ragContext  // Indicate if RAG was used
     };
   }
 
@@ -389,6 +405,180 @@ Do not add any explanations, just the corrected report.`;
     }
 
     throw new Error('No valid JSON found in response');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RAG Integration for Chat (iter6)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Detect what type of knowledge the question is seeking
+   * @param {string} message - User message
+   * @returns {Array<string>} - Query types: 'classification', 'coding', 'terminology', 'general'
+   */
+  detectQueryTypes(message) {
+    const types = [];
+    const lower = message.toLowerCase();
+
+    // Lung-RADS / Classification keywords
+    if (/lung-?rads|category|classification|grade|stage|level|risk/i.test(lower)) {
+      types.push('classification');
+    }
+
+    // ICD-10 / Coding keywords
+    if (/icd|code|coding|billing|diagnosis code|c\d{2}/i.test(lower)) {
+      types.push('coding');
+    }
+
+    // Terminology / Definition keywords
+    if (/what (is|does|means?|are)|define|definition|terminology|explain.*term|meaning of/i.test(lower)) {
+      types.push('terminology');
+    }
+
+    // General medical question - fallback if no specific type but medical terms present
+    if (types.length === 0 && /nodule|mass|lesion|finding|diagnosis|tumor|cancer|opacity|attenuation/i.test(lower)) {
+      types.push('general');
+    }
+
+    return types;
+  }
+
+  /**
+   * Extract key medical terms from report for RAG query
+   * @param {string} reportContent - Current report
+   * @returns {string} - Key terms for query augmentation
+   */
+  extractReportTerms(reportContent) {
+    if (!reportContent) return '';
+
+    // Extract nodule/lesion descriptions
+    const sizeMatch = reportContent.match(/(\d+)\s*mm/gi);
+    const typeMatch = reportContent.match(/(solid|ground[- ]?glass|part[- ]?solid|nodule|mass|lesion)/gi);
+    const locationMatch = reportContent.match(/(upper|lower|middle)\s+(lobe|lung)/gi);
+    const diagnosisMatch = reportContent.match(/(adenocarcinoma|carcinoma|malignant|benign|suspicious)/gi);
+
+    const terms = [
+      ...(sizeMatch || []).slice(0, 2),
+      ...(typeMatch || []).slice(0, 3),
+      ...(locationMatch || []).slice(0, 2),
+      ...(diagnosisMatch || []).slice(0, 2)
+    ];
+
+    return [...new Set(terms)].join(' '); // Deduplicate
+  }
+
+  /**
+   * Query RAG for chat context
+   * @param {string} message - User question
+   * @param {string} reportContent - Current report
+   * @returns {Promise<Object|null>} - RAG results by category, or null if not needed
+   */
+  async queryRAGForChat(message, reportContent) {
+    const queryTypes = this.detectQueryTypes(message);
+
+    if (queryTypes.length === 0) {
+      return null; // No RAG needed for this question
+    }
+
+    // Extract key terms from report for context-aware queries
+    const reportTerms = this.extractReportTerms(reportContent);
+    const combinedQuery = `${message} ${reportTerms}`.slice(0, 500);
+
+    this.log(`RAG query types: ${queryTypes.join(', ')}`);
+
+    const results = {
+      classification: null,
+      coding: null,
+      terminology: null
+    };
+
+    try {
+      // Query in parallel based on detected types
+      const queries = [];
+
+      if (queryTypes.includes('classification')) {
+        queries.push(
+          ragService.queryLungRADS(combinedQuery)
+            .then(r => { results.classification = r; })
+            .catch(e => { this.log(`RAG classification error: ${e.message}`, 'warn'); })
+        );
+      }
+
+      if (queryTypes.includes('coding')) {
+        queries.push(
+          ragService.queryICD10(combinedQuery)
+            .then(r => { results.coding = r; })
+            .catch(e => { this.log(`RAG coding error: ${e.message}`, 'warn'); })
+        );
+      }
+
+      if (queryTypes.includes('terminology') || queryTypes.includes('general')) {
+        queries.push(
+          ragService.queryTerminology(combinedQuery)
+            .then(r => { results.terminology = r; })
+            .catch(e => { this.log(`RAG terminology error: ${e.message}`, 'warn'); })
+        );
+      }
+
+      await Promise.all(queries);
+
+      // Log what we found
+      const counts = {
+        classification: results.classification?.length || 0,
+        coding: results.coding?.length || 0,
+        terminology: results.terminology?.length || 0
+      };
+      this.log(`RAG results: ${JSON.stringify(counts)}`);
+
+      return results;
+
+    } catch (error) {
+      this.log(`RAG query failed: ${error.message}`, 'error');
+      return null;
+    }
+  }
+
+  /**
+   * Format RAG results into prompt context
+   * @param {Object} ragResults - Results from queryRAGForChat
+   * @returns {string} - Formatted markdown for prompt injection
+   */
+  formatRAGContext(ragResults) {
+    if (!ragResults) return '';
+
+    const parts = [];
+    let hasContent = false;
+
+    if (ragResults.classification?.length > 0) {
+      hasContent = true;
+      parts.push('### Lung-RADS Classification Reference');
+      ragResults.classification.slice(0, 3).forEach(r => {
+        parts.push(`- **${r.category}**: ${r.description}`);
+        if (r.management) {
+          parts.push(`  - Recommended Management: ${r.management}`);
+        }
+      });
+    }
+
+    if (ragResults.coding?.length > 0) {
+      hasContent = true;
+      parts.push('\n### Relevant ICD-10 Codes');
+      ragResults.coding.slice(0, 3).forEach(r => {
+        parts.push(`- **${r.code}**: ${r.description}`);
+      });
+    }
+
+    if (ragResults.terminology?.length > 0) {
+      hasContent = true;
+      parts.push('\n### Medical Terminology');
+      ragResults.terminology.slice(0, 3).forEach(r => {
+        parts.push(`- **${r.term}**: ${r.definition}`);
+      });
+    }
+
+    if (!hasContent) return '';
+
+    return '## Reference Knowledge (from medical database):\n' + parts.join('\n');
   }
 }
 
