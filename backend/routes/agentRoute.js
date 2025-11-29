@@ -14,6 +14,7 @@ import express from 'express';
 import { Orchestrator } from '../agents/index.js';
 import { ChatMode } from '../agents/alignmentAgent.js';
 import { sessionManager } from '../utils/sessionManager.js';
+import { diagnosisService } from '../services/diagnosisService.js';
 
 const router = express.Router();
 
@@ -42,6 +43,22 @@ router.post('/medical_report_init', async (req, res) => {
 
     // 保存到活跃会话
     sessionManager.set(sessionId, orchestrator);
+
+    // === DATABASE PERSISTENCE ===
+    // Create diagnosis record
+    let diagnosisId = null;
+    try {
+      diagnosisId = await diagnosisService.createDiagnosis({
+        patientId: metadata.patientId || null,
+        doctorId: metadata.doctorId || null,
+        segmentationId: metadata.segmentationId || null,
+        status: 'ANALYZING'
+      });
+      orchestrator.diagnosisId = diagnosisId;  // Store for later updates
+      console.log(`[AgentRoute] Created diagnosis record: ${diagnosisId}`);
+    } catch (dbError) {
+      console.warn('[AgentRoute] DB persistence failed (non-critical):', dbError.message);
+    }
 
     // 准备输入数据
     const input = {
@@ -76,11 +93,27 @@ router.post('/medical_report_init', async (req, res) => {
     const elapsed = Date.now() - startTime;
     console.log(`[AgentRoute] Report generated in ${elapsed}ms`);
 
+    // === DATABASE PERSISTENCE ===
+    // Update diagnosis with report content
+    if (diagnosisId) {
+      try {
+        await diagnosisService.updateDiagnosis(diagnosisId, {
+          reportContent: result.report,
+          status: 'DRAFT_READY',
+          icdCodes: result.qcResult?.icdCodes || []
+        });
+        console.log(`[AgentRoute] Updated diagnosis ${diagnosisId} with report`);
+      } catch (dbError) {
+        console.warn('[AgentRoute] DB update failed (non-critical):', dbError.message);
+      }
+    }
+
     // 返回结果 (兼容原有前端格式)
     return res.status(200).json({
       message: 'Medical report generated successfully',
       report: result.report,
       sessionId: sessionId,
+      diagnosisId: diagnosisId,  // Include for frontend reference
       metadata: {
         generationTime: elapsed,
         qcScore: result.qcResult?.overallScore,
@@ -202,6 +235,25 @@ router.post('/chat_stream', async (req, res) => {
   // Send session info
   res.write(`data: ${JSON.stringify({ type: 'session', sessionId: orchestrator.sessionId })}\n\n`);
 
+  // === DATABASE PERSISTENCE ===
+  // Get diagnosisId from orchestrator or create one
+  const diagnosisId = orchestrator.diagnosisId;
+
+  // Save user message to chat history
+  if (diagnosisId) {
+    try {
+      await diagnosisService.saveChatMessage({
+        diagnosisId,
+        role: 'user',
+        agentName: null,
+        content: message,
+        feedbackType: null
+      });
+    } catch (dbError) {
+      console.warn('[ChatStream] Failed to save user message:', dbError.message);
+    }
+  }
+
   try {
     const agents = await orchestrator.getAgents();
     const currentReport = orchestrator.getLatestReport();
@@ -284,6 +336,8 @@ router.post('/chat_stream', async (req, res) => {
         }
 
         res.write(`data: ${JSON.stringify({ type: 'chunk', text: response })}\n\n`);
+        // Save assistant response to DB
+        await saveAssistantMessage(diagnosisId, response, targetAgent);
       }
     } else {
       // Normal flow: AlignmentAgent handles routing
@@ -313,6 +367,7 @@ router.post('/chat_stream', async (req, res) => {
     if (intent.mode === 'QUESTION' || intent.mode === 'INFO') {
       // Streaming chat response (no report modification)
       const currentReport = orchestrator.getLatestReport();
+      let fullResponse = '';
 
       if (alignmentAgent?.streamChat && currentReport) {
         await alignmentAgent.streamChat({
@@ -320,15 +375,22 @@ router.post('/chat_stream', async (req, res) => {
           currentReport,
           conversationHistory: orchestrator.conversationHistory || []
         }, (chunk) => {
+          fullResponse += chunk;
           res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunk })}\n\n`);
         });
+        // Save streamed response to DB
+        await saveAssistantMessage(diagnosisId, fullResponse, 'AlignmentAgent');
       } else if (!currentReport) {
         // No report available yet
-        res.write(`data: ${JSON.stringify({ type: 'chunk', text: 'Please generate a report first by clicking "Analyse" before asking questions.' })}\n\n`);
+        const noReportMsg = 'Please generate a report first by clicking "Analyse" before asking questions.';
+        res.write(`data: ${JSON.stringify({ type: 'chunk', text: noReportMsg })}\n\n`);
+        await saveAssistantMessage(diagnosisId, noReportMsg);
       } else {
         // Fallback: use handleFeedback
         const result = await orchestrator.handleFeedback(message);
-        res.write(`data: ${JSON.stringify({ type: 'chunk', text: result.responseToDoctor || 'I understand your question.' })}\n\n`);
+        const fallbackResponse = result.responseToDoctor || 'I understand your question.';
+        res.write(`data: ${JSON.stringify({ type: 'chunk', text: fallbackResponse })}\n\n`);
+        await saveAssistantMessage(diagnosisId, fallbackResponse);
       }
 
       // Add to conversation history
@@ -356,6 +418,9 @@ router.post('/chat_stream', async (req, res) => {
         // Send as chunk for consistent display
         res.write(`data: ${JSON.stringify({ type: 'chunk', text: response })}\n\n`);
 
+        // Save assistant response to DB with feedback type
+        await saveAssistantMessage(diagnosisId, response, 'AlignmentAgent', 'REVISION');
+
         // Also send revision_complete for report update
         if (result.updatedReport) {
           res.write(`data: ${JSON.stringify({
@@ -363,6 +428,18 @@ router.post('/chat_stream', async (req, res) => {
             updatedReport: result.updatedReport,
             changes: result.changes || []
           })}\n\n`);
+
+          // Update diagnosis record with revised report
+          if (diagnosisId) {
+            try {
+              await diagnosisService.updateDiagnosis(diagnosisId, {
+                reportContent: result.updatedReport,
+                status: 'REVISING'
+              });
+            } catch (dbError) {
+              console.warn('[ChatStream] Failed to update diagnosis:', dbError.message);
+            }
+          }
         }
       } else {
         res.write(`data: ${JSON.stringify({
@@ -372,13 +449,26 @@ router.post('/chat_stream', async (req, res) => {
       }
 
     } else if (intent.mode === 'APPROVAL') {
-      res.write(`data: ${JSON.stringify({ type: 'chunk', text: 'Thank you for approving the report. The report is now finalized.' })}\n\n`);
+      const approvalMsg = 'Thank you for approving the report. The report is now finalized.';
+      res.write(`data: ${JSON.stringify({ type: 'chunk', text: approvalMsg })}\n\n`);
+      await saveAssistantMessage(diagnosisId, approvalMsg, null, 'APPROVAL');
+
+      // Update diagnosis status to APPROVED
+      if (diagnosisId) {
+        try {
+          await diagnosisService.updateDiagnosis(diagnosisId, { status: 'APPROVED' });
+        } catch (dbError) {
+          console.warn('[ChatStream] Failed to update approval status:', dbError.message);
+        }
+      }
     } else if (intent.mode === 'UNCLEAR') {
       // Handle unclear input
+      const unclearMsg = "I'm not sure what you're asking. Could you please clarify your request? You can:\n• Ask questions about the report (e.g., \"Why is this diagnosis suggested?\")\n• Request changes (e.g., \"Change the impression to...\")\n• Ask for recommendations";
       res.write(`data: ${JSON.stringify({
         type: 'chunk',
-        text: "I'm not sure what you're asking. Could you please clarify your request? You can:\n• Ask questions about the report (e.g., \"Why is this diagnosis suggested?\")\n• Request changes (e.g., \"Change the impression to...\")\n• Ask for recommendations"
+        text: unclearMsg
       })}\n\n`);
+      await saveAssistantMessage(diagnosisId, unclearMsg, 'AlignmentAgent', 'UNCLEAR');
     }
     } // Close the else block for normal flow (non-targetAgent)
 
@@ -390,6 +480,24 @@ router.post('/chat_stream', async (req, res) => {
     res.end();
   }
 });
+
+/**
+ * Helper: Save assistant response to chat history
+ */
+async function saveAssistantMessage(diagnosisId, content, agentName = null, feedbackType = null) {
+  if (!diagnosisId || !content) return;
+  try {
+    await diagnosisService.saveChatMessage({
+      diagnosisId,
+      role: 'assistant',
+      agentName,
+      content,
+      feedbackType
+    });
+  } catch (dbError) {
+    console.warn('[ChatStream] Failed to save assistant message:', dbError.message);
+  }
+}
 
 /**
  * GET /medical_report_stream
@@ -443,8 +551,23 @@ router.post('/medical_report_stream', async (req, res) => {
   const sessionId = orchestrator.sessionId;
   sessionManager.set(sessionId, orchestrator);
 
+  // === DATABASE PERSISTENCE ===
+  let diagnosisId = null;
+  try {
+    diagnosisId = await diagnosisService.createDiagnosis({
+      patientId: metadata.patientId || null,
+      doctorId: metadata.doctorId || null,
+      segmentationId: metadata.segmentationId || null,
+      status: 'ANALYZING'
+    });
+    orchestrator.diagnosisId = diagnosisId;
+    console.log(`[ReportStream] Created diagnosis record: ${diagnosisId}`);
+  } catch (dbError) {
+    console.warn('[ReportStream] DB persistence failed (non-critical):', dbError.message);
+  }
+
   // 发送会话信息
-  res.write(`data: ${JSON.stringify({ type: 'session', sessionId })}\n\n`);
+  res.write(`data: ${JSON.stringify({ type: 'session', sessionId, diagnosisId })}\n\n`);
 
   try {
     const input = {
@@ -467,9 +590,24 @@ router.post('/medical_report_stream', async (req, res) => {
     const result = await orchestrator.startAnalysis(input, onProgress);
 
     if (result.success) {
+      // === DATABASE PERSISTENCE ===
+      if (diagnosisId) {
+        try {
+          await diagnosisService.updateDiagnosis(diagnosisId, {
+            reportContent: result.report,
+            status: 'DRAFT_READY',
+            icdCodes: result.qcResult?.icdCodes || []
+          });
+          console.log(`[ReportStream] Updated diagnosis ${diagnosisId} with report`);
+        } catch (dbError) {
+          console.warn('[ReportStream] DB update failed (non-critical):', dbError.message);
+        }
+      }
+
       res.write(`data: ${JSON.stringify({
         type: 'complete',
         report: result.report,
+        diagnosisId: diagnosisId,
         qcScore: result.qcResult?.overallScore
       })}\n\n`);
     } else {
