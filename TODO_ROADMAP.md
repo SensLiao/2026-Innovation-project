@@ -9,6 +9,7 @@
 | **iter3** | Database & Persistence | ✅ 完成 | 1 |
 | **iter4** | Professional Reports | 🔄 进行中 | 12+ |
 | **iter5** | Knowledge Base (RAG) | ⏳ 计划中 | - |
+| **iter6** | Agent SDK Migration | ⏳ 计划中 | - |
 
 ---
 
@@ -454,6 +455,118 @@ iter5/Steven/feat(rag): implement similarity search query
 iter5/Steven/feat(agents): integrate RAG in pathologist diagnosis
 iter5/Steven/feat(report): display reference citations
 iter5/Steven/feat(ui): show knowledge base sources
+```
+
+---
+
+## ⏳ iter6: Agent SDK Migration (计划中)
+
+**目标**: 迁移到 Claude Agent SDK Subagents 架构，提升性能
+
+**预期收益**:
+| 优化点 | 预估提升 |
+|--------|----------|
+| 并行执行 (Radiologist + Pathologist) | 响应时间 -30~40% |
+| Context 自动压缩 | Token 消耗 -20~30% |
+| Prompt Caching | 重复调用 -50% tokens |
+| 自动错误重试 | 可靠性提升 |
+
+**参考文档**: https://platform.claude.com/docs/en/agent-sdk/subagents
+
+### 6.1 Agent SDK 集成
+**描述**: 安装 SDK 并重构 Agent 基类
+
+**任务**:
+- [ ] 安装 `@anthropic-ai/claude-agent-sdk`
+- [ ] 创建 SDK 兼容的 Agent 配置
+- [ ] 重构 BaseAgent 使用 SDK
+- [ ] 保留现有 Orchestrator 状态机
+
+**涉及文件**:
+```
+backend/agents/baseAgent.js      # 重构为 SDK 兼容
+backend/agents/sdkConfig.js      # 新建 - Agent 配置
+package.json                     # 添加 SDK 依赖
+```
+
+---
+
+### 6.2 并行执行优化
+**描述**: 实现 Radiologist + Pathologist 并行分析
+
+**当前流程** (串行):
+```
+Radiologist (3s) → Pathologist (3s) → ReportWriter (3s) → QC (2s)
+总计: ~11秒
+```
+
+**优化后** (并行):
+```
+┌─ Radiologist (3s) ─┐
+│                    ├→ ReportWriter (3s) → QC (2s)
+└─ Pathologist (3s) ─┘
+总计: ~8秒 (节省27%)
+```
+
+**任务**:
+- [ ] 配置 SDK 并行执行
+- [ ] 处理结果合并逻辑
+- [ ] 更新 SSE 进度事件
+- [ ] 测试并行稳定性
+
+---
+
+### 6.3 工具权限隔离
+**描述**: 每个 Agent 只能访问必要的工具
+
+**权限设计**:
+```javascript
+agents: {
+  'radiologist': {
+    tools: ['Read'],  // 只读图像
+    model: 'sonnet'
+  },
+  'pathologist': {
+    tools: ['Read', 'WebFetch'],  // 读 + 知识库
+    model: 'sonnet'
+  },
+  'report-writer': {
+    tools: ['Read', 'Write'],  // 可写报告
+    model: 'sonnet'
+  },
+  'qc-reviewer': {
+    tools: ['Read'],  // 只读审核
+    model: 'haiku'  // 轻量模型
+  }
+}
+```
+
+**任务**:
+- [ ] 定义每个 Agent 的工具白名单
+- [ ] 测试权限隔离
+- [ ] 更新安全文档
+
+---
+
+### 6.4 Prompt Caching
+**描述**: 利用 SDK 自动 Prompt Caching 减少重复 token
+
+**适用场景**:
+- 相同病人多次修改报告
+- 医生反馈迭代
+- 相似病例分析
+
+**任务**:
+- [ ] 启用 SDK Prompt Caching
+- [ ] 监控 token 使用量变化
+- [ ] 对比迁移前后成本
+
+**预计 Commits**:
+```
+iter6/Steven/feat(sdk): integrate claude agent sdk
+iter6/Steven/perf(agents): implement parallel agent execution
+iter6/Steven/feat(security): add per-agent tool restrictions
+iter6/Steven/perf(cache): enable automatic prompt caching
 ```
 
 ---
