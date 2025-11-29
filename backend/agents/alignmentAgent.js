@@ -81,6 +81,26 @@ const INTENT_ROUTING = {
   [FeedbackIntent.APPROVAL]: 'NONE'
 };
 
+// Chat mode types
+export const ChatMode = {
+  QUESTION: 'question',      // Asking about findings, diagnosis, etc.
+  INFO_REQUEST: 'info',      // Requesting recommendations, suggestions
+  REVISION: 'revision',      // Requesting changes to report
+  APPROVAL: 'approval'       // Approving the report
+};
+
+// Keywords for fast intent classification
+const INTENT_KEYWORDS = {
+  question: ['why', 'how', 'what', 'explain', 'can you', 'could you', 'tell me', '?',
+             'reason', 'because', 'based on', 'evidence', 'support'],
+  info: ['recommend', 'suggest', 'advice', 'should', 'next step', 'follow-up',
+         'additional', 'other', 'alternative', 'option'],
+  revision: ['change', 'modify', 'update', 'fix', 'correct', 'wrong', 'error',
+             'should be', 'instead', 'revise', 'edit', 'add', 'remove', 'delete'],
+  approval: ['approve', 'accept', 'confirm', 'good', 'looks good', 'ok', 'okay',
+             'fine', 'agree', 'submit', 'finalize']
+};
+
 const SYSTEM_PROMPT = `You are a medical AI assistant that helps physicians review and refine medical reports.
 
 Your responsibilities:
@@ -128,16 +148,101 @@ export class AlignmentAgent extends BaseAgent {
   }
 
   /**
+   * Fast intent classification using keywords (no LLM call)
+   * @param {string} message - User message
+   * @returns {Object} - { mode: ChatMode, confidence: number }
+   */
+  classifyIntentFast(message) {
+    const lowerMessage = message.toLowerCase();
+
+    // Check each intent type
+    for (const [mode, keywords] of Object.entries(INTENT_KEYWORDS)) {
+      const matchCount = keywords.filter(kw => lowerMessage.includes(kw)).length;
+      if (matchCount > 0) {
+        return {
+          mode: mode.toUpperCase(),
+          confidence: Math.min(0.5 + matchCount * 0.15, 0.95)
+        };
+      }
+    }
+
+    // Default to question if contains "?" or revision otherwise
+    if (message.includes('?')) {
+      return { mode: ChatMode.QUESTION.toUpperCase(), confidence: 0.6 };
+    }
+
+    return { mode: ChatMode.REVISION.toUpperCase(), confidence: 0.5 };
+  }
+
+  /**
+   * Streaming chat for questions and info requests (no report modification)
+   * @param {Object} input - Input data
+   * @param {string} input.message - User message
+   * @param {string} input.currentReport - Current report content
+   * @param {Array} input.conversationHistory - Previous conversation
+   * @param {Function} onChunk - Streaming callback
+   * @returns {Promise<Object>}
+   */
+  async streamChat(input, onChunk) {
+    const { message, currentReport, conversationHistory = [] } = input;
+
+    const chatSystemPrompt = `You are a helpful medical AI assistant discussing a radiology report with a physician.
+
+Your role:
+- Answer questions about the report findings, diagnosis, and recommendations
+- Explain medical reasoning and evidence
+- Provide additional clinical recommendations when asked
+- Be professional, accurate, and concise
+- Reference specific findings from the report when relevant
+
+Important:
+- Do NOT modify the report - just discuss and explain
+- If the physician wants changes, acknowledge and suggest they can request specific edits
+- Cite specific sections of the report when explaining`;
+
+    // Build conversation context
+    const reportContext = typeof currentReport === 'string'
+      ? currentReport
+      : (currentReport?.content || 'No report available');
+
+    // Build full prompt with context
+    let fullPrompt = `## Current Medical Report:\n\`\`\`\n${reportContext}\n\`\`\`\n\n`;
+
+    // Add conversation history
+    if (conversationHistory.length > 0) {
+      fullPrompt += '## Previous Conversation:\n';
+      conversationHistory.slice(-6).forEach(msg => {
+        fullPrompt += `${msg.role === 'user' ? 'Physician' : 'AI'}: ${msg.content}\n`;
+      });
+      fullPrompt += '\n';
+    }
+
+    fullPrompt += `## Physician's Question:\n${message}\n\nProvide a helpful, professional response:`;
+
+    this.log('Streaming chat response...');
+    const fullText = await this.callLLMStream(fullPrompt, onChunk, {
+      systemPrompt: chatSystemPrompt,
+      maxTokens: 1500
+    });
+
+    return {
+      success: true,
+      response: fullText
+    };
+  }
+
+  /**
    * 分析医生反馈并确定路由
    * @param {Object} input - 输入数据
    * @param {string} input.feedback - 医生反馈内容
    * @param {string} input.currentReport - 当前报告内容
    * @param {Object} input.agentResults - 各 Agent 的原始结果
+   * @param {Array} input.conversationHistory - 对话历史
    */
   async analyzeFeedback(input) {
-    const { feedback, currentReport, agentResults = {} } = input;
+    const { feedback, currentReport, agentResults = {}, conversationHistory = [] } = input;
 
-    const prompt = this.buildAnalysisPrompt(feedback, currentReport, agentResults);
+    const prompt = this.buildAnalysisPrompt(feedback, currentReport, agentResults, conversationHistory);
 
     this.log('Analyzing physician feedback...');
     const result = await this.callLLM(prompt);
@@ -226,13 +331,21 @@ Do not add any explanations, just the corrected report.`;
   /**
    * 构建分析提示
    */
-  buildAnalysisPrompt(feedback, currentReport, agentResults) {
+  buildAnalysisPrompt(feedback, currentReport, agentResults, conversationHistory = []) {
     const parts = ['Analyze the following physician feedback and determine how to handle it:'];
 
     parts.push('\n## Current Report:');
     parts.push('```markdown');
     parts.push(typeof currentReport === 'string' ? currentReport : (currentReport?.content || 'No report available'));
     parts.push('```');
+
+    // Add conversation history for context
+    if (conversationHistory.length > 0) {
+      parts.push('\n## Recent Conversation History:');
+      conversationHistory.slice(-4).forEach(msg => {
+        parts.push(`${msg.role === 'user' ? 'Physician' : 'AI'}: ${msg.content}`);
+      });
+    }
 
     parts.push('\n## Physician Feedback:');
     parts.push(`"${feedback}"`);
