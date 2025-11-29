@@ -1,16 +1,18 @@
 /**
- * Agent Route - 多智能体医学报告 API
+ * Agent Route - Multi-Agent Medical Report API
  *
- * 端点：
- * - POST /medical_report_init - 初始化报告生成
- * - POST /medical_report_rein - 医生反馈/报告修订
- * - GET  /medical_report_stream - SSE 流式响应 (可选)
+ * Endpoints:
+ * - POST /medical_report_init - Initialize report generation
+ * - POST /medical_report_rein - Doctor feedback / report revision
+ * - POST /medical_report_stream - SSE streaming report generation
+ * - POST /chat_stream - SSE streaming chat (questions/info requests)
  *
- * 替代原有的 n8n webhook 调用
+ * Replaces the original n8n webhook calls
  */
 
 import express from 'express';
 import { Orchestrator, sessionManager } from '../agents/index.js';
+import { ChatMode } from '../agents/alignmentAgent.js';
 
 const router = express.Router();
 
@@ -156,6 +158,128 @@ router.post('/medical_report_rein', async (req, res) => {
       error: 'Failed to process feedback',
       reply: 'Service is temporarily unavailable.'
     });
+  }
+});
+
+/**
+ * POST /chat_stream
+ * SSE streaming chat for questions and info requests
+ *
+ * Body: { message: string, sessionId?: string, mode?: 'auto' | 'question' | 'info' | 'revision' }
+ * SSE Events:
+ *   - { type: 'intent', intent: string, confidence: number }
+ *   - { type: 'chunk', text: string }
+ *   - { type: 'revision_complete', updatedReport: string, changes: [] }
+ *   - { type: 'done' }
+ */
+router.post('/chat_stream', async (req, res) => {
+  const { message, sessionId, mode = 'auto' } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ error: 'No message provided' });
+  }
+
+  // Set SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+
+  // Get or create orchestrator
+  let orchestrator;
+  if (sessionId && activeOrchestrators.has(sessionId)) {
+    orchestrator = activeOrchestrators.get(sessionId);
+    console.log(`[ChatStream] Using existing session: ${sessionId}`);
+  } else {
+    orchestrator = new Orchestrator();
+    activeOrchestrators.set(orchestrator.sessionId, orchestrator);
+    console.log(`[ChatStream] Created new session: ${orchestrator.sessionId}`);
+  }
+
+  // Send session info
+  res.write(`data: ${JSON.stringify({ type: 'session', sessionId: orchestrator.sessionId })}\n\n`);
+
+  try {
+    // Step 1: Get agents and classify intent (fast, no LLM call)
+    const agents = await orchestrator.getAgents();
+    const alignmentAgent = agents?.alignment;
+    let intent;
+
+    if (mode !== 'auto') {
+      intent = { mode: mode.toUpperCase(), confidence: 1.0 };
+    } else if (alignmentAgent?.classifyIntentFast) {
+      intent = alignmentAgent.classifyIntentFast(message);
+    } else {
+      // Fallback: simple keyword check
+      const lowerMsg = message.toLowerCase();
+      if (lowerMsg.includes('?') || lowerMsg.includes('why') || lowerMsg.includes('how')) {
+        intent = { mode: 'QUESTION', confidence: 0.7 };
+      } else if (lowerMsg.includes('change') || lowerMsg.includes('fix') || lowerMsg.includes('wrong')) {
+        intent = { mode: 'REVISION', confidence: 0.7 };
+      } else {
+        intent = { mode: 'QUESTION', confidence: 0.5 };
+      }
+    }
+
+    res.write(`data: ${JSON.stringify({ type: 'intent', intent: intent.mode, confidence: intent.confidence })}\n\n`);
+    console.log(`[ChatStream] Intent: ${intent.mode} (${intent.confidence})`);
+
+    // Step 2: Handle based on intent
+    if (intent.mode === 'QUESTION' || intent.mode === 'INFO') {
+      // Streaming chat response (no report modification)
+      if (alignmentAgent?.streamChat) {
+        await alignmentAgent.streamChat({
+          message,
+          currentReport: orchestrator.currentReport,
+          conversationHistory: orchestrator.conversationHistory || []
+        }, (chunk) => {
+          res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunk })}\n\n`);
+        });
+      } else {
+        // Fallback: use handleFeedback
+        const result = await orchestrator.handleFeedback(message);
+        res.write(`data: ${JSON.stringify({ type: 'chunk', text: result.responseToDoctor || 'I understand your question.' })}\n\n`);
+      }
+
+      // Add to conversation history
+      if (orchestrator.conversationHistory) {
+        orchestrator.conversationHistory.push({ role: 'user', content: message });
+      }
+
+    } else if (intent.mode === 'REVISION') {
+      // Report modification flow
+      res.write(`data: ${JSON.stringify({ type: 'status', message: 'Processing revision request...' })}\n\n`);
+
+      const onProgress = (update) => {
+        res.write(`data: ${JSON.stringify({ type: 'progress', ...update })}\n\n`);
+      };
+
+      const result = await orchestrator.handleFeedback(message, onProgress);
+
+      if (result.success) {
+        res.write(`data: ${JSON.stringify({
+          type: 'revision_complete',
+          updatedReport: result.updatedReport,
+          changes: result.changes || [],
+          response: result.responseToDoctor
+        })}\n\n`);
+      } else {
+        res.write(`data: ${JSON.stringify({
+          type: 'error',
+          error: result.error || 'Failed to process revision'
+        })}\n\n`);
+      }
+
+    } else if (intent.mode === 'APPROVAL') {
+      res.write(`data: ${JSON.stringify({ type: 'chunk', text: 'Thank you for approving the report. The report is now finalized.' })}\n\n`);
+    }
+
+  } catch (error) {
+    console.error('[ChatStream] Error:', error);
+    res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+  } finally {
+    res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+    res.end();
   }
 });
 

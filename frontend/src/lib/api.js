@@ -123,6 +123,102 @@ export async function streamRequest(endpoint, body, callbacks = {}) {
 }
 
 /**
+ * SSE streaming chat request
+ * Routes messages to appropriate handler (question vs revision)
+ *
+ * @param {Object} params - Request parameters
+ * @param {string} params.message - User message
+ * @param {string} params.sessionId - Session ID
+ * @param {string} params.mode - 'auto' | 'question' | 'info' | 'revision'
+ * @param {Object} callbacks - Callback functions
+ * @param {Function} callbacks.onIntent - Intent classification callback
+ * @param {Function} callbacks.onChunk - Text chunk callback (streaming)
+ * @param {Function} callbacks.onRevision - Revision complete callback
+ * @param {Function} callbacks.onError - Error callback
+ * @returns {Promise<{abort: Function}>}
+ */
+export async function streamChat(params, callbacks = {}) {
+  const { message, sessionId, mode = 'auto' } = params;
+  const { onIntent, onChunk, onRevision, onError, onDone } = callbacks;
+
+  const controller = new AbortController();
+
+  try {
+    const response = await fetch(`${API_BASE}/chat_stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message, sessionId, mode }),
+      credentials: 'include',
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+
+            switch (data.type) {
+              case 'session':
+                // Session info received
+                break;
+              case 'intent':
+                onIntent?.(data);
+                break;
+              case 'chunk':
+                fullText += data.text;
+                onChunk?.(data.text, fullText);
+                break;
+              case 'status':
+                // Status update during revision
+                break;
+              case 'revision_complete':
+                onRevision?.(data);
+                break;
+              case 'error':
+                onError?.(new Error(data.error || 'Unknown error'));
+                break;
+              case 'done':
+                onDone?.(fullText);
+                break;
+              default:
+                // Ignore unknown types
+                break;
+            }
+          } catch (e) {
+            console.warn('SSE parse error:', e, line);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      onError?.(err);
+    }
+  }
+
+  return { abort: () => controller.abort() };
+}
+
+/**
  * Progress phase mapping for UI display
  */
 export const ANALYSIS_PHASES = {

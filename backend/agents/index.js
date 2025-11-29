@@ -234,7 +234,8 @@ export class Orchestrator {
       const routingResult = await agents.alignment.analyzeFeedback({
         feedback,
         currentReport: this.getLatestReport(),
-        agentResults: this.agentResults
+        agentResults: this.agentResults,
+        conversationHistory: this.conversationHistory
       });
 
       if (onProgress) {
