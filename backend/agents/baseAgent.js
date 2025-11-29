@@ -129,12 +129,19 @@ export class BaseAgent {
 
   /**
    * 多轮对话调用
-   * @param {Array} messages - 消息历史 [{role: 'user'|'assistant', content: '...'}]
+   * @param {string} userMessage - 新的用户消息
+   * @param {Array} history - 消息历史 [{role: 'user'|'assistant', content: '...'}]
    * @param {Object} options - 可选配置
    * @returns {Promise<Object>} - LLM 响应
    */
-  async callLLMWithHistory(messages, options = {}) {
+  async callLLMWithHistory(userMessage, history = [], options = {}) {
     this.status = AgentStatus.RUNNING;
+
+    // 构建完整的消息列表
+    const messages = [
+      ...history,
+      { role: 'user', content: userMessage }
+    ];
 
     try {
       const response = await this.client.messages.create({
