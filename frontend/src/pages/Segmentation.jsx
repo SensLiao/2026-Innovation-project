@@ -1184,10 +1184,10 @@ const SegmentationPage = () => {
               </div>
 
               {/* Right: Chat */}
-              {/* <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col h-[560px]"> */}
-                <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col md:self-stretch">
+                <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col min-h-[500px]">
 
-                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3 max-h-[350px]">
+                {/* Messages area - grows to fill space, scrolls when needed */}
+                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3 mb-3">
                   {messages.length === 0 ? (
                     <>
                       <div className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
@@ -1229,58 +1229,61 @@ const SegmentationPage = () => {
                   )}
                 </div>
 
-                <div className="mt-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
-                      <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Add">+</button>
-                      <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Settings">⚙</button>
-                      Models
-                    </span>
-                    <select value={model} onChange={(e) => setModel(e.target.value)} className="rounded-md border px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150 cursor-pointer">
-                      <option value="SOMA-CT-v1">SOMA-CT-v1</option>
-                      <option value="SOMA-CT-v2">SOMA-CT-v2</option>
-                      <option value="General-4o-mini">General-4o-mini</option>
-                    </select>
+                {/* Bottom controls - stays at bottom */}
+                <div className="mt-auto space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Add">+</button>
+                        <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Settings">⚙</button>
+                        Models
+                      </span>
+                      <select value={model} onChange={(e) => setModel(e.target.value)} className="rounded-md border px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150 cursor-pointer">
+                        <option value="SOMA-CT-v1">SOMA-CT-v1</option>
+                        <option value="SOMA-CT-v2">SOMA-CT-v2</option>
+                        <option value="General-4o-mini">General-4o-mini</option>
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={handleAnalysis}
+                      className={`ml-3 rounded-md px-3 py-1.5 text-sm font-semibold transition-all duration-200 ease-out active:scale-95 ${
+                        isAnalysisTriggered
+                          ? 'border text-gray-700 hover:bg-gray-50 hover:shadow-sm'
+                          : 'bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md'
+                      }`}
+                      title="Generate report from current mask"
+                    >
+                      Analyse
+                    </button>
                   </div>
 
-                  <button
-                    onClick={handleAnalysis}
-                    className={`ml-3 rounded-md px-3 py-1.5 text-sm font-semibold transition-all duration-200 ease-out active:scale-95 ${
-                      isAnalysisTriggered
-                        ? 'border text-gray-700 hover:bg-gray-50 hover:shadow-sm'
-                        : 'bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md'
-                    }`}
-                    title="Generate report from current mask"
-                  >
-                    Analyse
-                  </button>
-                </div>
-
-                <div className="mt-3 flex items-start gap-2">
-                  <textarea
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey && !isRunning && question.trim()) {
-                        e.preventDefault();
-                        sendMessage();
-                      }
-                    }}
-                    placeholder="Enter your questions… (Press Enter to send)"
-                    className="flex-1 h-28 resize-none rounded-xl border bg-blue-50 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150"
-                  />
-                  <button
-                    onClick={sendMessage}
-                    className={`h-10 shrink-0 rounded-md px-4 text-sm font-semibold transition-all duration-200 ease-out active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 ${
-                      isAnalysisTriggered
-                        ? 'bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md'
-                        : 'border text-gray-700 hover:bg-gray-50 hover:shadow-sm'
-                    }`}
-                    title="Send (Enter)"
-                    disabled={isRunning}
-                  >
-                    Send
-                  </button>
+                  <div className="flex items-start gap-2">
+                    <textarea
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey && !isRunning && question.trim()) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      placeholder="Enter your questions… (Press Enter to send)"
+                      className="flex-1 h-24 resize-none rounded-xl border bg-blue-50 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150"
+                    />
+                    <button
+                      onClick={sendMessage}
+                      className={`h-10 shrink-0 rounded-md px-4 text-sm font-semibold transition-all duration-200 ease-out active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 ${
+                        isAnalysisTriggered
+                          ? 'bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md'
+                          : 'border text-gray-700 hover:bg-gray-50 hover:shadow-sm'
+                      }`}
+                      title="Send (Enter)"
+                      disabled={isRunning}
+                    >
+                      Send
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
