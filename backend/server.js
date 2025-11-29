@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 import patientRoute from './routes/patientRoute.js';
 import userRoute from './routes/userRoute.js';
 import pubRoute from './routes/pubRoute.js';
+import agentRoute from './routes/agentRoute.js';
 import { sql } from './config/db.js';
 import globals from './globals.js';
 import * as modelModule from './routes/models.js';
@@ -49,6 +50,7 @@ app.use('/api/patients', patientRoute);
 app.use('/api/users', userRoute);
 app.use('/api/publications', pubRoute);
 app.use('/api', modelModule.router);
+app.use('/api', agentRoute);  // Multi-agent medical report routes
 app.use('/api/auth', buildAuthRouter());
 
 async function initDB() {
