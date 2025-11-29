@@ -237,49 +237,49 @@ export const ANALYSIS_PHASES = {
     label: 'Initializing analysis...',
     detail: 'Setting up multi-agent system',
     progress: 8,
-    agent: 'Orchestrator'
+    agent: 'System'
   },
   phase1_start: {
     label: 'Starting image analysis...',
     detail: 'Identifying lesions, measuring dimensions, describing characteristics',
     progress: 10,
-    agent: 'RadiologistAgent'
+    agent: 'Radiology Analysis Agent'
   },
   radiologist_done: {
     label: 'Image analysis complete',
     detail: 'Findings documented',
     progress: 25,
-    agent: 'RadiologistAgent'
+    agent: 'Radiology Analysis Agent'
   },
   phase2_start: {
     label: 'Analyzing findings and generating diagnosis...',
     detail: 'Generating differential diagnosis based on imaging findings',
     progress: 30,
-    agent: 'PathologistAgent'
+    agent: 'Pathology Diagnosis Agent'
   },
   pathologist_done: {
     label: 'Diagnosis complete',
     detail: 'Differential diagnosis generated',
     progress: 50,
-    agent: 'PathologistAgent'
+    agent: 'Pathology Diagnosis Agent'
   },
   phase3_start: {
     label: 'Writing medical report...',
     detail: 'Synthesizing findings into structured report format',
     progress: 55,
-    agent: 'ReportWriterAgent'
+    agent: 'Report Drafting Agent'
   },
   report_draft_done: {
     label: 'Report draft complete',
     detail: 'Proceeding to quality review',
     progress: 75,
-    agent: 'ReportWriterAgent'
+    agent: 'Report Drafting Agent'
   },
   phase4_start: {
     label: 'Running quality control checks...',
     detail: 'Checking terminology, consistency and completeness',
     progress: 80,
-    agent: 'QCReviewerAgent'
+    agent: 'Quality Review Agent'
   },
   analysis_complete: {
     label: 'Analysis complete!',
