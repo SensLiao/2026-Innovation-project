@@ -295,7 +295,26 @@ const changes = diffLines(previousReport, currentReport);
 
 ---
 
-### 4.5 Agent Display Names (用户友好的 Agent 名称)
+### 4.5 Favicon 透明背景
+**描述**: 当前 favicon 白色背景在 Dark Mode 下显示不协调
+
+**问题**:
+- 浏览器标签页图标有白色背景方块
+- Dark Mode 下非常明显 (穿帮)
+
+**任务**:
+- [ ] 将 favicon 换成透明背景 PNG
+- [ ] 可选: 添加 SVG favicon (自适应颜色)
+
+**涉及文件**:
+```
+frontend/public/favicon.png  # 替换为透明背景版本
+frontend/index.html          # 如需更新引用
+```
+
+---
+
+### 4.6 Agent Display Names (用户友好的 Agent 名称)
 **描述**: 将技术性 Agent 名称改为医生能理解的专业术语
 
 **问题**:
