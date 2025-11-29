@@ -50,7 +50,7 @@ export class ReportWriterAgent extends BaseAgent {
   constructor() {
     super({
       name: 'ReportWriterAgent',
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-haiku-20241022', // Use faster model for report synthesis
       maxTokens: 4000,
       systemPrompt: SYSTEM_PROMPT
     });

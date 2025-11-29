@@ -52,14 +52,10 @@ export class QCReviewerAgent extends BaseAgent {
   constructor() {
     super({
       name: 'QCReviewerAgent',
-      model: 'gpt-4o-mini', // 使用更快的模型做质检
+      model: 'claude-3-5-haiku-20241022', // Use faster model for QC tasks
       maxTokens: 2500,
       systemPrompt: SYSTEM_PROMPT
     });
-
-    // QC 可以用 OpenAI 模型，这里先用 Claude
-    // 实际部署时可以切换
-    this.model = 'claude-sonnet-4-20250514';
   }
 
   /**
