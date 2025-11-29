@@ -121,6 +121,7 @@ export class Orchestrator {
 
       // Phase 1: 并行执行 - 放射科分析 + RAG 预检索
       notify('phase1_start', { message: 'Starting parallel analysis...' });
+      notify('log', { agent: 'RadiologistAgent', message: 'Starting image analysis...', level: 'info' });
 
       const [radiologistResult, ragContext] = await Promise.all([
         agents.radiologist.execute({
@@ -132,10 +133,12 @@ export class Orchestrator {
       ]);
 
       this.agentResults.radiologist = radiologistResult;
+      notify('log', { agent: 'RadiologistAgent', message: `Found ${radiologistResult.findings?.length || 0} findings`, level: 'info' });
       notify('radiologist_done', { result: radiologistResult });
 
       // Phase 2: 病理分析 (依赖放射科结果 + RAG)
       notify('phase2_start', { message: 'Starting pathologist analysis...' });
+      notify('log', { agent: 'PathologistAgent', message: 'Analyzing findings and generating diagnosis...', level: 'info' });
 
       const pathologistResult = await agents.pathologist.execute({
         radiologistFindings: radiologistResult,
@@ -144,10 +147,12 @@ export class Orchestrator {
       });
 
       this.agentResults.pathologist = pathologistResult;
+      notify('log', { agent: 'PathologistAgent', message: `Primary diagnosis: ${pathologistResult.primaryDiagnosis?.name || 'N/A'}`, level: 'info' });
       notify('pathologist_done', { result: pathologistResult });
 
       // Phase 3: 报告生成
       notify('phase3_start', { message: 'Generating report...' });
+      notify('log', { agent: 'ReportWriterAgent', message: 'Writing medical report...', level: 'info' });
 
       const reportResult = await agents.reportWriter.execute({
         radiologistFindings: radiologistResult,
@@ -157,10 +162,12 @@ export class Orchestrator {
       });
 
       this.agentResults.reportWriter = reportResult;
+      notify('log', { agent: 'ReportWriterAgent', message: `Report generated (${reportResult.report?.length || 0} chars)`, level: 'info' });
       notify('report_draft_done', { result: reportResult });
 
       // Phase 4: 质量审核
       notify('phase4_start', { message: 'Quality review...' });
+      notify('log', { agent: 'QCReviewerAgent', message: 'Running quality control checks...', level: 'info' });
 
       const qcResult = await agents.qcReviewer.execute({
         draftReport: reportResult,
@@ -169,6 +176,7 @@ export class Orchestrator {
       });
 
       this.agentResults.qcReviewer = qcResult;
+      notify('log', { agent: 'QCReviewerAgent', message: `QC Score: ${qcResult.overallScore || 0}, Pass: ${qcResult.passesQC}`, level: 'info' });
 
       // 保存报告版本
       this.history.push({
