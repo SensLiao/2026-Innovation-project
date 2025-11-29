@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 import Header from "../components/Header";
 import main from "../assets/images/Main.png";
 import Decoration from "../assets/images/main2.png";
@@ -48,6 +49,8 @@ const SegmentationPage = () => {
 
   // SSE Progress tracking
   const [analysisProgress, setAnalysisProgress] = useState(null); // { step, label, progress }
+  const [agentLogs, setAgentLogs] = useState([]); // [{agent, message, level, timestamp}]
+  const [showCompletion, setShowCompletion] = useState(false); // Completion animation state
   const [sessionId, setSessionId] = useState(() => {
     // Initialize from localStorage
     return localStorage.getItem('medicalReportSessionId') || null;
@@ -469,7 +472,8 @@ const SegmentationPage = () => {
       return;
     }
     setIsRunning(true);
-    setAnalysisProgress({ step: 'preparing', label: 'Preparing image...', progress: 0 });
+    setAgentLogs([]); // Clear previous logs
+    setAnalysisProgress({ step: 'preparing', label: 'Preparing image...', progress: 5, agent: null });
 
     try {
       // 准备叠加图像
@@ -509,26 +513,56 @@ const SegmentationPage = () => {
         // SSE 流式请求
         await streamRequest('/medical_report_stream', { final_image: image_base64 }, {
           onProgress: (data) => {
-            console.log('[SSE Progress]', data);
-            const phaseInfo = ANALYSIS_PHASES[data.step] || { label: data.message || 'Processing...', progress: 50, detail: '' };
+            console.log('[SSE Progress] raw data:', JSON.stringify(data));
+            // Try to get step from multiple possible locations
+            const stepKey = data.step || data.phase || data.type;
+            console.log('[SSE Progress] stepKey:', stepKey, 'ANALYSIS_PHASES keys:', Object.keys(ANALYSIS_PHASES));
+
+            const phaseInfo = ANALYSIS_PHASES[stepKey] || {
+              label: data.message || 'Processing...',
+              progress: Math.min(90, (analysisProgress?.progress || 5) + 5), // Increment progress
+              detail: data.detail || '',
+              agent: data.agent || null
+            };
+            console.log('[SSE Progress] phaseInfo:', phaseInfo);
+
             setAnalysisProgress({
-              step: data.step || data.type,
+              step: stepKey,
               label: phaseInfo.label,
               detail: phaseInfo.detail,
               progress: phaseInfo.progress,
+              agent: phaseInfo.agent,
             });
             if (data.sessionId) {
               setSessionId(data.sessionId);
             }
           },
+          onLog: (data) => {
+            console.log('[SSE Log]', data);
+            setAgentLogs(prev => [...prev, {
+              agent: data.agent,
+              message: data.message,
+              level: data.level,
+              timestamp: Date.now()
+            }]);
+          },
           onComplete: (data) => {
             console.log('[SSE Complete]', data);
             const reportContent = typeof data.report === 'object' ? data.report?.content : data.report;
             setReportText(reportContent || sampleGeneratedReport);
-            setActiveTab("report");
-            setIsAnalysisTriggered(true);
-            setAnalysisProgress(null);
-            setIsRunning(false);
+
+            // Show completion animation
+            setAnalysisProgress({ step: 'complete', label: 'Report Generated', progress: 100, agent: null });
+            setShowCompletion(true);
+
+            // Hide completion animation after 2 seconds and switch to report tab
+            setTimeout(() => {
+              setShowCompletion(false);
+              setAnalysisProgress(null);
+              setIsRunning(false);
+              setActiveTab("report");
+              setIsAnalysisTriggered(true);
+            }, 2000);
           },
           onError: (err) => {
             console.error('[SSE Error]', err);
@@ -840,31 +874,70 @@ const SegmentationPage = () => {
               onAddPatientClick={() => document.getElementById("add_patient_modal").showModal()}
             />
             
-            {isRunning && (
+            {(isRunning || showCompletion) && (
               <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-30 rounded-3xl">
-                <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full mx-4">
-                  <div className="flex items-center mb-3">
-                    <div className="mr-3 h-7 w-7 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
-                    <span className="text-blue-700 font-semibold text-lg">
-                      {analysisProgress?.label || 'Working…'}
-                    </span>
-                  </div>
-                  {analysisProgress?.detail && (
-                    <p className="text-gray-500 text-sm mb-3 ml-10">
-                      {analysisProgress.detail}
-                    </p>
-                  )}
-                  {analysisProgress && (
-                    <div className="space-y-2">
-                      <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 ease-out"
-                          style={{ width: `${analysisProgress.progress || 0}%` }}
-                        />
+                <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg w-full mx-4">
+                  {showCompletion ? (
+                    /* Completion Animation */
+                    <div className="flex flex-col items-center justify-center py-4 animate-[fadeIn_300ms_ease-out]">
+                      {/* Animated Blue Checkmark */}
+                      <div className="relative mb-4">
+                        <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                          <svg
+                            className="h-10 w-10 text-blue-600 animate-[checkDraw_500ms_ease-out_200ms_forwards]"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={3}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M5 13l4 4L19 7"
+                              style={{
+                                strokeDasharray: 30,
+                                strokeDashoffset: 0,
+                              }}
+                            />
+                          </svg>
+                        </div>
+                        {/* Pulse ring effect */}
+                        <div className="absolute inset-0 h-16 w-16 rounded-full bg-blue-400 animate-ping opacity-20" />
                       </div>
-                      <div className="flex justify-end text-xs text-gray-500">
-                        <span>{analysisProgress.progress || 0}%</span>
+                      <h3 className="text-xl font-bold text-blue-700 mb-1">Report Generated</h3>
+                      <p className="text-gray-500 text-sm">Completed successfully</p>
+                    </div>
+                  ) : (
+                    /* Progress Animation - Clean & Minimal */
+                    <div className="py-2">
+                      {/* Spinner + Text row */}
+                      <div className="flex items-center gap-4 mb-5">
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600 flex-shrink-0" />
+                        <div className="text-left">
+                          {analysisProgress?.agent && (
+                            <p className="text-xs font-medium text-sky-500 mb-0.5 text-left">
+                              {analysisProgress.agent}
+                            </p>
+                          )}
+                          <p className="text-blue-700 font-semibold text-[18px] text-left">
+                            {analysisProgress?.label || 'Working…'}
+                          </p>
+                        </div>
                       </div>
+                      {/* Progress bar */}
+                      {analysisProgress && (
+                        <div>
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 ease-out"
+                              style={{ width: `${analysisProgress.progress || 0}%` }}
+                            />
+                          </div>
+                          <p className="text-right text-[10px] text-gray-400 mt-1.5">
+                            {analysisProgress.progress || 0}%
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1136,7 +1209,7 @@ const SegmentationPage = () => {
                         </div>
                       ) : (
                         <div key={m.id || i} className="mb-2 flex justify-start animate-[fadeIn_300ms_ease-out]">
-                          <div className="max-w-[75%] w-full rounded-2xl bg-white px-4 py-2 text-sm text-gray-900 border text-left transition-transform duration-200 hover:scale-[1.02]">
+                          <div className="max-w-[85%] w-full rounded-2xl bg-white px-4 py-2 text-sm text-gray-900 border text-left transition-transform duration-200 hover:scale-[1.01]">
                             {m.isStreaming && !m.text ? (
                               <span className="inline-flex items-center gap-1">
                                 <span className="animate-pulse">●</span>
@@ -1144,10 +1217,10 @@ const SegmentationPage = () => {
                                 <span className="animate-pulse delay-200">●</span>
                               </span>
                             ) : (
-                              <>
-                                {m.text || "…"}
+                              <div className="prose prose-sm prose-gray max-w-none [&>h1]:text-lg [&>h1]:font-bold [&>h1]:mb-2 [&>h2]:text-base [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-sm [&>h3]:font-semibold [&>p]:mb-2 [&>ul]:my-1 [&>ol]:my-1 [&>li]:my-0.5 [&>strong]:font-semibold [&>hr]:my-2">
+                                <ReactMarkdown>{m.text || "…"}</ReactMarkdown>
                                 {m.isStreaming && <span className="ml-1 animate-pulse">▌</span>}
-                              </>
+                              </div>
                             )}
                           </div>
                         </div>
