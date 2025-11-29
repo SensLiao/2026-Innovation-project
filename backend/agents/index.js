@@ -31,8 +31,9 @@ const STATE_TRANSITIONS = {
 };
 
 export class Orchestrator {
-  constructor(sessionId, options = {}) {
-    this.sessionId = sessionId;
+  constructor(sessionId = null, options = {}) {
+    // 自动生成 sessionId (如果未提供)
+    this.sessionId = sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.state = SessionState.CREATED;
     this.history = [];              // 报告版本历史
     this.agentResults = {};         // 各 Agent 的输出结果
