@@ -227,14 +227,19 @@ router.post('/chat_stream', async (req, res) => {
     // Step 2: Handle based on intent
     if (intent.mode === 'QUESTION' || intent.mode === 'INFO') {
       // Streaming chat response (no report modification)
-      if (alignmentAgent?.streamChat) {
+      const currentReport = orchestrator.getLatestReport();
+
+      if (alignmentAgent?.streamChat && currentReport) {
         await alignmentAgent.streamChat({
           message,
-          currentReport: orchestrator.currentReport,
+          currentReport,
           conversationHistory: orchestrator.conversationHistory || []
         }, (chunk) => {
           res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunk })}\n\n`);
         });
+      } else if (!currentReport) {
+        // No report available yet
+        res.write(`data: ${JSON.stringify({ type: 'chunk', text: 'Please generate a report first by clicking "Analyse" before asking questions.' })}\n\n`);
       } else {
         // Fallback: use handleFeedback
         const result = await orchestrator.handleFeedback(message);
@@ -257,12 +262,23 @@ router.post('/chat_stream', async (req, res) => {
       const result = await orchestrator.handleFeedback(message, onProgress);
 
       if (result.success) {
-        res.write(`data: ${JSON.stringify({
-          type: 'revision_complete',
-          updatedReport: result.updatedReport,
-          changes: result.changes || [],
-          response: result.responseToDoctor
-        })}\n\n`);
+        // Build response message
+        const response = result.responseToDoctor ||
+          (result.changes?.length > 0
+            ? `I've made the following changes: ${result.changes.join(', ')}`
+            : 'I have processed your revision request.');
+
+        // Send as chunk for consistent display
+        res.write(`data: ${JSON.stringify({ type: 'chunk', text: response })}\n\n`);
+
+        // Also send revision_complete for report update
+        if (result.updatedReport) {
+          res.write(`data: ${JSON.stringify({
+            type: 'revision_complete',
+            updatedReport: result.updatedReport,
+            changes: result.changes || []
+          })}\n\n`);
+        }
       } else {
         res.write(`data: ${JSON.stringify({
           type: 'error',
