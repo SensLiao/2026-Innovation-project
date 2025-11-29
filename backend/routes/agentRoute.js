@@ -367,7 +367,9 @@ router.post('/medical_report_stream', async (req, res) => {
 
     // 进度回调 - 通过 SSE 发送
     const onProgress = (update) => {
-      res.write(`data: ${JSON.stringify({ type: 'progress', ...update })}\n\n`);
+      // Determine the correct SSE event type based on the step
+      const eventType = update.step === 'log' ? 'log' : 'progress';
+      res.write(`data: ${JSON.stringify({ type: eventType, ...update })}\n\n`);
     };
 
     const result = await orchestrator.startAnalysis(input, onProgress);
