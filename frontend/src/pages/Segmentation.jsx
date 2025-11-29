@@ -969,8 +969,8 @@ const SegmentationPage = () => {
             </div>
 
 
-            {/* <div className="mt-10 flex flex-col md:flex-row gap-6"> */}
-            <div className="mt-20 md:mt-28 relative z-10 flex flex-col md:flex-row gap-6">
+            {/* Left-Right panel container - items-stretch ensures equal height */}
+            <div className="mt-20 md:mt-28 relative z-10 flex flex-col md:flex-row md:items-stretch gap-6">
 
               {/* Left */}
               {/* <div className="md:basis-3/5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"> */}
@@ -1184,8 +1184,8 @@ const SegmentationPage = () => {
               {/* Right: Chat */}
                 <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col min-h-[500px]">
 
-                {/* Messages area - fixed max height with scroll */}
-                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3 mb-3 max-h-[400px]">
+                {/* Messages area - stretches to fill available space, scrolls when content overflows */}
+                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3 mb-3 min-h-0">
                   {messages.length === 0 ? (
                     <>
                       <div className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
