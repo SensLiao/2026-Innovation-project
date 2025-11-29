@@ -57,12 +57,14 @@ export class RadiologistAgent extends BaseAgent {
    * @param {string} input.imageData - 图像数据 (base64 或描述)
    * @param {Array} input.segmentationMasks - 分割掩码数据
    * @param {Object} input.metadata - 图像元数据 (modality, bodyPart, etc.)
+   * @param {Object} input.clinicalContext - 临床上下文 (iter4)
+   * @param {Object} input.patientInfo - 患者信息
    */
   async execute(input) {
-    const { imageData, segmentationMasks, metadata = {} } = input;
+    const { imageData, segmentationMasks, metadata = {}, clinicalContext = {}, patientInfo = {} } = input;
 
     // 构建分析提示
-    const prompt = this.buildAnalysisPrompt(segmentationMasks, metadata);
+    const prompt = this.buildAnalysisPrompt(segmentationMasks, metadata, clinicalContext, patientInfo);
 
     this.log('Starting image analysis...');
 
@@ -201,26 +203,70 @@ Maintain the same JSON output format.`;
   }
 
   /**
-   * 构建分析提示
+   * 构建分析提示 (updated iter4 - clinical context support)
    */
-  buildAnalysisPrompt(segmentationMasks, metadata) {
+  buildAnalysisPrompt(segmentationMasks, metadata, clinicalContext = {}, patientInfo = {}) {
     const parts = ['Analyze the provided medical image with the following context:'];
 
+    // Patient demographics (if available)
+    if (patientInfo && (patientInfo.age || patientInfo.gender)) {
+      parts.push('\n## Patient Demographics:');
+      if (patientInfo.age) parts.push(`- Age: ${patientInfo.age} years`);
+      if (patientInfo.gender) parts.push(`- Gender: ${patientInfo.gender}`);
+    }
+
+    // Clinical context (iter4)
+    if (clinicalContext && Object.keys(clinicalContext).length > 0) {
+      parts.push('\n## Clinical Context:');
+
+      if (clinicalContext.clinicalIndication) {
+        parts.push(`- Clinical Indication: ${clinicalContext.clinicalIndication}`);
+      }
+      if (clinicalContext.examType) {
+        parts.push(`- Exam Type: ${clinicalContext.examType}`);
+      }
+      if (clinicalContext.examDate) {
+        parts.push(`- Exam Date: ${clinicalContext.examDate}`);
+      }
+
+      // Smoking history (important for lung CT analysis)
+      if (clinicalContext.smokingHistory && typeof clinicalContext.smokingHistory === 'object') {
+        const sh = clinicalContext.smokingHistory;
+        let smokingDesc = `- Smoking History: ${sh.status || 'unknown'}`;
+        if (sh.packYears) smokingDesc += ` (${sh.packYears} pack-years)`;
+        if (sh.quitDate) smokingDesc += `, quit ${sh.quitDate}`;
+        if (sh.cigarettesPerDay) smokingDesc += `, ${sh.cigarettesPerDay} cig/day`;
+        parts.push(smokingDesc);
+      }
+
+      if (clinicalContext.relevantHistory) {
+        parts.push(`- Relevant History: ${clinicalContext.relevantHistory}`);
+      }
+
+      // Prior imaging for comparison
+      if (clinicalContext.priorImagingDate) {
+        parts.push(`- Prior Imaging Available: ${clinicalContext.priorImagingDate}`);
+        parts.push('  (Compare current findings with prior study if relevant)');
+      }
+    }
+
+    // Imaging modality and technique
+    parts.push('\n## Imaging Technique:');
     if (metadata.modality) {
-      parts.push(`\nImaging Modality: ${metadata.modality}`);
+      parts.push(`- Modality: ${metadata.modality}`);
     }
     if (metadata.bodyPart) {
-      parts.push(`Body Part: ${metadata.bodyPart}`);
+      parts.push(`- Body Part: ${metadata.bodyPart}`);
     }
     if (metadata.contrast) {
-      parts.push(`Contrast: ${metadata.contrast}`);
+      parts.push(`- Contrast: ${metadata.contrast}`);
     }
 
+    // Segmentation results
     if (segmentationMasks && segmentationMasks.length > 0) {
-      parts.push(`\nSegmentation regions highlighted in the image:`);
+      parts.push(`\n## AI Segmentation Results:`);
       parts.push(`- Number of segmented regions: ${segmentationMasks.length}`);
 
-      // 如果有掩码统计信息
       segmentationMasks.forEach((mask, idx) => {
         if (mask.area) {
           parts.push(`- Region ${idx + 1}: area=${mask.area} pixels, centroid=(${mask.centroidX}, ${mask.centroidY})`);
@@ -228,11 +274,18 @@ Maintain the same JSON output format.`;
       });
     }
 
-    parts.push('\nPlease analyze the image and provide findings in JSON format:');
+    parts.push('\n## Analysis Instructions:');
     parts.push('1. Describe any visible lesions, abnormalities, or notable findings');
-    parts.push('2. Provide measurements and characteristics');
-    parts.push('3. Note incidental findings');
-    parts.push('4. Assess technical quality of the image');
+    parts.push('2. Provide measurements and characteristics (size, density, borders)');
+    parts.push('3. Consider clinical context when interpreting findings');
+    parts.push('4. Note incidental findings');
+    parts.push('5. Assess technical quality of the image');
+
+    if (clinicalContext.priorImagingDate) {
+      parts.push('6. Comment on changes from prior imaging if findings suggest comparison is needed');
+    }
+
+    parts.push('\nProvide findings in JSON format as specified.');
 
     return parts.join('\n');
   }

@@ -6,6 +6,10 @@
  * - 协调多个 Agent 的并行/串行执行
  * - 整合各 Agent 的输出结果
  * - 处理医生反馈循环
+ *
+ * iter4: 支持病人信息和临床上下文
+ * - patientInfo: 病人基本信息 (用于报告头部)
+ * - clinicalContext: 临床上下文 (用于 AI 分析)
  */
 
 import { AgentStatus } from './baseAgent.js';
@@ -48,6 +52,11 @@ export class Orchestrator {
     this.patientId = options.patientId || null;
     this.userId = options.userId || null;
     this.metadata = options.metadata || {};
+
+    // iter4: 病人信息和临床上下文
+    this.patientInfo = options.patientInfo || null;
+    this.clinicalContext = options.clinicalContext || null;
+    this.diagnosisId = options.diagnosisId || null;  // 数据库关联 ID
   }
 
   /**
@@ -106,12 +115,23 @@ export class Orchestrator {
   /**
    * 开始分析流程
    * @param {Object} input - 输入数据 (图像, 分割结果等)
+   * @param {Object} input.imageData - 图像数据 (base64)
+   * @param {Object} input.patientInfo - 病人信息 (iter4)
+   * @param {Object} input.clinicalContext - 临床上下文 (iter4)
    * @param {Function} onProgress - 进度回调
    * @returns {Promise<Object>} - 分析结果
    */
   async startAnalysis(input, onProgress = null) {
     this.transition(SessionState.ANALYZING);
     const agents = await this.getAgents();
+
+    // iter4: 存储病人信息和临床上下文到 session
+    if (input.patientInfo) {
+      this.patientInfo = input.patientInfo;
+    }
+    if (input.clinicalContext) {
+      this.clinicalContext = input.clinicalContext;
+    }
 
     try {
       // 通知进度
@@ -123,11 +143,14 @@ export class Orchestrator {
       notify('phase1_start', { message: 'Starting parallel analysis...' });
       notify('log', { agent: 'RadiologistAgent', message: 'Starting image analysis...', level: 'info' });
 
+      // iter4: 传递临床上下文给 RAG
       const [radiologistResult, ragContext] = await Promise.all([
         agents.radiologist.execute({
           imageData: input.imageData,
           segmentationMasks: input.segmentationMasks,
-          metadata: input.metadata
+          metadata: input.metadata,
+          // iter4: 临床上下文影响影像分析
+          clinicalContext: this.clinicalContext
         }),
         this.preloadRAGContext(input)
       ]);
@@ -143,7 +166,9 @@ export class Orchestrator {
       const pathologistResult = await agents.pathologist.execute({
         radiologistFindings: radiologistResult,
         ragContext: ragContext,
-        patientInfo: input.patientInfo
+        patientInfo: this.patientInfo,
+        // iter4: 临床上下文影响诊断 (如吸烟史影响结节风险评估)
+        clinicalContext: this.clinicalContext
       });
 
       this.agentResults.pathologist = pathologistResult;
@@ -158,7 +183,10 @@ export class Orchestrator {
         radiologistFindings: radiologistResult,
         pathologistDiagnosis: pathologistResult,
         ragContext: ragContext,
-        patientInfo: input.patientInfo
+        // iter4: 病人信息用于报告头部
+        patientInfo: this.patientInfo,
+        // iter4: 临床上下文填充报告模板
+        clinicalContext: this.clinicalContext
       });
 
       this.agentResults.reportWriter = reportResult;
@@ -203,16 +231,48 @@ export class Orchestrator {
   }
 
   /**
-   * 预加载 RAG 上下文 (占位，待实现)
+   * 预加载 RAG 上下文 (占位，待 iter5 实现)
    * @param {Object} input - 输入数据
+   *
+   * iter4: 准备临床上下文用于 RAG 检索
+   * iter5: 实现实际的向量检索
    */
   async preloadRAGContext(input) {
-    // TODO: 实现 RAG 服务集成
-    // 根据图像类型/部位预检索相关医学知识
+    // TODO (iter5): 实现 RAG 服务集成
+    // 根据临床上下文检索相关医学知识
+    //
+    // 检索触发条件:
+    // - clinicalContext.smokingHistory + 结节 → Fleischner 指南
+    // - clinicalContext.clinicalIndication + 影像特征 → 鉴别诊断
+    // - patientInfo.age + 影像特征 → 年龄相关流行病学
+
+    const clinicalContext = input.clinicalContext || this.clinicalContext || {};
+    const patientInfo = input.patientInfo || this.patientInfo || {};
+
+    // 构建检索提示 (iter5 将使用这些生成 embedding 查询)
+    const ragHints = {
+      // 吸烟相关
+      smokingRelated: clinicalContext.smokingHistory?.status === 'current' ||
+                      clinicalContext.smokingHistory?.status === 'former',
+      packYears: clinicalContext.smokingHistory?.packYears || 0,
+
+      // 临床指征
+      indication: clinicalContext.clinicalIndication || '',
+
+      // 病人特征
+      patientAge: patientInfo.age || null,
+      patientGender: patientInfo.gender || null,
+
+      // 检查类型
+      examType: clinicalContext.examType || input.metadata?.modality || 'Unknown'
+    };
+
+    // 占位返回 (iter5 将返回实际检索结果)
     return {
       relevantCases: [],
       guidelines: [],
-      anatomyInfo: []
+      anatomyInfo: [],
+      ragHints  // 传递给 Agents 供日后 RAG 使用
     };
   }
 

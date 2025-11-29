@@ -7,8 +7,8 @@ import "./patient.css";
 import axios from "axios";
 import ReportPanel from "../components/ReportPanel";
 import SegmentationActionsBar from "../components/SegmentationActionsBar";
-import { Eye, EyeOff, Trash2, ChevronDown } from "lucide-react";
-import { streamRequest, streamChat, ANALYSIS_PHASES } from "../lib/api";
+import { Eye, EyeOff, Trash2, ChevronDown, User, FileText } from "lucide-react";
+import { streamRequest, streamChat, ANALYSIS_PHASES, api } from "../lib/api";
 
 const SegmentationPage = () => {
   const [activeTab, setActiveTab] = useState("segmentation");
@@ -70,6 +70,60 @@ const SegmentationPage = () => {
 
   // 色板
   const maskColors = ["#1E90FF","#00BFFF","#7FFF00","#FFD700","#FF7F50","#FF1493","#8A2BE2"];
+
+  // ===== iter4: Patient & Clinical Context =====
+  const [patientInfoOpen, setPatientInfoOpen] = useState(false);
+  const [patients, setPatients] = useState([]);
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [clinicalContext, setClinicalContext] = useState({
+    clinicalIndication: '',
+    examType: 'CT Chest',
+    smokingHistory: { status: 'never', packYears: 0 },
+    relevantHistory: '',
+    priorImagingDate: ''
+  });
+
+  // Fetch patients list on mount
+  useEffect(() => {
+    async function fetchPatients() {
+      try {
+        const res = await api.get('/patients');
+        setPatients(res.data.patients || []);
+      } catch (err) {
+        console.error('Failed to fetch patients:', err);
+      }
+    }
+    fetchPatients();
+  }, []);
+
+  // When selected patient changes, fetch full patient info
+  useEffect(() => {
+    if (!selectedPatientId) {
+      setSelectedPatient(null);
+      return;
+    }
+    async function fetchPatientInfo() {
+      try {
+        const res = await api.get(`/patients/${selectedPatientId}`);
+        setSelectedPatient(res.data.patient || null);
+      } catch (err) {
+        console.error('Failed to fetch patient info:', err);
+      }
+    }
+    fetchPatientInfo();
+  }, [selectedPatientId]);
+
+  // Helper to update clinical context fields
+  const updateClinicalContext = (field, value) => {
+    setClinicalContext(prev => ({ ...prev, [field]: value }));
+  };
+  const updateSmokingHistory = (field, value) => {
+    setClinicalContext(prev => ({
+      ...prev,
+      smokingHistory: { ...prev.smokingHistory, [field]: value }
+    }));
+  };
 
   // 窗口变化重绘
   useEffect(() => {
@@ -510,8 +564,20 @@ const SegmentationPage = () => {
       const image_base64 = await blobToDataURL(blob);
 
       if (useStreaming) {
-        // SSE 流式请求
-        await streamRequest('/medical_report_stream', { final_image: image_base64 }, {
+        // SSE 流式请求 (iter4: include patientInfo and clinicalContext)
+        const requestBody = {
+          final_image: image_base64,
+          patientInfo: selectedPatient ? {
+            id: selectedPatient.pid,
+            name: selectedPatient.name,
+            age: selectedPatient.age,
+            gender: selectedPatient.gender,
+            mrn: selectedPatient.mrn,
+            dob: selectedPatient.dateofbirth
+          } : null,
+          clinicalContext: clinicalContext
+        };
+        await streamRequest('/medical_report_stream', requestBody, {
           onProgress: (data) => {
             console.log('[SSE Progress] raw data:', JSON.stringify(data));
             // Try to get step from multiple possible locations
@@ -572,8 +638,19 @@ const SegmentationPage = () => {
           }
         });
       } else {
-        // Fallback: 普通 POST 请求
-        const res = await axios.post("http://localhost:3000/api/medical_report_init", { final_image: image_base64 });
+        // Fallback: 普通 POST 请求 (iter4: include patientInfo and clinicalContext)
+        const res = await axios.post("http://localhost:3000/api/medical_report_init", {
+          final_image: image_base64,
+          patientInfo: selectedPatient ? {
+            id: selectedPatient.pid,
+            name: selectedPatient.name,
+            age: selectedPatient.age,
+            gender: selectedPatient.gender,
+            mrn: selectedPatient.mrn,
+            dob: selectedPatient.dateofbirth
+          } : null,
+          clinicalContext: clinicalContext
+        });
         const reportContent = typeof res.data?.report === 'object' ? res.data.report?.content : res.data?.report;
         setReportText(reportContent || sampleGeneratedReport);
         setActiveTab("report");
@@ -1075,6 +1152,138 @@ const SegmentationPage = () => {
                           disableUndoPoints={clickPoints.length === 0}
                           showExport={uploadedImage && masks && masks.length > 0}
                         />
+                      </div>
+
+                      {/* ======= iter4: Patient & Clinical Context (collapsible) ======= */}
+                      <div className="col-span-2 md:col-span-4">
+                        <div className="rounded-2xl border border-gray-300 bg-white overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setPatientInfoOpen((o) => !o)}
+                            className="w-full flex items-center justify-between px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 focus:outline-none transition-colors duration-150"
+                          >
+                            <span className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              Patient & Clinical Context
+                              {selectedPatient && <span className="text-xs text-green-600 font-normal">({selectedPatient.name})</span>}
+                            </span>
+                            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${patientInfoOpen ? "rotate-180" : ""}`} />
+                          </button>
+
+                          {patientInfoOpen && (
+                            <div className="px-4 py-3 border-t border-gray-200 space-y-3">
+                              {/* Patient Selection */}
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Patient</label>
+                                <select
+                                  value={selectedPatientId || ''}
+                                  onChange={(e) => setSelectedPatientId(e.target.value ? Number(e.target.value) : null)}
+                                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                  <option value="">-- Select Patient --</option>
+                                  {patients.map(p => (
+                                    <option key={p.pid} value={p.pid}>
+                                      {p.name} ({p.mrn || 'No MRN'}) - {p.age}yo {p.gender}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Clinical Indication */}
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Clinical Indication</label>
+                                <textarea
+                                  value={clinicalContext.clinicalIndication}
+                                  onChange={(e) => updateClinicalContext('clinicalIndication', e.target.value)}
+                                  placeholder="e.g., Rule out pulmonary nodule, follow-up for prior abnormality..."
+                                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm resize-none h-16 focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+
+                              {/* Exam Type */}
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Exam Type</label>
+                                  <select
+                                    value={clinicalContext.examType}
+                                    onChange={(e) => updateClinicalContext('examType', e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                                  >
+                                    <option value="CT Chest">CT Chest</option>
+                                    <option value="CT Chest with Contrast">CT Chest with Contrast</option>
+                                    <option value="Low-dose CT Chest">Low-dose CT Chest (Screening)</option>
+                                    <option value="CT Abdomen">CT Abdomen</option>
+                                    <option value="MRI Brain">MRI Brain</option>
+                                    <option value="X-ray Chest">X-ray Chest</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Prior Imaging Date</label>
+                                  <input
+                                    type="date"
+                                    value={clinicalContext.priorImagingDate}
+                                    onChange={(e) => updateClinicalContext('priorImagingDate', e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Smoking History */}
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Smoking History</label>
+                                <div className="flex items-center gap-3">
+                                  <select
+                                    value={clinicalContext.smokingHistory.status}
+                                    onChange={(e) => updateSmokingHistory('status', e.target.value)}
+                                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                                  >
+                                    <option value="never">Never smoker</option>
+                                    <option value="former">Former smoker</option>
+                                    <option value="current">Current smoker</option>
+                                    <option value="unknown">Unknown</option>
+                                  </select>
+                                  {(clinicalContext.smokingHistory.status === 'former' || clinicalContext.smokingHistory.status === 'current') && (
+                                    <div className="flex items-center gap-1">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={clinicalContext.smokingHistory.packYears}
+                                        onChange={(e) => updateSmokingHistory('packYears', parseInt(e.target.value) || 0)}
+                                        className="w-16 rounded-lg border border-gray-300 px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500"
+                                      />
+                                      <span className="text-xs text-gray-500">pack-years</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Relevant History */}
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Relevant Medical History</label>
+                                <textarea
+                                  value={clinicalContext.relevantHistory}
+                                  onChange={(e) => updateClinicalContext('relevantHistory', e.target.value)}
+                                  placeholder="e.g., Hypertension, Diabetes, Family history of lung cancer..."
+                                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm resize-none h-16 focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+
+                              {/* Selected Patient Info Display */}
+                              {selectedPatient && (
+                                <div className="mt-2 p-2 bg-blue-50 rounded-lg text-xs">
+                                  <div className="font-semibold text-blue-800 mb-1">Selected Patient:</div>
+                                  <div className="grid grid-cols-2 gap-x-4 text-gray-700">
+                                    <div>Name: {selectedPatient.name}</div>
+                                    <div>MRN: {selectedPatient.mrn || 'N/A'}</div>
+                                    <div>Age: {selectedPatient.age} years</div>
+                                    <div>Gender: {selectedPatient.gender}</div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* ======= 新：折叠式 Masks List（默认关闭；最多显示 2 项） ======= */}
