@@ -500,10 +500,11 @@ const SegmentationPage = () => {
         await streamRequest('/medical_report_stream', { final_image: image_base64 }, {
           onProgress: (data) => {
             console.log('[SSE Progress]', data);
-            const phaseInfo = ANALYSIS_PHASES[data.step] || { label: data.message || 'Processing...', progress: 50 };
+            const phaseInfo = ANALYSIS_PHASES[data.step] || { label: data.message || 'Processing...', progress: 50, detail: '' };
             setAnalysisProgress({
               step: data.step || data.type,
               label: phaseInfo.label,
+              detail: phaseInfo.detail,
               progress: phaseInfo.progress,
             });
             if (data.sessionId) {
@@ -795,23 +796,27 @@ const SegmentationPage = () => {
             
             {isRunning && (
               <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-30 rounded-3xl">
-                <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
-                  <div className="flex items-center mb-4">
+                <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full mx-4">
+                  <div className="flex items-center mb-3">
                     <div className="mr-3 h-7 w-7 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
-                    <span className="text-blue-700 font-medium">
+                    <span className="text-blue-700 font-semibold text-lg">
                       {analysisProgress?.label || 'Working…'}
                     </span>
                   </div>
+                  {analysisProgress?.detail && (
+                    <p className="text-gray-500 text-sm mb-3 ml-10">
+                      {analysisProgress.detail}
+                    </p>
+                  )}
                   {analysisProgress && (
                     <div className="space-y-2">
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+                          className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 ease-out"
                           style={{ width: `${analysisProgress.progress || 0}%` }}
                         />
                       </div>
-                      <div className="flex justify-between text-xs text-gray-500">
-                        <span>{analysisProgress.step}</span>
+                      <div className="flex justify-end text-xs text-gray-500">
                         <span>{analysisProgress.progress || 0}%</span>
                       </div>
                     </div>

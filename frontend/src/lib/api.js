@@ -123,16 +123,52 @@ export async function streamRequest(endpoint, body, callbacks = {}) {
 }
 
 /**
- * 进度阶段映射 - 用于 UI 显示
+ * Progress phase mapping for UI display
  */
 export const ANALYSIS_PHASES = {
-  session: { label: 'Initializing', progress: 0 },
-  phase1_start: { label: 'Radiologist analyzing...', progress: 10 },
-  radiologist_done: { label: 'Radiologist complete', progress: 25 },
-  phase2_start: { label: 'Pathologist analyzing...', progress: 30 },
-  pathologist_done: { label: 'Pathologist complete', progress: 50 },
-  phase3_start: { label: 'Generating report...', progress: 55 },
-  report_draft_done: { label: 'Draft complete', progress: 75 },
-  phase4_start: { label: 'Quality review...', progress: 80 },
-  analysis_complete: { label: 'Complete', progress: 100 },
+  session: {
+    label: 'Initializing analysis...',
+    detail: 'Setting up multi-agent system',
+    progress: 0
+  },
+  phase1_start: {
+    label: 'Radiologist analyzing image...',
+    detail: 'Identifying lesions, measuring dimensions, describing characteristics',
+    progress: 10
+  },
+  radiologist_done: {
+    label: 'Image analysis complete',
+    detail: 'Findings documented',
+    progress: 25
+  },
+  phase2_start: {
+    label: 'Pathologist diagnosing...',
+    detail: 'Generating differential diagnosis based on imaging findings',
+    progress: 30
+  },
+  pathologist_done: {
+    label: 'Diagnosis complete',
+    detail: 'Differential diagnosis generated',
+    progress: 50
+  },
+  phase3_start: {
+    label: 'Writing medical report...',
+    detail: 'Synthesizing findings into structured report format',
+    progress: 55
+  },
+  report_draft_done: {
+    label: 'Report draft complete',
+    detail: 'Proceeding to quality review',
+    progress: 75
+  },
+  phase4_start: {
+    label: 'Quality control review...',
+    detail: 'Checking terminology, consistency and completeness',
+    progress: 80
+  },
+  analysis_complete: {
+    label: 'Analysis complete!',
+    detail: 'Report ready for physician review',
+    progress: 100
+  },
 };
