@@ -62,10 +62,19 @@ export class RadiologistAgent extends BaseAgent {
     const { imageData, segmentationMasks, metadata = {} } = input;
 
     // 构建分析提示
-    const prompt = this.buildAnalysisPrompt(imageData, segmentationMasks, metadata);
+    const prompt = this.buildAnalysisPrompt(segmentationMasks, metadata);
 
     this.log('Starting image analysis...');
-    const result = await this.callLLM(prompt);
+
+    // 使用视觉能力分析图像
+    let result;
+    if (imageData && typeof imageData === 'string' && imageData.startsWith('data:image')) {
+      // 使用 Claude Vision 分析图像
+      result = await this.callLLMWithVision(prompt, imageData);
+    } else {
+      // 没有图像数据，只用文本
+      result = await this.callLLM(prompt);
+    }
 
     // 解析 JSON 响应
     try {
@@ -87,6 +96,69 @@ export class RadiologistAgent extends BaseAgent {
         rawResponse: result.text,
         usage: result.usage
       };
+    }
+  }
+
+  /**
+   * 使用视觉能力调用 LLM
+   * @param {string} prompt - 文本提示
+   * @param {string} imageData - base64 图像数据
+   */
+  async callLLMWithVision(prompt, imageData) {
+    this.status = 'running';
+    const startTime = Date.now();
+
+    try {
+      // 提取 base64 数据和 media type
+      const matches = imageData.match(/^data:(.+);base64,(.+)$/);
+      if (!matches) {
+        throw new Error('Invalid base64 image format');
+      }
+
+      const mediaType = matches[1];
+      const base64Data = matches[2];
+
+      const response = await this.client.messages.create({
+        model: this.model,
+        max_tokens: this.maxTokens,
+        system: this.systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: mediaType,
+                  data: base64Data,
+                },
+              },
+              {
+                type: 'text',
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      });
+
+      const elapsed = Date.now() - startTime;
+      this.status = 'idle';
+
+      const textContent = response.content.find(c => c.type === 'text');
+      const result = {
+        text: textContent?.text || '',
+        usage: response.usage,
+      };
+
+      this.log(`Completed in ${elapsed}ms, tokens: ${result.usage?.output_tokens || 0}`);
+      return result;
+
+    } catch (error) {
+      this.status = 'error';
+      this.log(`Vision API error: ${error.message}`, 'error');
+      throw error;
     }
   }
 
@@ -131,8 +203,8 @@ Maintain the same JSON output format.`;
   /**
    * 构建分析提示
    */
-  buildAnalysisPrompt(imageData, segmentationMasks, metadata) {
-    const parts = ['Analyze the following medical image segmentation data:'];
+  buildAnalysisPrompt(segmentationMasks, metadata) {
+    const parts = ['Analyze the provided medical image with the following context:'];
 
     if (metadata.modality) {
       parts.push(`\nImaging Modality: ${metadata.modality}`);
@@ -145,23 +217,22 @@ Maintain the same JSON output format.`;
     }
 
     if (segmentationMasks && segmentationMasks.length > 0) {
-      parts.push(`\nSegmentation Data:`);
+      parts.push(`\nSegmentation regions highlighted in the image:`);
       parts.push(`- Number of segmented regions: ${segmentationMasks.length}`);
 
       // 如果有掩码统计信息
       segmentationMasks.forEach((mask, idx) => {
         if (mask.area) {
-          parts.push(`- Region ${idx + 1}: area=${mask.area}, centroid=(${mask.centroidX}, ${mask.centroidY})`);
+          parts.push(`- Region ${idx + 1}: area=${mask.area} pixels, centroid=(${mask.centroidX}, ${mask.centroidY})`);
         }
       });
     }
 
-    if (imageData && typeof imageData === 'string' && imageData.length < 1000) {
-      // 如果是描述文本而非 base64
-      parts.push(`\nImage description: ${imageData}`);
-    }
-
-    parts.push('\nProvide detailed radiological analysis in JSON format.');
+    parts.push('\nPlease analyze the image and provide findings in JSON format:');
+    parts.push('1. Describe any visible lesions, abnormalities, or notable findings');
+    parts.push('2. Provide measurements and characteristics');
+    parts.push('3. Note incidental findings');
+    parts.push('4. Assess technical quality of the image');
 
     return parts.join('\n');
   }
