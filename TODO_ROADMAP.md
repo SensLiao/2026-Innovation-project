@@ -314,7 +314,7 @@ frontend/index.html          # 如需更新引用
 
 ---
 
-### 4.6 Agent Display Names (用户友好的 Agent 名称)
+### 4.6 Agent Display Names (用户友好的 Agent 名称) ✅ DONE
 **描述**: 将技术性 Agent 名称改为医生能理解的专业术语
 
 **问题**:
@@ -324,84 +324,26 @@ frontend/index.html          # 如需更新引用
 
 **名称映射方案**:
 
-| 内部名称 | 当前显示 | 优化后显示 (English) | 优化后显示 (中文) |
-|----------|----------|---------------------|------------------|
-| `RadiologistAgent` | RadiologistAgent | 🔬 Radiology Analysis | 影像分析 |
-| `PathologistAgent` | PathologistAgent | 🧬 Pathology Diagnosis | 病理诊断 |
-| `ReportWriterAgent` | ReportWriterAgent | 📝 Report Drafting | 报告撰写 |
-| `QCReviewerAgent` | QCReviewerAgent | ✅ Quality Review | 质量审核 |
-| `AlignmentAgent` | AlignmentAgent | 💬 Medical Assistant | 医疗助手 |
+| 内部名称 | 优化后显示 |
+|----------|----------|
+| `RadiologistAgent` | Radiology Analysis Agent |
+| `PathologistAgent` | Pathology Diagnosis Agent |
+| `ReportWriterAgent` | Report Drafting Agent |
+| `QCReviewerAgent` | Quality Review Agent |
+| `Orchestrator` | System |
 
-**任务**:
-- [ ] 创建 `agentDisplayNames.js` 常量文件
-- [ ] 更新 SSE progress handler 使用 display names
-- [ ] 更新 Chat 消息显示使用友好名称
-- [ ] 可选: 添加语言切换 (中/英)
-- [ ] 添加 Agent 图标 (emoji 或 SVG)
+**已完成任务**:
+- [x] 更新 `api.js` STEP_INFO 映射
+- [x] 更新 Agent 选择下拉菜单
+- [x] 移除 emoji，使用专业命名
 
 **涉及文件**:
 ```
-frontend/src/constants/agentDisplayNames.js  # 新建 - 名称映射
-frontend/src/pages/Segmentation.jsx          # 更新 progress 显示
-frontend/src/components/ChatMessage.jsx      # 更新消息显示 (如有)
+frontend/src/lib/api.js               # STEP_INFO agent 名称
+frontend/src/pages/Segmentation.jsx   # Agent 选择下拉菜单
 ```
 
-**实现代码**:
-```javascript
-// frontend/src/constants/agentDisplayNames.js
-export const AGENT_DISPLAY_NAMES = {
-  RadiologistAgent: {
-    en: 'Radiology Analysis',
-    zh: '影像分析',
-    icon: '🔬',
-    description: 'Analyzing medical images for abnormalities'
-  },
-  PathologistAgent: {
-    en: 'Pathology Diagnosis',
-    zh: '病理诊断',
-    icon: '🧬',
-    description: 'Providing differential diagnosis'
-  },
-  ReportWriterAgent: {
-    en: 'Report Drafting',
-    zh: '报告撰写',
-    icon: '📝',
-    description: 'Generating structured medical report'
-  },
-  QCReviewerAgent: {
-    en: 'Quality Review',
-    zh: '质量审核',
-    icon: '✅',
-    description: 'Reviewing report for accuracy and completeness'
-  },
-  AlignmentAgent: {
-    en: 'Medical Assistant',
-    zh: '医疗助手',
-    icon: '💬',
-    description: 'Processing your feedback'
-  }
-};
-
-// 使用方式
-const getAgentDisplayName = (agentName, lang = 'en') => {
-  const agent = AGENT_DISPLAY_NAMES[agentName];
-  if (!agent) return agentName;
-  return `${agent.icon} ${agent[lang]}`;
-};
-```
-
-**UI 效果** (优化后):
-```
-┌──────────────────────────────────────┐
-│  🔬 Radiology Analysis               │
-│  ○━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━○    │
-│  Analyzing CT scan for lesions...    │
-├──────────────────────────────────────┤
-│  🧬 Pathology Diagnosis              │
-│  ○━━━━━━━━━━━━○                      │
-│  Evaluating findings...              │
-└──────────────────────────────────────┘
-```
+**Commit**: `768493d feat(ui): update agent display names to user-friendly format`
 
 ---
 
