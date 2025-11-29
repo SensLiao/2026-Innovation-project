@@ -81,7 +81,10 @@ export class QCReviewerAgent extends BaseAgent {
         passesQC: parsed.passesQC !== false,
         issues: parsed.issues || [],
         suggestions: parsed.suggestions || [],
-        reviewedReport: parsed.reviewedReport || (draftReport.report || draftReport),
+        // Only use reviewedReport if it's a full report (>200 chars), otherwise use original
+        reviewedReport: (parsed.reviewedReport && parsed.reviewedReport.length > 200)
+          ? parsed.reviewedReport
+          : (draftReport.report || draftReport),
         rawResponse: result.text,
         usage: result.usage
       };
