@@ -8,7 +8,7 @@
 | **iter2** | Streaming & Interaction | ✅ 完成 | 21 |
 | **iter3** | Database & Persistence | ✅ 完成 | 1 |
 | **iter4** | Professional Reports | 🔄 进行中 | 12+ |
-| **iter5** | Knowledge Base (RAG) | ⏳ 计划中 | - |
+| **iter5** | Knowledge Base (RAG) | ✅ 完成 | 4 |
 | **iter6** | Agent SDK Migration | 💡 可选 | - |
 
 ---
@@ -398,63 +398,121 @@ b73165d style(ui): increase progress text size for better readability
 
 ---
 
-## ⏳ iter5: Knowledge Base - RAG (计划中)
+## ✅ iter5: Knowledge Base - RAG (已完成)
 
-**目标**: 集成医学知识库，提供循证诊断支持
+**目标**: 集成胸部 CT 医学知识库，提供循证诊断支持
 
-### 5.1 Knowledge Data Import
-**描述**: 导入医学指南和参考资料到向量数据库
+### 实现成果
 
-**数据源**:
-- Fleischner Society Guidelines (肺结节)
-- ACR Appropriateness Criteria
-- RadLex 术语表
-- 常见疾病 ICD-10 映射
+| 组件 | 状态 | 说明 |
+|------|------|------|
+| PubMedBERT Embedding Server | ✅ | 本地 FastAPI 服务，768 维向量 |
+| 知识库数据 | ✅ | 441 条目 (7 个 JSON 文件) |
+| pgvector HNSW 索引 | ✅ | O(log n) 查询 |
+| Orchestrator RAG 集成 | ✅ | 并行查询 3 类别 |
+| Mac MPS 加速 | ✅ | 查询 avg 55ms, min 26ms |
 
-**任务**:
-- [ ] 创建知识导入脚本
-- [ ] 文本分块 (chunk) 策略
-- [ ] 生成 embeddings (OpenAI ada-002)
-- [ ] 存储到 medical_knowledge 表
-- [ ] 创建向量索引 (IVFFlat)
+### 知识库内容 (441 条目)
 
-**涉及文件**:
+| 文件 | 类别 | 条目数 | 说明 |
+|------|------|--------|------|
+| `lung-rads-v2022.json` | classification | 19 | Lung-RADS v2022 分级 |
+| `icd10-respiratory.json` | coding | 50 | ICD-10 基础呼吸编码 |
+| `icd10-respiratory-extended.json` | coding | 149 | ICD-10 扩展 (TB, 肿瘤, ILD, PE) |
+| `radlex-chest.json` | terminology | 43 | RadLex 基础术语 |
+| `radlex-chest-extended.json` | terminology | 106 | RadLex 扩展 (征象, 模式) |
+| `clinical-differential.json` | classification | 38 | 鉴别诊断 by 影像表现 |
+| `clinical-guidelines.json` | classification | 36 | Fleischner, ACR, TNM, GOLD |
+
+### Embedding 架构
+
 ```
-backend/scripts/import-knowledge.mjs  # 新建
-backend/services/embeddingService.js  # 完善
-```
-
-**预计 Commits**:
-```
-iter5/Steven/feat(rag): create knowledge import script
-iter5/Steven/feat(rag): implement text chunking strategy
-iter5/Steven/feat(db): add vector index for similarity search
-```
-
----
-
-### 5.2 RAG Service Integration
-**描述**: 在诊断流程中集成 RAG 检索
-
-**任务**:
-- [ ] 完善 RAGService.query() 方法
-- [ ] PathologistAgent 调用 RAG 获取相关指南
-- [ ] 在诊断结果中添加引用来源
-- [ ] 前端显示参考文献
-
-**涉及文件**:
-```
-backend/services/ragService.js        # 完善查询
-backend/agents/pathologistAgent.js    # 集成 RAG
-frontend/src/components/ReportPanel.jsx  # 显示引用
+┌─────────────────────────────────────────────────────────────┐
+│                    Embedding Pipeline                        │
+├─────────────────────────────────────────────────────────────┤
+│  Model: NeuML/pubmedbert-base-embeddings                    │
+│  Dimensions: 768                                            │
+│  Provider: Local FastAPI (port 8001)                        │
+│  Acceleration: MPS (Mac) / CUDA (4090)                      │
+├─────────────────────────────────────────────────────────────┤
+│  Performance (Mac M-series):                                │
+│  - First query: ~170ms (model load)                         │
+│  - Subsequent: 26-55ms avg                                  │
+│                                                             │
+│  Performance (4090):                                        │
+│  - Import 441 entries: 11.7s                                │
+│  - ~26ms per embedding                                      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**预计 Commits**:
+### RAG 查询流程
+
 ```
-iter5/Steven/feat(rag): implement similarity search query
-iter5/Steven/feat(agents): integrate RAG in pathologist diagnosis
-iter5/Steven/feat(report): display reference citations
-iter5/Steven/feat(ui): show knowledge base sources
+报告生成请求
+       ↓
+Orchestrator.preloadRAGContext()
+       ↓
+┌──────────────────────────────────────────┐
+│  并行查询 3 类别 (Promise.all):           │
+│  1. classification → 指南 (Fleischner)   │
+│  2. terminology → RadLex 术语            │
+│  3. coding → ICD-10 编码                 │
+└──────────────────────────────────────────┘
+       ↓
+整合 → ragContext { relevantCases, guidelines, icdCodes }
+       ↓
+传递给 PathologistAgent + ReportWriterAgent
+```
+
+### 关键文件
+
+```
+backend/
+├── embedding_server/
+│   ├── main.py              # FastAPI + PubMedBERT
+│   └── requirements.txt
+├── services/
+│   ├── embeddingService.js  # Embedding 客户端
+│   └── ragService.js        # RAG 查询服务
+├── agents/
+│   └── index.js             # Orchestrator (preloadRAGContext)
+├── scripts/
+│   ├── import-knowledge.mjs # 知识库导入脚本
+│   ├── test-rag.mjs         # RAG 查询测试
+│   └── test-rag-integration.mjs  # 集成测试
+└── data/
+    ├── lung-rads-v2022.json
+    ├── icd10-respiratory.json
+    ├── icd10-respiratory-extended.json
+    ├── radlex-chest.json
+    ├── radlex-chest-extended.json
+    ├── clinical-differential.json
+    └── clinical-guidelines.json
+```
+
+### Commits (iter5)
+
+```
+f64d7bc feat(rag): expand knowledge base from ~250 to ~565 entries
+c794f6e feat(rag): integrate RAG queries into Orchestrator report generation
+[earlier commits for embedding server and initial setup]
+```
+
+### 运行指南
+
+```bash
+# 1. 启动 embedding server (Mac)
+cd backend/embedding_server
+pip install -r requirements.txt
+python -m uvicorn main:app --port 8001
+
+# 2. 导入知识库 (首次或更新时)
+cd backend
+CLEAR_FIRST=true node scripts/import-knowledge.mjs
+
+# 3. 测试 RAG 查询
+node scripts/test-rag.mjs
+node scripts/test-rag-integration.mjs
 ```
 
 ---
@@ -733,7 +791,7 @@ useEffect(() => {
 
 ## Commit Summary
 
-### 已完成 (42+ commits)
+### 已完成 (46+ commits)
 ```
 iter1: 8 commits  - Agent 架构
 iter2: 21 commits - 流式交互
@@ -744,6 +802,10 @@ iter4: 12+ commits - 专业报告 (进行中)
   ├── 4.7 Cancel & Animations: 2 commits ✅
   ├── Security Fixes: 2 commits ✅
   └── Docs & JSDoc: 4 commits ✅
+iter5: 4 commits - RAG 知识库 ✅
+  ├── Embedding Server + Services
+  ├── Knowledge Data (441 entries)
+  └── Orchestrator Integration
 ```
 
 ### 计划中
@@ -753,10 +815,6 @@ iter4 剩余:
   ├── 4.3 Dual Reports: ~4 commits
   ├── 4.4 Diff View: ~2 commits
   └── 4.5 Favicon: ~1 commit
-
-iter5: ~7 commits - 知识库
-  ├── 5.1 Data Import: 3
-  └── 5.2 RAG Integration: 4
 ```
 
 ---
@@ -764,12 +822,15 @@ iter5: ~7 commits - 知识库
 ## 优先级建议
 
 ```
+已完成:
+├── iter4.1 Patient Info      ✅ 病人信息集成
+├── iter5 RAG Knowledge Base  ✅ 441条医学知识 + Fleischner指南
+
 高优先级 (Demo Ready):
-├── iter4.1 Patient Info      - 快速提升报告可用性
 ├── iter4.2 ACR Template      - 专业性提升
-└── iter4.3 Dual Reports      - 差异化功能
+└── iter4.3 Dual Reports      - 医生版/患者版
 
 中优先级 (v2.0):
-├── iter5.1 Knowledge Import  - RAG 基础
-└── iter5.2 RAG Integration   - 循证诊断
+├── iter4.4 Diff View         - 修订对比
+└── iter6 Agent SDK           - 性能优化 (可选)
 ```
