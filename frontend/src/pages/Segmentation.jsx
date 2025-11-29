@@ -57,6 +57,7 @@ const SegmentationPage = () => {
   });
 
   const inputRef = useRef(null);
+  const currentFileRef = useRef(null); // Track current file to prevent memory leaks
 
   // 叠加画布
   const canvasRef = useRef(null);
@@ -103,13 +104,18 @@ const SegmentationPage = () => {
       setSelectedPatient(null);
       return;
     }
+
+    let isCurrent = true; // Prevent race condition with stale data
+
     async function fetchPatientInfo() {
       try {
         const res = await api.get(`/patients/${selectedPatientId}`);
+        if (!isCurrent) return; // Selection changed, abort
         setSelectedPatient(res.data.patient || res.data.data || null);
 
         // Also fetch latest diagnosis for this patient to auto-fill clinical context
         const diagRes = await api.get(`/diagnosis/patient/${selectedPatientId}/latest`);
+        if (!isCurrent) return; // Selection changed, abort
         if (diagRes.data.success && diagRes.data.diagnosis?.clinicalContext) {
           const ctx = diagRes.data.diagnosis.clinicalContext;
           setClinicalContext({
@@ -121,10 +127,14 @@ const SegmentationPage = () => {
           });
         }
       } catch (err) {
-        console.error('Failed to fetch patient info:', err);
+        if (isCurrent) {
+          console.error('Failed to fetch patient info:', err);
+        }
       }
     }
     fetchPatientInfo();
+
+    return () => { isCurrent = false; }; // Cleanup on unmount or re-run
   }, [selectedPatientId]);
 
   // Helper to update clinical context fields
@@ -161,11 +171,15 @@ const SegmentationPage = () => {
   async function handleFile(f) {
     setFileName(f.name);
     setIsRunning(true);
+    currentFileRef.current = f; // Track current file to prevent stale updates
+
     try {
       const dataURL = await fileToDataURL(f);
+      if (currentFileRef.current !== f) return; // File changed, abort
       setUploadedImage(dataURL);
 
       const { natW, natH } = await loadImageOffscreen(dataURL);
+      if (currentFileRef.current !== f) return;
       setOrigImSize([natH, natW]);
 
       const im = new Image();
@@ -175,12 +189,14 @@ const SegmentationPage = () => {
       const form = new FormData();
       form.append("image", f);
       const resp = await axios.post("http://localhost:3000/api/load_model", form);
+      if (currentFileRef.current !== f) return;
       setImageEmbeddings(resp.data.image_embeddings || []);
       setEmbeddingsDims(resp.data.embedding_dims || []);
 
       // Auto-classify image type using Claude Vision
       try {
         const classifyResp = await api.post('/classify_image', { imageData: dataURL });
+        if (currentFileRef.current !== f) return; // File changed during classification
         if (classifyResp.data.success && classifyResp.data.classification) {
           const { examType, modality, bodyPart, contrast } = classifyResp.data.classification;
           // Map to dropdown options
@@ -210,6 +226,7 @@ const SegmentationPage = () => {
         console.warn('[AutoClassify] Classification failed (non-critical):', classifyErr.message);
       }
 
+      if (currentFileRef.current !== f) return;
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 1200);
     } catch (e) {
