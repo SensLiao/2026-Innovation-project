@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node tests/runAll.js",
+    "test:base": "node tests/baseAgent.test.js",
+    "test:agents": "node tests/agents.test.js",
+    "test:services": "node tests/services.test.js",
+    "test:mock": "MOCK_MODE=true node tests/runAll.js",
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
