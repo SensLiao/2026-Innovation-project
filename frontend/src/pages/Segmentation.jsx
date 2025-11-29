@@ -89,7 +89,7 @@ const SegmentationPage = () => {
     async function fetchPatients() {
       try {
         const res = await api.get('/patients');
-        setPatients(res.data.patients || []);
+        setPatients(res.data.data || res.data.patients || []);
       } catch (err) {
         console.error('Failed to fetch patients:', err);
       }
@@ -97,7 +97,7 @@ const SegmentationPage = () => {
     fetchPatients();
   }, []);
 
-  // When selected patient changes, fetch full patient info
+  // When selected patient changes, fetch full patient info and latest diagnosis
   useEffect(() => {
     if (!selectedPatientId) {
       setSelectedPatient(null);
@@ -106,7 +106,20 @@ const SegmentationPage = () => {
     async function fetchPatientInfo() {
       try {
         const res = await api.get(`/patients/${selectedPatientId}`);
-        setSelectedPatient(res.data.patient || null);
+        setSelectedPatient(res.data.patient || res.data.data || null);
+
+        // Also fetch latest diagnosis for this patient to auto-fill clinical context
+        const diagRes = await api.get(`/diagnosis/patient/${selectedPatientId}/latest`);
+        if (diagRes.data.success && diagRes.data.diagnosis?.clinicalContext) {
+          const ctx = diagRes.data.diagnosis.clinicalContext;
+          setClinicalContext({
+            clinicalIndication: ctx.clinicalIndication || '',
+            examType: ctx.examType || 'CT Chest',
+            smokingHistory: ctx.smokingHistory || { status: 'never', packYears: 0 },
+            relevantHistory: ctx.relevantHistory || '',
+            priorImagingDate: ctx.priorImagingDate ? ctx.priorImagingDate.split('T')[0] : ''
+          });
+        }
       } catch (err) {
         console.error('Failed to fetch patient info:', err);
       }
@@ -164,6 +177,38 @@ const SegmentationPage = () => {
       const resp = await axios.post("http://localhost:3000/api/load_model", form);
       setImageEmbeddings(resp.data.image_embeddings || []);
       setEmbeddingsDims(resp.data.embedding_dims || []);
+
+      // Auto-classify image type using Claude Vision
+      try {
+        const classifyResp = await api.post('/classify_image', { imageData: dataURL });
+        if (classifyResp.data.success && classifyResp.data.classification) {
+          const { examType, modality, bodyPart, contrast } = classifyResp.data.classification;
+          // Map to dropdown options
+          const examTypeMap = {
+            'CT Chest': 'CT Chest',
+            'CT Chest with Contrast': 'CT Chest with Contrast',
+            'Low-dose CT Chest': 'Low-dose CT Chest',
+            'CT Abdomen': 'CT Abdomen',
+            'CT Abdomen with Contrast': 'CT Abdomen',
+            'MRI Brain': 'MRI Brain',
+            'MRI Brain with Contrast': 'MRI Brain',
+            'X-ray Chest': 'X-ray Chest',
+            'Chest X-ray': 'X-ray Chest',
+          };
+          // Try exact match first, then construct from modality+bodyPart
+          let detectedExamType = examTypeMap[examType];
+          if (!detectedExamType && modality && bodyPart) {
+            const constructed = `${modality} ${bodyPart}${contrast ? ' with Contrast' : ''}`;
+            detectedExamType = examTypeMap[constructed] || constructed;
+          }
+          if (detectedExamType) {
+            updateClinicalContext('examType', detectedExamType);
+            console.log('[AutoClassify] Detected exam type:', detectedExamType);
+          }
+        }
+      } catch (classifyErr) {
+        console.warn('[AutoClassify] Classification failed (non-critical):', classifyErr.message);
+      }
 
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 1200);
@@ -1079,6 +1124,39 @@ const SegmentationPage = () => {
 
                 {activeTab === "segmentation" ? (
                   <>
+                    {/* ======= Patient Info Bar (always visible above image) ======= */}
+                    {selectedPatient && (
+                      <div className="mb-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold">
+                              {selectedPatient.name?.charAt(0) || '?'}
+                            </div>
+                            <div>
+                              <div className="text-sm font-semibold text-gray-800">{selectedPatient.name}</div>
+                              <div className="text-xs text-gray-500">{selectedPatient.mrn || 'No MRN'}</div>
+                            </div>
+                          </div>
+                          <div className="hidden sm:flex items-center gap-4 text-xs text-gray-600">
+                            <span className="px-2 py-0.5 bg-white rounded-full border">{selectedPatient.age} years</span>
+                            <span className="px-2 py-0.5 bg-white rounded-full border">{selectedPatient.gender}</span>
+                            {clinicalContext.smokingHistory?.status !== 'never' && clinicalContext.smokingHistory?.packYears > 0 && (
+                              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full border border-amber-300">
+                                {clinicalContext.smokingHistory.packYears} pack-years
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setSelectedPatientId(null)}
+                          className="text-gray-400 hover:text-gray-600 text-xs"
+                          title="Clear patient selection"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
                     {/* 上传区 */}
                     <div
                       ref={dropZoneRef}
@@ -1167,10 +1245,21 @@ const SegmentationPage = () => {
                               Patient & Clinical Context
                               {selectedPatient && <span className="text-xs text-green-600 font-normal">({selectedPatient.name})</span>}
                             </span>
-                            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${patientInfoOpen ? "rotate-180" : ""}`} />
+                            {patientInfoOpen ? (
+                              <span className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-full transition-colors duration-150 shadow-sm">
+                                Confirm
+                              </span>
+                            ) : (
+                              <ChevronDown className="h-4 w-4 transition-transform duration-300" />
+                            )}
                           </button>
 
-                          {patientInfoOpen && (
+                          <div
+                            className={`
+                              overflow-hidden transition-all duration-300 ease-in-out
+                              ${patientInfoOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}
+                            `}
+                          >
                             <div className="px-4 py-3 border-t border-gray-200 space-y-3">
                               {/* Patient Selection */}
                               <div>
@@ -1269,20 +1358,8 @@ const SegmentationPage = () => {
                                 />
                               </div>
 
-                              {/* Selected Patient Info Display */}
-                              {selectedPatient && (
-                                <div className="mt-2 p-2 bg-blue-50 rounded-lg text-xs">
-                                  <div className="font-semibold text-blue-800 mb-1">Selected Patient:</div>
-                                  <div className="grid grid-cols-2 gap-x-4 text-gray-700">
-                                    <div>Name: {selectedPatient.name}</div>
-                                    <div>MRN: {selectedPatient.mrn || 'N/A'}</div>
-                                    <div>Age: {selectedPatient.age} years</div>
-                                    <div>Gender: {selectedPatient.gender}</div>
-                                  </div>
-                                </div>
-                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
 
