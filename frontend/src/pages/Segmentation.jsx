@@ -1103,11 +1103,11 @@ const SegmentationPage = () => {
                         <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600 flex-shrink-0" />
                         <div className="text-left">
                           {analysisProgress?.agent && (
-                            <p className="text-xs font-medium text-sky-500 mb-0.5 text-left">
+                            <p className="text-sm font-medium text-sky-500 mb-0.5 text-left">
                               {analysisProgress.agent}
                             </p>
                           )}
-                          <p className="text-blue-700 font-semibold text-[18px] text-left">
+                          <p className="text-blue-700 font-semibold text-xl text-left">
                             {analysisProgress?.label || 'Working…'}
                           </p>
                         </div>
