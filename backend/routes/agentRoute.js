@@ -286,6 +286,12 @@ router.post('/chat_stream', async (req, res) => {
 
     } else if (intent.mode === 'APPROVAL') {
       res.write(`data: ${JSON.stringify({ type: 'chunk', text: 'Thank you for approving the report. The report is now finalized.' })}\n\n`);
+    } else if (intent.mode === 'UNCLEAR') {
+      // Handle unclear input
+      res.write(`data: ${JSON.stringify({
+        type: 'chunk',
+        text: "I'm not sure what you're asking. Could you please clarify your request? You can:\n• Ask questions about the report (e.g., \"Why is this diagnosis suggested?\")\n• Request changes (e.g., \"Change the impression to...\")\n• Ask for recommendations"
+      })}\n\n`);
     }
 
   } catch (error) {

@@ -86,7 +86,8 @@ export const ChatMode = {
   QUESTION: 'question',      // Asking about findings, diagnosis, etc.
   INFO_REQUEST: 'info',      // Requesting recommendations, suggestions
   REVISION: 'revision',      // Requesting changes to report
-  APPROVAL: 'approval'       // Approving the report
+  APPROVAL: 'approval',      // Approving the report
+  UNCLEAR: 'unclear'         // Input is unclear or unrelated
 };
 
 // Keywords for fast intent classification
@@ -166,12 +167,13 @@ export class AlignmentAgent extends BaseAgent {
       }
     }
 
-    // Default to question if contains "?" or revision otherwise
+    // Default to question if contains "?"
     if (message.includes('?')) {
       return { mode: ChatMode.QUESTION.toUpperCase(), confidence: 0.6 };
     }
 
-    return { mode: ChatMode.REVISION.toUpperCase(), confidence: 0.5 };
+    // No clear intent detected - return UNCLEAR
+    return { mode: ChatMode.UNCLEAR.toUpperCase(), confidence: 0.3 };
   }
 
   /**
