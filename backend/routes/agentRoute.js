@@ -27,12 +27,24 @@ const router = express.Router();
 // Anthropic client for image classification
 const anthropic = new Anthropic();
 
+// ═══════════════════════════════════════════════════════════════════════════
+// iter4: Image Classification API (Claude Vision)
+// ═══════════════════════════════════════════════════════════════════════════
+
 /**
- * POST /classify_image
- * 使用 Claude Vision 自动识别医学图像类型
+ * POST /classify_image - 医学图像自动分类
  *
- * Body: { imageData: "data:image/png;base64,..." }
- * Returns: { modality, bodyPart, examType, confidence }
+ * 职责：
+ * - 使用 Claude Vision 分析上传的医学图像
+ * - 自动识别影像模态 (CT/MRI/X-ray/Ultrasound)
+ * - 识别检查部位 (Chest/Abdomen/Brain 等)
+ * - 判断是否使用造影剂
+ * - 返回标准化检查类型 (如 "CT Chest with Contrast")
+ *
+ * 输入: { imageData: "data:image/png;base64,..." }
+ * 输出: { success, classification: { modality, bodyPart, contrast, examType, confidence } }
+ *
+ * 注意：使用 claude-3-5-haiku 模型保证低延迟 (~500ms)
  */
 router.post('/classify_image', async (req, res) => {
   const { imageData } = req.body;
@@ -865,6 +877,22 @@ router.get('/health', (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 // iter4: Patient API Endpoints
 // ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Patient API - 病人信息管理接口
+ *
+ * 职责：
+ * - 提供病人列表查询 (用于前端下拉选择)
+ * - 支持按姓名/MRN 模糊搜索 (SQL 注入防护)
+ * - 获取单个病人详细信息
+ * - 获取病人最新诊断记录 (用于自动填充临床上下文)
+ *
+ * 安全措施：
+ * - 所有 ID 参数经过 parseInt 验证
+ * - 搜索查询进行 LIKE 通配符转义
+ *
+ * 关联: diagnosisService.js
+ */
 
 /**
  * GET /patients
