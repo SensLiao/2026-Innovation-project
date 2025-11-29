@@ -1,0 +1,901 @@
+{
+  "source": "ICD-10-CM 2024",
+  "version": "2024-extended",
+  "description": "Extended ICD-10-CM codes for chest CT radiology - Respiratory, Neoplasms, and Related",
+  "entries": [
+    {
+      "category": "coding",
+      "title": "A15.0 - Tuberculosis of Lung",
+      "content": "Tuberculosis of lung, confirmed by sputum microscopy with or without culture. Primary pulmonary TB. CT findings include upper lobe consolidation, tree-in-bud nodules, cavitation, and lymphadenopathy.",
+      "metadata": { "icd_code": "A15.0", "chapter": "A - Infectious diseases", "ct_findings": ["Tree-in-bud", "Cavitation", "Upper lobe consolidation"] }
+    },
+    {
+      "category": "coding",
+      "title": "A15.3 - Tuberculosis of Intrathoracic Lymph Nodes",
+      "content": "Tuberculosis of intrathoracic lymph nodes. Mediastinal and hilar lymphadenopathy due to TB. Nodes may show central low attenuation (necrosis) with peripheral rim enhancement.",
+      "metadata": { "icd_code": "A15.3", "chapter": "A - Infectious diseases", "ct_findings": ["Necrotic lymph nodes", "Rim enhancement"] }
+    },
+    {
+      "category": "coding",
+      "title": "A16.2 - Tuberculosis of Lung, Without Mention of Bacteriological Confirmation",
+      "content": "Tuberculosis of lung without bacteriological or histological confirmation. Use when TB is diagnosed clinically or radiologically but culture/smear negative.",
+      "metadata": { "icd_code": "A16.2", "chapter": "A - Infectious diseases" }
+    },
+    {
+      "category": "coding",
+      "title": "B37.1 - Pulmonary Candidiasis",
+      "content": "Pulmonary candidiasis. Fungal lung infection, typically in immunocompromised patients. CT may show nodules, consolidation, or ground-glass opacities.",
+      "metadata": { "icd_code": "B37.1", "chapter": "B - Infectious diseases", "risk_factors": ["Immunocompromise", "Prolonged antibiotics"] }
+    },
+    {
+      "category": "coding",
+      "title": "B44.0 - Invasive Pulmonary Aspergillosis",
+      "content": "Invasive pulmonary aspergillosis. Severe fungal infection in immunocompromised hosts. Classic CT finding is halo sign (nodule with surrounding GGO) or air crescent sign.",
+      "metadata": { "icd_code": "B44.0", "chapter": "B - Infectious diseases", "ct_findings": ["Halo sign", "Air crescent sign", "Nodules"] }
+    },
+    {
+      "category": "coding",
+      "title": "B44.1 - Other Pulmonary Aspergillosis",
+      "content": "Other pulmonary aspergillosis including chronic pulmonary aspergillosis and aspergilloma. Aspergilloma appears as mobile intracavitary mass with air crescent sign.",
+      "metadata": { "icd_code": "B44.1", "chapter": "B - Infectious diseases", "ct_findings": ["Aspergilloma", "Fungus ball", "Mycetoma"] }
+    },
+    {
+      "category": "coding",
+      "title": "B45.0 - Pulmonary Cryptococcosis",
+      "content": "Pulmonary cryptococcosis. Fungal infection that may present as nodules, masses, or consolidation. Can mimic lung cancer. More common in immunocompromised but can occur in immunocompetent.",
+      "metadata": { "icd_code": "B45.0", "chapter": "B - Infectious diseases" }
+    },
+    {
+      "category": "coding",
+      "title": "B59 - Pneumocystosis",
+      "content": "Pneumocystis jirovecii pneumonia (PJP/PCP). Opportunistic infection in AIDS and immunocompromised. CT shows bilateral perihilar ground-glass opacities with apical sparing. May have pneumatoceles.",
+      "metadata": { "icd_code": "B59", "chapter": "B - Infectious diseases", "ct_pattern": "Perihilar GGO with apical sparing" }
+    },
+    {
+      "category": "coding",
+      "title": "B90.9 - Sequelae of Respiratory Tuberculosis",
+      "content": "Sequelae of respiratory and unspecified tuberculosis. Chronic changes from prior TB including fibrosis, bronchiectasis, calcified granulomas, and volume loss.",
+      "metadata": { "icd_code": "B90.9", "chapter": "B - Infectious diseases", "findings": ["Calcified granuloma", "Fibrosis", "Bronchiectasis"] }
+    },
+    {
+      "category": "coding",
+      "title": "C33 - Malignant Neoplasm of Trachea",
+      "content": "Malignant neoplasm of trachea. Primary tracheal carcinoma is rare. Types include squamous cell carcinoma and adenoid cystic carcinoma. CT shows intraluminal mass or wall thickening.",
+      "metadata": { "icd_code": "C33", "chapter": "C - Neoplasms", "types": ["Squamous cell", "Adenoid cystic"] }
+    },
+    {
+      "category": "coding",
+      "title": "C38.1 - Malignant Neoplasm of Anterior Mediastinum",
+      "content": "Malignant neoplasm of anterior mediastinum. Includes thymoma, thymic carcinoma, germ cell tumors, and lymphoma. CT shows anterior mediastinal mass, may have calcification or cystic areas.",
+      "metadata": { "icd_code": "C38.1", "chapter": "C - Neoplasms", "differential": ["Thymoma", "Lymphoma", "Germ cell tumor"] }
+    },
+    {
+      "category": "coding",
+      "title": "C38.2 - Malignant Neoplasm of Posterior Mediastinum",
+      "content": "Malignant neoplasm of posterior mediastinum. Includes neurogenic tumors, esophageal cancer extension, and metastatic disease. CT shows posterior mediastinal mass.",
+      "metadata": { "icd_code": "C38.2", "chapter": "C - Neoplasms", "differential": ["Neurogenic tumor", "Esophageal cancer"] }
+    },
+    {
+      "category": "coding",
+      "title": "C38.3 - Malignant Neoplasm of Mediastinum, Part Unspecified",
+      "content": "Malignant neoplasm of mediastinum, part unspecified. Use when mediastinal malignancy location (anterior/middle/posterior) is not specified.",
+      "metadata": { "icd_code": "C38.3", "chapter": "C - Neoplasms" }
+    },
+    {
+      "category": "coding",
+      "title": "C38.4 - Malignant Neoplasm of Pleura",
+      "content": "Malignant neoplasm of pleura. Includes mesothelioma and primary pleural malignancies. CT shows pleural thickening, nodularity, and effusion. Circumferential thickening suggests mesothelioma.",
+      "metadata": { "icd_code": "C38.4", "chapter": "C - Neoplasms", "ct_findings": ["Pleural thickening", "Nodularity", "Effusion"] }
+    },
+    {
+      "category": "coding",
+      "title": "C45.0 - Mesothelioma of Pleura",
+      "content": "Mesothelioma of pleura. Malignant tumor arising from mesothelial cells, strongly associated with asbestos exposure. CT shows circumferential pleural thickening, nodularity, volume loss, and effusion.",
+      "metadata": { "icd_code": "C45.0", "chapter": "C - Neoplasms", "risk_factor": "Asbestos exposure", "ct_findings": ["Circumferential pleural thickening", "Pleural plaques"] }
+    },
+    {
+      "category": "coding",
+      "title": "C77.1 - Secondary Malignant Neoplasm of Intrathoracic Lymph Nodes",
+      "content": "Secondary malignant neoplasm of intrathoracic lymph nodes. Metastatic cancer involving mediastinal or hilar lymph nodes. CT shows enlarged nodes (>10mm short axis).",
+      "metadata": { "icd_code": "C77.1", "chapter": "C - Neoplasms", "ct_criteria": "Short axis >10mm" }
+    },
+    {
+      "category": "coding",
+      "title": "C78.2 - Secondary Malignant Neoplasm of Pleura",
+      "content": "Secondary malignant neoplasm of pleura. Metastatic disease to pleura. CT shows pleural effusion, nodular pleural thickening. Common primaries: lung, breast, ovarian.",
+      "metadata": { "icd_code": "C78.2", "chapter": "C - Neoplasms", "common_primaries": ["Lung", "Breast", "Ovarian"] }
+    },
+    {
+      "category": "coding",
+      "title": "C79.51 - Secondary Malignant Neoplasm of Bone",
+      "content": "Secondary malignant neoplasm of bone. Bone metastases. On chest CT, look for lytic or blastic lesions in ribs, spine, sternum. Important incidental finding.",
+      "metadata": { "icd_code": "C79.51", "chapter": "C - Neoplasms", "ct_findings": ["Lytic lesions", "Blastic lesions", "Pathologic fracture"] }
+    },
+    {
+      "category": "coding",
+      "title": "D15.0 - Benign Neoplasm of Thymus",
+      "content": "Benign neoplasm of thymus. Thymoma without evidence of invasion. CT shows well-circumscribed anterior mediastinal mass. May have capsular calcification.",
+      "metadata": { "icd_code": "D15.0", "chapter": "D - Neoplasms", "location": "Anterior mediastinum" }
+    },
+    {
+      "category": "coding",
+      "title": "D15.1 - Benign Neoplasm of Heart",
+      "content": "Benign neoplasm of heart. Includes cardiac myxoma, lipoma, fibroma. May be detected incidentally on chest CT as cardiac mass.",
+      "metadata": { "icd_code": "D15.1", "chapter": "D - Neoplasms", "types": ["Myxoma", "Lipoma", "Fibroma"] }
+    },
+    {
+      "category": "coding",
+      "title": "D15.2 - Benign Neoplasm of Mediastinum",
+      "content": "Benign neoplasm of mediastinum. Includes benign neurogenic tumors, cysts, lipomas. CT appearance depends on specific tumor type.",
+      "metadata": { "icd_code": "D15.2", "chapter": "D - Neoplasms" }
+    },
+    {
+      "category": "coding",
+      "title": "D86.0 - Sarcoidosis of Lung",
+      "content": "Sarcoidosis of lung. Granulomatous disease with pulmonary involvement. CT shows bilateral hilar lymphadenopathy, perilymphatic nodules, and upper lobe predominant fibrosis.",
+      "metadata": { "icd_code": "D86.0", "chapter": "D - Diseases of blood", "ct_findings": ["Bilateral hilar adenopathy", "Perilymphatic nodules"] }
+    },
+    {
+      "category": "coding",
+      "title": "D86.1 - Sarcoidosis of Lymph Nodes",
+      "content": "Sarcoidosis of lymph nodes. Lymph node involvement in sarcoidosis. Classic pattern is bilateral hilar and right paratracheal lymphadenopathy (1-2-3 sign).",
+      "metadata": { "icd_code": "D86.1", "chapter": "D - Diseases of blood", "ct_pattern": "1-2-3 sign (bilateral hilar + right paratracheal)" }
+    },
+    {
+      "category": "coding",
+      "title": "D86.2 - Sarcoidosis of Lung with Sarcoidosis of Lymph Nodes",
+      "content": "Sarcoidosis of lung with sarcoidosis of lymph nodes. Combined pulmonary and nodal sarcoidosis. Most common presentation with both parenchymal and nodal disease.",
+      "metadata": { "icd_code": "D86.2", "chapter": "D - Diseases of blood" }
+    },
+    {
+      "category": "coding",
+      "title": "I26.99 - Other Pulmonary Embolism Without Acute Cor Pulmonale",
+      "content": "Other pulmonary embolism without acute cor pulmonale. PE without right heart strain. CT shows filling defect in pulmonary arteries without RV dilation.",
+      "metadata": { "icd_code": "I26.99", "chapter": "I - Circulatory system", "ct_finding": "Intraluminal filling defect" }
+    },
+    {
+      "category": "coding",
+      "title": "I26.92 - Saddle Embolus of Pulmonary Artery Without Acute Cor Pulmonale",
+      "content": "Saddle embolus of pulmonary artery without acute cor pulmonale. Large PE straddling the main pulmonary artery bifurcation. High-risk finding requiring urgent treatment.",
+      "metadata": { "icd_code": "I26.92", "chapter": "I - Circulatory system", "urgency": "High risk" }
+    },
+    {
+      "category": "coding",
+      "title": "I26.01 - Septic Pulmonary Embolism With Acute Cor Pulmonale",
+      "content": "Septic pulmonary embolism with acute cor pulmonale. Infected emboli, often from endocarditis or IV drug use. CT shows multiple peripheral nodules with feeding vessel sign, may cavitate.",
+      "metadata": { "icd_code": "I26.01", "chapter": "I - Circulatory system", "ct_findings": ["Peripheral nodules", "Feeding vessel sign", "Cavitation"] }
+    },
+    {
+      "category": "coding",
+      "title": "I27.0 - Primary Pulmonary Hypertension",
+      "content": "Primary pulmonary hypertension (idiopathic PAH). CT shows enlarged main pulmonary artery (>29mm), right heart enlargement, and mosaic attenuation pattern.",
+      "metadata": { "icd_code": "I27.0", "chapter": "I - Circulatory system", "ct_criteria": "MPA >29mm" }
+    },
+    {
+      "category": "coding",
+      "title": "I27.20 - Pulmonary Hypertension, Unspecified",
+      "content": "Pulmonary hypertension, unspecified. Elevated pulmonary artery pressure of unspecified cause. CT findings include dilated pulmonary arteries and right heart enlargement.",
+      "metadata": { "icd_code": "I27.20", "chapter": "I - Circulatory system" }
+    },
+    {
+      "category": "coding",
+      "title": "I27.82 - Chronic Pulmonary Embolism",
+      "content": "Chronic pulmonary embolism. Chronic thromboembolic disease. CT shows eccentric wall-adherent thrombus, webs/bands, mosaic perfusion, and bronchial artery hypertrophy.",
+      "metadata": { "icd_code": "I27.82", "chapter": "I - Circulatory system", "ct_findings": ["Eccentric thrombus", "Webs", "Mosaic perfusion"] }
+    },
+    {
+      "category": "coding",
+      "title": "I71.01 - Dissection of Thoracic Aorta",
+      "content": "Dissection of thoracic aorta. Life-threatening condition with intimal tear and false lumen creation. CT shows intimal flap, true and false lumens, and may show branch vessel involvement.",
+      "metadata": { "icd_code": "I71.01", "chapter": "I - Circulatory system", "urgency": "Emergency", "ct_finding": "Intimal flap" }
+    },
+    {
+      "category": "coding",
+      "title": "I71.2 - Thoracic Aortic Aneurysm, Without Rupture",
+      "content": "Thoracic aortic aneurysm without rupture. Dilation of thoracic aorta. Ascending aorta >4.5cm or descending >4.0cm is aneurysmal. Monitor for growth.",
+      "metadata": { "icd_code": "I71.2", "chapter": "I - Circulatory system", "threshold": "Ascending >4.5cm, Descending >4.0cm" }
+    },
+    {
+      "category": "coding",
+      "title": "J09.X1 - Influenza Due to Identified Novel Influenza A Virus with Pneumonia",
+      "content": "Influenza due to identified novel influenza A virus with pneumonia. Viral pneumonia from novel influenza strains. CT shows bilateral GGO, consolidation, and may have crazy-paving pattern.",
+      "metadata": { "icd_code": "J09.X1", "chapter": "J - Respiratory system", "ct_pattern": "Bilateral GGO and consolidation" }
+    },
+    {
+      "category": "coding",
+      "title": "J10.00 - Influenza Due to Other Identified Influenza Virus with Unspecified Type of Pneumonia",
+      "content": "Influenza with pneumonia, other identified influenza virus. Seasonal influenza pneumonia. CT may show bilateral patchy consolidation and ground-glass opacities.",
+      "metadata": { "icd_code": "J10.00", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J12.89 - Other Viral Pneumonia",
+      "content": "Other viral pneumonia. Pneumonia caused by viruses not elsewhere classified. CT findings vary but often show bilateral GGO and consolidation.",
+      "metadata": { "icd_code": "J12.89", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J12.82 - Pneumonia Due to Coronavirus Disease 2019 (COVID-19)",
+      "content": "Pneumonia due to COVID-19. SARS-CoV-2 pneumonia. Classic CT findings: bilateral peripheral GGO, crazy-paving pattern, consolidation with air bronchograms, organizing pneumonia pattern.",
+      "metadata": { "icd_code": "J12.82", "chapter": "J - Respiratory system", "ct_findings": ["Bilateral peripheral GGO", "Crazy-paving", "Organizing pneumonia pattern"] }
+    },
+    {
+      "category": "coding",
+      "title": "J13 - Pneumonia Due to Streptococcus Pneumoniae",
+      "content": "Pneumococcal pneumonia. Most common bacterial pneumonia. CT typically shows lobar consolidation with air bronchograms. May have parapneumonic effusion.",
+      "metadata": { "icd_code": "J13", "chapter": "J - Respiratory system", "pattern": "Lobar consolidation" }
+    },
+    {
+      "category": "coding",
+      "title": "J14 - Pneumonia Due to Hemophilus Influenzae",
+      "content": "Haemophilus influenzae pneumonia. Bacterial pneumonia, more common in COPD patients. CT shows bronchopneumonia pattern or lobar consolidation.",
+      "metadata": { "icd_code": "J14", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J15.0 - Pneumonia Due to Klebsiella Pneumoniae",
+      "content": "Klebsiella pneumonia. Gram-negative bacterial pneumonia, often in alcoholics or diabetics. CT may show bulging fissure sign and early cavitation, typically upper lobe.",
+      "metadata": { "icd_code": "J15.0", "chapter": "J - Respiratory system", "ct_findings": ["Bulging fissure sign", "Cavitation", "Upper lobe"] }
+    },
+    {
+      "category": "coding",
+      "title": "J15.1 - Pneumonia Due to Pseudomonas",
+      "content": "Pseudomonas pneumonia. Nosocomial or healthcare-associated pneumonia. CT shows bronchopneumonia pattern, may rapidly progress to necrosis and abscess formation.",
+      "metadata": { "icd_code": "J15.1", "chapter": "J - Respiratory system", "setting": "Healthcare-associated" }
+    },
+    {
+      "category": "coding",
+      "title": "J15.20 - Pneumonia Due to Staphylococcus, Unspecified",
+      "content": "Staphylococcal pneumonia. May cause necrotizing pneumonia with abscess formation and pneumatoceles. Associated with influenza superinfection and IV drug use.",
+      "metadata": { "icd_code": "J15.20", "chapter": "J - Respiratory system", "complications": ["Abscess", "Pneumatocele", "Empyema"] }
+    },
+    {
+      "category": "coding",
+      "title": "J15.211 - Pneumonia Due to MRSA",
+      "content": "Pneumonia due to methicillin-resistant Staphylococcus aureus (MRSA). Severe bacterial pneumonia with high morbidity. CT often shows necrotizing pneumonia with cavitation.",
+      "metadata": { "icd_code": "J15.211", "chapter": "J - Respiratory system", "severity": "High" }
+    },
+    {
+      "category": "coding",
+      "title": "J15.4 - Pneumonia Due to Other Streptococci",
+      "content": "Pneumonia due to other streptococci (non-pneumococcal). Includes Group A streptococcal pneumonia which may cause rapid progression and empyema.",
+      "metadata": { "icd_code": "J15.4", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J15.6 - Pneumonia Due to Other Gram-Negative Bacteria",
+      "content": "Pneumonia due to other gram-negative bacteria. Includes E. coli, Enterobacter, Serratia pneumonias. Often healthcare-associated with bronchopneumonia pattern.",
+      "metadata": { "icd_code": "J15.6", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J15.7 - Pneumonia Due to Mycoplasma Pneumoniae",
+      "content": "Mycoplasma pneumonia. Atypical pneumonia, common in young adults. CT shows patchy consolidation, GGO, centrilobular nodules, and bronchial wall thickening.",
+      "metadata": { "icd_code": "J15.7", "chapter": "J - Respiratory system", "demographic": "Young adults", "pattern": "Atypical" }
+    },
+    {
+      "category": "coding",
+      "title": "J16.0 - Chlamydial Pneumonia",
+      "content": "Chlamydial pneumonia. Atypical pneumonia caused by Chlamydia pneumoniae. CT findings similar to mycoplasma with patchy consolidation and GGO.",
+      "metadata": { "icd_code": "J16.0", "chapter": "J - Respiratory system", "pattern": "Atypical" }
+    },
+    {
+      "category": "coding",
+      "title": "J17 - Pneumonia in Diseases Classified Elsewhere",
+      "content": "Pneumonia in diseases classified elsewhere. Code underlying disease first. Includes pneumonia in viral diseases, mycoses, and parasitic diseases.",
+      "metadata": { "icd_code": "J17", "chapter": "J - Respiratory system", "coding_note": "Code underlying disease first" }
+    },
+    {
+      "category": "coding",
+      "title": "J18.0 - Bronchopneumonia, Unspecified Organism",
+      "content": "Bronchopneumonia, unspecified organism. Patchy airspace disease involving multiple lobules. CT shows multifocal patchy consolidation and tree-in-bud nodules.",
+      "metadata": { "icd_code": "J18.0", "chapter": "J - Respiratory system", "pattern": "Multifocal patchy" }
+    },
+    {
+      "category": "coding",
+      "title": "J21.9 - Acute Bronchiolitis, Unspecified",
+      "content": "Acute bronchiolitis, unspecified. Inflammation of bronchioles, common in infants. CT shows centrilobular nodules, tree-in-bud pattern, and air trapping.",
+      "metadata": { "icd_code": "J21.9", "chapter": "J - Respiratory system", "ct_pattern": "Tree-in-bud" }
+    },
+    {
+      "category": "coding",
+      "title": "J40 - Bronchitis, Not Specified as Acute or Chronic",
+      "content": "Bronchitis, not specified as acute or chronic. Inflammation of bronchi. CT may show bronchial wall thickening. Often a clinical diagnosis.",
+      "metadata": { "icd_code": "J40", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J42 - Unspecified Chronic Bronchitis",
+      "content": "Unspecified chronic bronchitis. Chronic productive cough. CT shows bronchial wall thickening. Part of COPD spectrum.",
+      "metadata": { "icd_code": "J42", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J44.0 - COPD with Acute Lower Respiratory Infection",
+      "content": "Chronic obstructive pulmonary disease with acute lower respiratory infection. COPD exacerbation with superimposed infection. CT shows emphysema plus acute consolidation or GGO.",
+      "metadata": { "icd_code": "J44.0", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J44.1 - COPD with (Acute) Exacerbation",
+      "content": "COPD with acute exacerbation. Worsening of COPD symptoms without documented infection. CT shows emphysema and may have increased bronchial wall thickening.",
+      "metadata": { "icd_code": "J44.1", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J44.9 - Chronic Obstructive Pulmonary Disease, Unspecified",
+      "content": "COPD, unspecified. Chronic airflow limitation. CT shows emphysema (low attenuation areas), bronchial wall thickening, and air trapping on expiratory images.",
+      "metadata": { "icd_code": "J44.9", "chapter": "J - Respiratory system", "ct_findings": ["Emphysema", "Air trapping", "Bronchial wall thickening"] }
+    },
+    {
+      "category": "coding",
+      "title": "J60 - Coalworker's Pneumoconiosis",
+      "content": "Coalworker's pneumoconiosis (black lung disease). Occupational lung disease from coal dust. CT shows upper lobe predominant nodules, progressive massive fibrosis.",
+      "metadata": { "icd_code": "J60", "chapter": "J - Respiratory system", "occupation": "Coal mining" }
+    },
+    {
+      "category": "coding",
+      "title": "J61 - Pneumoconiosis Due to Asbestos and Other Mineral Fibers",
+      "content": "Asbestosis and asbestos-related disease. CT shows lower lobe predominant fibrosis, pleural plaques (often calcified), rounded atelectasis, and increased mesothelioma risk.",
+      "metadata": { "icd_code": "J61", "chapter": "J - Respiratory system", "ct_findings": ["Pleural plaques", "Lower lobe fibrosis", "Rounded atelectasis"] }
+    },
+    {
+      "category": "coding",
+      "title": "J62.8 - Pneumoconiosis Due to Other Dust Containing Silica",
+      "content": "Silicosis. Occupational lung disease from silica dust. CT shows upper lobe predominant nodules with eggshell calcification of hilar nodes. May progress to PMF.",
+      "metadata": { "icd_code": "J62.8", "chapter": "J - Respiratory system", "ct_finding": "Eggshell lymph node calcification" }
+    },
+    {
+      "category": "coding",
+      "title": "J67.9 - Hypersensitivity Pneumonitis Due to Unspecified Organic Dust",
+      "content": "Hypersensitivity pneumonitis (extrinsic allergic alveolitis). Immune reaction to inhaled antigens. CT shows centrilobular GGO nodules, mosaic attenuation, and air trapping.",
+      "metadata": { "icd_code": "J67.9", "chapter": "J - Respiratory system", "ct_pattern": "Centrilobular GGO + mosaic + air trapping" }
+    },
+    {
+      "category": "coding",
+      "title": "J69.0 - Pneumonitis Due to Inhalation of Food and Vomit",
+      "content": "Aspiration pneumonitis. Chemical pneumonitis from aspiration of gastric contents. CT shows dependent consolidation (right lower lobe, posterior segments) in acute setting.",
+      "metadata": { "icd_code": "J69.0", "chapter": "J - Respiratory system", "typical_location": "Right lower lobe, posterior segments" }
+    },
+    {
+      "category": "coding",
+      "title": "J69.1 - Pneumonitis Due to Inhalation of Oils and Essences",
+      "content": "Lipoid pneumonia. From aspiration of lipid material (mineral oil, petroleum). CT shows consolidation with fat attenuation (-30 to -150 HU). Crazy-paving pattern may be seen.",
+      "metadata": { "icd_code": "J69.1", "chapter": "J - Respiratory system", "ct_finding": "Fat attenuation consolidation" }
+    },
+    {
+      "category": "coding",
+      "title": "J70.0 - Acute Pulmonary Manifestations Due to Radiation",
+      "content": "Radiation pneumonitis. Acute lung injury 4-12 weeks after thoracic radiation. CT shows GGO and consolidation conforming to radiation port, not anatomic boundaries.",
+      "metadata": { "icd_code": "J70.0", "chapter": "J - Respiratory system", "timing": "4-12 weeks post-radiation" }
+    },
+    {
+      "category": "coding",
+      "title": "J70.1 - Chronic Pulmonary Manifestations Due to Radiation",
+      "content": "Radiation fibrosis. Late fibrotic changes from radiation therapy. CT shows fibrosis with volume loss and traction bronchiectasis conforming to radiation field.",
+      "metadata": { "icd_code": "J70.1", "chapter": "J - Respiratory system", "timing": ">6 months post-radiation" }
+    },
+    {
+      "category": "coding",
+      "title": "J70.2 - Acute Drug-Induced Interstitial Lung Disorders",
+      "content": "Drug-induced lung disease, acute. Pulmonary toxicity from medications (chemotherapy, amiodarone, methotrexate). CT shows diffuse or patchy GGO, consolidation.",
+      "metadata": { "icd_code": "J70.2", "chapter": "J - Respiratory system", "common_drugs": ["Amiodarone", "Methotrexate", "Bleomycin"] }
+    },
+    {
+      "category": "coding",
+      "title": "J70.4 - Drug-Induced Interstitial Lung Disorders, Unspecified",
+      "content": "Drug-induced interstitial lung disease, unspecified. Chronic lung toxicity from medications. Various CT patterns possible including NSIP, OP, and fibrosis patterns.",
+      "metadata": { "icd_code": "J70.4", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J80 - Acute Respiratory Distress Syndrome",
+      "content": "ARDS (Acute Respiratory Distress Syndrome). Severe acute lung injury with diffuse alveolar damage. CT shows bilateral, diffuse, dependent GGO and consolidation.",
+      "metadata": { "icd_code": "J80", "chapter": "J - Respiratory system", "ct_pattern": "Bilateral dependent opacities" }
+    },
+    {
+      "category": "coding",
+      "title": "J81.0 - Acute Pulmonary Edema",
+      "content": "Acute pulmonary edema. Fluid accumulation in alveoli, usually cardiogenic. CT shows bilateral GGO, interlobular septal thickening, pleural effusions, and cardiomegaly.",
+      "metadata": { "icd_code": "J81.0", "chapter": "J - Respiratory system", "ct_findings": ["Bilateral GGO", "Septal thickening", "Effusions", "Cardiomegaly"] }
+    },
+    {
+      "category": "coding",
+      "title": "J81.1 - Chronic Pulmonary Edema",
+      "content": "Chronic pulmonary edema. Prolonged fluid accumulation, often from heart failure. CT shows GGO, septal thickening, pleural effusions, and signs of heart failure.",
+      "metadata": { "icd_code": "J81.1", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J82.83 - Eosinophilic Asthma",
+      "content": "Eosinophilic asthma. Asthma with eosinophilic airway inflammation. CT may show bronchial wall thickening, mucoid impaction, and air trapping.",
+      "metadata": { "icd_code": "J82.83", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.01 - Alveolar Proteinosis",
+      "content": "Pulmonary alveolar proteinosis (PAP). Accumulation of surfactant in alveoli. Classic CT finding is crazy-paving pattern (GGO with septal thickening) with geographic distribution.",
+      "metadata": { "icd_code": "J84.01", "chapter": "J - Respiratory system", "ct_pattern": "Crazy-paving, geographic" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.02 - Pulmonary Alveolar Microlithiasis",
+      "content": "Pulmonary alveolar microlithiasis. Rare disease with calcium microliths in alveoli. CT shows dense, diffuse micronodules giving ground-glass appearance, subpleural linear calcifications.",
+      "metadata": { "icd_code": "J84.02", "chapter": "J - Respiratory system", "ct_finding": "Dense micronodules, subpleural calcifications" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.03 - Idiopathic Pulmonary Hemosiderosis",
+      "content": "Idiopathic pulmonary hemosiderosis. Recurrent alveolar hemorrhage leading to hemosiderin deposition. CT shows GGO in acute phase, reticular opacities and fibrosis chronically.",
+      "metadata": { "icd_code": "J84.03", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.111 - Idiopathic Interstitial Pneumonia, Not Otherwise Specified",
+      "content": "Idiopathic interstitial pneumonia, NOS. Use when specific IIP subtype cannot be determined. Requires multidisciplinary discussion for classification.",
+      "metadata": { "icd_code": "J84.111", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.113 - Idiopathic Non-Specific Interstitial Pneumonitis",
+      "content": "Idiopathic NSIP (nonspecific interstitial pneumonia). CT shows bilateral, symmetric, basal predominant GGO and reticular opacities. Less honeycombing than UIP.",
+      "metadata": { "icd_code": "J84.113", "chapter": "J - Respiratory system", "ct_pattern": "Bilateral basal GGO and reticulation, subpleural sparing" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.114 - Acute Interstitial Pneumonitis",
+      "content": "Acute interstitial pneumonitis (AIP, Hamman-Rich syndrome). Rapidly progressive ILD with DAD pattern. CT shows bilateral extensive GGO and consolidation, similar to ARDS.",
+      "metadata": { "icd_code": "J84.114", "chapter": "J - Respiratory system", "prognosis": "Poor", "pattern": "DAD" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.115 - Respiratory Bronchiolitis Interstitial Lung Disease",
+      "content": "RB-ILD (Respiratory bronchiolitis-ILD). Smoking-related ILD. CT shows centrilobular nodules, patchy GGO, bronchial wall thickening. Upper lobe predominant.",
+      "metadata": { "icd_code": "J84.115", "chapter": "J - Respiratory system", "risk_factor": "Smoking" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.116 - Cryptogenic Organizing Pneumonia",
+      "content": "Cryptogenic organizing pneumonia (COP, formerly BOOP). CT shows patchy consolidation with peribronchovascular and subpleural distribution. Reversed halo sign may be present.",
+      "metadata": { "icd_code": "J84.116", "chapter": "J - Respiratory system", "ct_findings": ["Patchy consolidation", "Reversed halo sign", "Peribronchovascular distribution"] }
+    },
+    {
+      "category": "coding",
+      "title": "J84.117 - Desquamative Interstitial Pneumonia",
+      "content": "Desquamative interstitial pneumonia (DIP). Smoking-related ILD. CT shows diffuse GGO with lower lobe predominance. Better prognosis than UIP.",
+      "metadata": { "icd_code": "J84.117", "chapter": "J - Respiratory system", "risk_factor": "Smoking", "ct_pattern": "Diffuse GGO, lower lobe" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.170 - Interstitial Lung Disease with Progressive Fibrotic Phenotype",
+      "content": "Progressive pulmonary fibrosis. ILD with progressive fibrotic phenotype regardless of underlying diagnosis. CT shows worsening fibrosis over time.",
+      "metadata": { "icd_code": "J84.170", "chapter": "J - Respiratory system", "course": "Progressive" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.2 - Lymphoid Interstitial Pneumonia",
+      "content": "Lymphoid interstitial pneumonia (LIP). Benign lymphoproliferative disorder. CT shows diffuse GGO, centrilobular nodules, and thin-walled cysts. Associated with Sjogren's syndrome and HIV.",
+      "metadata": { "icd_code": "J84.2", "chapter": "J - Respiratory system", "ct_findings": ["GGO", "Thin-walled cysts", "Centrilobular nodules"] }
+    },
+    {
+      "category": "coding",
+      "title": "J84.81 - Lymphangioleiomyomatosis",
+      "content": "Lymphangioleiomyomatosis (LAM). Cystic lung disease in women. CT shows numerous thin-walled cysts diffusely distributed throughout both lungs.",
+      "metadata": { "icd_code": "J84.81", "chapter": "J - Respiratory system", "demographic": "Women of childbearing age", "ct_finding": "Diffuse thin-walled cysts" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.82 - Adult Pulmonary Langerhans Cell Histiocytosis",
+      "content": "Pulmonary Langerhans cell histiocytosis (PLCH). Smoking-related cystic lung disease. CT shows upper and middle lobe cysts with bizarre shapes, nodules early in disease.",
+      "metadata": { "icd_code": "J84.82", "chapter": "J - Respiratory system", "risk_factor": "Smoking", "ct_finding": "Bizarre-shaped upper lobe cysts" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.83 - Surfactant Mutations of the Lung",
+      "content": "Surfactant mutations of the lung. Genetic disorders of surfactant production causing ILD. CT shows diffuse GGO and variable fibrosis.",
+      "metadata": { "icd_code": "J84.83", "chapter": "J - Respiratory system", "etiology": "Genetic" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.841 - Neuroendocrine Cell Hyperplasia of Infancy",
+      "content": "Neuroendocrine cell hyperplasia of infancy (NEHI). Pediatric ILD. CT shows geographic GGO with mosaic attenuation and air trapping.",
+      "metadata": { "icd_code": "J84.841", "chapter": "J - Respiratory system", "age_group": "Infants" }
+    },
+    {
+      "category": "coding",
+      "title": "J84.848 - Other Interstitial Lung Diseases of Childhood",
+      "content": "Other interstitial lung diseases of childhood. Pediatric ILD not elsewhere classified.",
+      "metadata": { "icd_code": "J84.848", "chapter": "J - Respiratory system", "age_group": "Children" }
+    },
+    {
+      "category": "coding",
+      "title": "J85.1 - Abscess of Lung with Pneumonia",
+      "content": "Lung abscess with pneumonia. Necrotic lung infection with cavity formation. CT shows thick-walled cavity with air-fluid level within area of consolidation.",
+      "metadata": { "icd_code": "J85.1", "chapter": "J - Respiratory system", "ct_finding": "Thick-walled cavity with air-fluid level" }
+    },
+    {
+      "category": "coding",
+      "title": "J85.2 - Abscess of Lung Without Pneumonia",
+      "content": "Lung abscess without pneumonia. Isolated lung abscess, may be from aspiration or septic embolism. CT shows thick-walled cavity, may have surrounding consolidation.",
+      "metadata": { "icd_code": "J85.2", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J86.0 - Pyothorax with Fistula",
+      "content": "Empyema with bronchopleural fistula. Infected pleural space with communication to bronchus. CT shows pleural collection with air and may show fistula tract.",
+      "metadata": { "icd_code": "J86.0", "chapter": "J - Respiratory system", "complication": "Bronchopleural fistula" }
+    },
+    {
+      "category": "coding",
+      "title": "J86.9 - Pyothorax Without Fistula",
+      "content": "Empyema without fistula. Infected pleural fluid collection. CT shows pleural effusion with enhancement of parietal and visceral pleura (split pleura sign), may have loculations.",
+      "metadata": { "icd_code": "J86.9", "chapter": "J - Respiratory system", "ct_sign": "Split pleura sign" }
+    },
+    {
+      "category": "coding",
+      "title": "J91.8 - Pleural Effusion in Other Conditions Classified Elsewhere",
+      "content": "Pleural effusion in conditions classified elsewhere. Code the underlying condition first. Includes effusion due to heart failure, cirrhosis, nephrotic syndrome.",
+      "metadata": { "icd_code": "J91.8", "chapter": "J - Respiratory system", "coding_note": "Code underlying condition first" }
+    },
+    {
+      "category": "coding",
+      "title": "J92.0 - Pleural Plaque with Presence of Asbestos",
+      "content": "Pleural plaque due to asbestos exposure. Benign pleural thickening from asbestos. CT shows bilateral parietal pleural plaques, often calcified, along lower chest wall and diaphragm.",
+      "metadata": { "icd_code": "J92.0", "chapter": "J - Respiratory system", "etiology": "Asbestos", "typical_location": "Parietal pleura, diaphragm" }
+    },
+    {
+      "category": "coding",
+      "title": "J92.9 - Pleural Plaque Without Asbestos",
+      "content": "Pleural plaque without asbestos exposure documented. Focal pleural thickening that may be calcified. May be idiopathic or from other causes.",
+      "metadata": { "icd_code": "J92.9", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J93.81 - Chronic Pneumothorax",
+      "content": "Chronic pneumothorax. Persistent air in pleural space. May have thickened visceral pleura. Often requires surgical intervention.",
+      "metadata": { "icd_code": "J93.81", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J93.83 - Other Pneumothorax",
+      "content": "Other pneumothorax. Pneumothorax not fitting other specific categories. Includes catamenial pneumothorax (associated with menstruation, endometriosis).",
+      "metadata": { "icd_code": "J93.83", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J94.0 - Chylous Effusion",
+      "content": "Chylothorax. Chyle (lymphatic fluid) in pleural space. CT shows pleural effusion; fluid density may be slightly lower than simple effusion. Often from thoracic duct injury or lymphoma.",
+      "metadata": { "icd_code": "J94.0", "chapter": "J - Respiratory system", "causes": ["Thoracic duct injury", "Lymphoma", "Trauma"] }
+    },
+    {
+      "category": "coding",
+      "title": "J94.1 - Fibrothorax",
+      "content": "Fibrothorax. Thick fibrous pleural peel encasing the lung. CT shows markedly thickened pleura with volume loss and trapped lung. Often sequela of empyema or hemothorax.",
+      "metadata": { "icd_code": "J94.1", "chapter": "J - Respiratory system", "etiology": "Prior empyema or hemothorax" }
+    },
+    {
+      "category": "coding",
+      "title": "J94.2 - Hemothorax",
+      "content": "Hemothorax. Blood in pleural space. CT shows pleural effusion with higher attenuation (35-70 HU) than simple effusion. Causes include trauma, malignancy, and pulmonary infarction.",
+      "metadata": { "icd_code": "J94.2", "chapter": "J - Respiratory system", "ct_finding": "High-attenuation pleural fluid (35-70 HU)" }
+    },
+    {
+      "category": "coding",
+      "title": "J94.8 - Other Specified Pleural Conditions",
+      "content": "Other specified pleural conditions. Includes pleural calcification and other pleural abnormalities not classified elsewhere.",
+      "metadata": { "icd_code": "J94.8", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J95.1 - Acute Pulmonary Insufficiency Following Thoracic Surgery",
+      "content": "Acute pulmonary insufficiency following thoracic surgery. Respiratory failure after lung surgery. CT may show atelectasis, edema, pneumonia, or other postoperative complications.",
+      "metadata": { "icd_code": "J95.1", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J95.3 - Chronic Pulmonary Insufficiency Following Surgery",
+      "content": "Chronic pulmonary insufficiency following surgery. Long-term respiratory compromise after thoracic surgery. CT shows post-surgical changes and may show fibrosis.",
+      "metadata": { "icd_code": "J95.3", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J95.811 - Postprocedural Pneumothorax",
+      "content": "Postprocedural pneumothorax. Iatrogenic pneumothorax following procedure (biopsy, central line, thoracentesis). CT shows pneumothorax; important to document if intervention needed.",
+      "metadata": { "icd_code": "J95.811", "chapter": "J - Respiratory system", "causes": ["Lung biopsy", "Central line", "Thoracentesis"] }
+    },
+    {
+      "category": "coding",
+      "title": "J95.812 - Postprocedural Air Leak",
+      "content": "Postprocedural air leak. Persistent air leak after thoracic surgery, usually from staple line or parenchymal injury. CT shows pneumothorax or subcutaneous emphysema.",
+      "metadata": { "icd_code": "J95.812", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J96.00 - Acute Respiratory Failure, Unspecified",
+      "content": "Acute respiratory failure, unspecified whether with hypoxia or hypercapnia. Severe respiratory compromise requiring urgent intervention. CT may show underlying cause.",
+      "metadata": { "icd_code": "J96.00", "chapter": "J - Respiratory system", "urgency": "Emergency" }
+    },
+    {
+      "category": "coding",
+      "title": "J96.01 - Acute Respiratory Failure with Hypoxia",
+      "content": "Acute respiratory failure with hypoxia. Type 1 respiratory failure with low oxygen. CT findings depend on underlying etiology.",
+      "metadata": { "icd_code": "J96.01", "chapter": "J - Respiratory system", "type": "Type 1 (hypoxic)" }
+    },
+    {
+      "category": "coding",
+      "title": "J96.02 - Acute Respiratory Failure with Hypercapnia",
+      "content": "Acute respiratory failure with hypercapnia. Type 2 respiratory failure with elevated CO2. Often from COPD exacerbation or neuromuscular disease.",
+      "metadata": { "icd_code": "J96.02", "chapter": "J - Respiratory system", "type": "Type 2 (hypercapnic)" }
+    },
+    {
+      "category": "coding",
+      "title": "J98.0 - Diseases of Bronchus, Not Elsewhere Classified",
+      "content": "Diseases of bronchus NEC. Includes broncholithiasis (calcified material in bronchus), bronchial stenosis, and other bronchial abnormalities.",
+      "metadata": { "icd_code": "J98.0", "chapter": "J - Respiratory system", "includes": ["Broncholithiasis", "Bronchial stenosis"] }
+    },
+    {
+      "category": "coding",
+      "title": "J98.19 - Other Pulmonary Collapse",
+      "content": "Other pulmonary collapse. Includes rounded atelectasis (folded lung), plate-like atelectasis, and other forms of lung collapse not classified as simple atelectasis.",
+      "metadata": { "icd_code": "J98.19", "chapter": "J - Respiratory system", "includes": ["Rounded atelectasis", "Plate-like atelectasis"] }
+    },
+    {
+      "category": "coding",
+      "title": "J98.5 - Diseases of Mediastinum, Not Elsewhere Classified",
+      "content": "Diseases of mediastinum NEC. Includes mediastinal fibrosis, mediastinal cyst, and other mediastinal abnormalities. CT appearance varies by specific condition.",
+      "metadata": { "icd_code": "J98.5", "chapter": "J - Respiratory system" }
+    },
+    {
+      "category": "coding",
+      "title": "J98.6 - Disorders of Diaphragm",
+      "content": "Disorders of diaphragm. Includes diaphragmatic paralysis, elevation, and eventration. CT shows elevated hemidiaphragm, may have paradoxical motion on dynamic imaging.",
+      "metadata": { "icd_code": "J98.6", "chapter": "J - Respiratory system", "conditions": ["Paralysis", "Eventration", "Elevation"] }
+    },
+    {
+      "category": "coding",
+      "title": "M34.81 - Systemic Sclerosis with Lung Involvement",
+      "content": "Systemic sclerosis (scleroderma) with lung involvement. ILD in scleroderma. CT shows NSIP pattern (GGO, reticulation) or UIP pattern in advanced disease. Dilated esophagus may be seen.",
+      "metadata": { "icd_code": "M34.81", "chapter": "M - Musculoskeletal", "ct_pattern": "NSIP or UIP pattern" }
+    },
+    {
+      "category": "coding",
+      "title": "M35.02 - Sicca Syndrome with Lung Involvement",
+      "content": "Sjogren's syndrome with lung involvement. May cause LIP, NSIP, or bronchiolitis. CT shows cysts, GGO, and bronchial abnormalities.",
+      "metadata": { "icd_code": "M35.02", "chapter": "M - Musculoskeletal" }
+    },
+    {
+      "category": "coding",
+      "title": "M31.30 - Wegener's Granulomatosis Without Renal Involvement",
+      "content": "Granulomatosis with polyangiitis (GPA, Wegener's) without renal involvement. Vasculitis affecting lungs and upper airways. CT shows nodules that may cavitate, ground-glass halos.",
+      "metadata": { "icd_code": "M31.30", "chapter": "M - Musculoskeletal", "ct_findings": ["Cavitating nodules", "GGO halos"] }
+    },
+    {
+      "category": "coding",
+      "title": "Q33.0 - Congenital Cystic Lung",
+      "content": "Congenital cystic lung disease. Includes congenital pulmonary airway malformation (CPAM). CT shows cystic mass in lung, may be single large cyst or multiple small cysts.",
+      "metadata": { "icd_code": "Q33.0", "chapter": "Q - Congenital malformations" }
+    },
+    {
+      "category": "coding",
+      "title": "Q33.6 - Congenital Hypoplasia and Dysplasia of Lung",
+      "content": "Congenital hypoplasia of lung. Underdeveloped lung, often unilateral. CT shows small hemithorax with mediastinal shift and small lung.",
+      "metadata": { "icd_code": "Q33.6", "chapter": "Q - Congenital malformations" }
+    },
+    {
+      "category": "coding",
+      "title": "Q34.0 - Anomaly of Pleura",
+      "content": "Congenital anomaly of pleura. Includes accessory fissures, azygos fissure (azygos lobe), and other pleural variants.",
+      "metadata": { "icd_code": "Q34.0", "chapter": "Q - Congenital malformations", "examples": ["Azygos fissure", "Accessory fissure"] }
+    },
+    {
+      "category": "coding",
+      "title": "R04.0 - Epistaxis",
+      "content": "Epistaxis (nosebleed). May be associated with bleeding disorders or local pathology. If severe and recurrent, consider HHT (hereditary hemorrhagic telangiectasia) with pulmonary AVMs.",
+      "metadata": { "icd_code": "R04.0", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "R04.89 - Hemorrhage from Other Sites in Respiratory Passages",
+      "content": "Hemorrhage from other respiratory sites. Includes hemorrhage from throat, larynx, or other respiratory structures not classified as hemoptysis.",
+      "metadata": { "icd_code": "R04.89", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "R05.1 - Acute Cough",
+      "content": "Acute cough. Cough of less than 3 weeks duration. Usually from acute respiratory infection. CT typically not indicated unless complicated.",
+      "metadata": { "icd_code": "R05.1", "chapter": "R - Symptoms", "duration": "<3 weeks" }
+    },
+    {
+      "category": "coding",
+      "title": "R05.2 - Subacute Cough",
+      "content": "Subacute cough. Cough of 3-8 weeks duration. Often post-infectious. CT may be indicated if no improvement.",
+      "metadata": { "icd_code": "R05.2", "chapter": "R - Symptoms", "duration": "3-8 weeks" }
+    },
+    {
+      "category": "coding",
+      "title": "R05.3 - Chronic Cough",
+      "content": "Chronic cough. Cough greater than 8 weeks duration. Warrants investigation with CT to evaluate for underlying pulmonary pathology.",
+      "metadata": { "icd_code": "R05.3", "chapter": "R - Symptoms", "duration": ">8 weeks", "workup": "CT chest indicated" }
+    },
+    {
+      "category": "coding",
+      "title": "R06.00 - Dyspnea, Unspecified",
+      "content": "Dyspnea, unspecified. Shortness of breath without further specification. Common indication for chest CT to evaluate pulmonary and cardiac causes.",
+      "metadata": { "icd_code": "R06.00", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "R06.01 - Orthopnea",
+      "content": "Orthopnea. Dyspnea when lying flat, characteristic of heart failure. CT may show pulmonary edema, cardiomegaly, and pleural effusions.",
+      "metadata": { "icd_code": "R06.01", "chapter": "R - Symptoms", "suggests": "Heart failure" }
+    },
+    {
+      "category": "coding",
+      "title": "R06.03 - Acute Respiratory Distress",
+      "content": "Acute respiratory distress. Severe breathing difficulty requiring urgent evaluation. CT may reveal cause: PE, pneumonia, pneumothorax, or other acute process.",
+      "metadata": { "icd_code": "R06.03", "chapter": "R - Symptoms", "urgency": "Urgent" }
+    },
+    {
+      "category": "coding",
+      "title": "R06.09 - Other Forms of Dyspnea",
+      "content": "Other forms of dyspnea. Includes exertional dyspnea and other specified types of breathing difficulty.",
+      "metadata": { "icd_code": "R06.09", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "R06.1 - Stridor",
+      "content": "Stridor. High-pitched breathing sound from upper airway obstruction. CT neck/chest may show cause: foreign body, tumor, or stenosis.",
+      "metadata": { "icd_code": "R06.1", "chapter": "R - Symptoms", "indicates": "Upper airway obstruction" }
+    },
+    {
+      "category": "coding",
+      "title": "R06.2 - Wheezing",
+      "content": "Wheezing. Musical breath sounds from lower airway narrowing. Associated with asthma, COPD, bronchitis. CT may show air trapping or bronchial abnormalities.",
+      "metadata": { "icd_code": "R06.2", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "R07.1 - Chest Pain on Breathing",
+      "content": "Pleuritic chest pain. Sharp pain worsened by breathing. May indicate pleuritis, PE, pneumonia, or pneumothorax. CT is often indicated for workup.",
+      "metadata": { "icd_code": "R07.1", "chapter": "R - Symptoms", "character": "Pleuritic" }
+    },
+    {
+      "category": "coding",
+      "title": "R07.89 - Other Chest Pain",
+      "content": "Other chest pain. Non-specific chest pain not otherwise categorized. May prompt CT to evaluate for pulmonary, vascular, or musculoskeletal causes.",
+      "metadata": { "icd_code": "R07.89", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "R07.9 - Chest Pain, Unspecified",
+      "content": "Chest pain, unspecified. Uncharacterized chest pain. Workup depends on clinical context; CT may be performed to evaluate for PE, aortic pathology, or pulmonary causes.",
+      "metadata": { "icd_code": "R07.9", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "R09.01 - Asphyxia",
+      "content": "Asphyxia. Severe hypoxia from airway obstruction or respiratory failure. Emergency condition requiring immediate intervention.",
+      "metadata": { "icd_code": "R09.01", "chapter": "R - Symptoms", "urgency": "Emergency" }
+    },
+    {
+      "category": "coding",
+      "title": "R09.02 - Hypoxemia",
+      "content": "Hypoxemia. Low blood oxygen level. May be acute or chronic. CT may help identify cause: parenchymal disease, vascular abnormality, or airway disease.",
+      "metadata": { "icd_code": "R09.02", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "R09.1 - Pleurisy",
+      "content": "Pleurisy. Inflammation of the pleura causing pleuritic chest pain. CT may show pleural thickening, small effusion, or underlying cause.",
+      "metadata": { "icd_code": "R09.1", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "R09.3 - Abnormal Sputum",
+      "content": "Abnormal sputum. Includes excessive, purulent, or blood-tinged sputum. May indicate infection, malignancy, or other pulmonary pathology requiring CT evaluation.",
+      "metadata": { "icd_code": "R09.3", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "R09.81 - Nasal Congestion",
+      "content": "Nasal congestion. May be associated with sinusitis visible on chest CT scout or upper cuts. Often incidental finding.",
+      "metadata": { "icd_code": "R09.81", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "R23.0 - Cyanosis",
+      "content": "Cyanosis. Blue discoloration from hypoxemia or abnormal hemoglobin. Central cyanosis suggests significant pulmonary or cardiac disease.",
+      "metadata": { "icd_code": "R23.0", "chapter": "R - Symptoms", "indicates": "Hypoxemia" }
+    },
+    {
+      "category": "coding",
+      "title": "R59.0 - Localized Enlarged Lymph Nodes",
+      "content": "Localized lymphadenopathy. Enlarged lymph nodes in a single region. On chest CT, note size (>10mm short axis is abnormal), morphology, and distribution.",
+      "metadata": { "icd_code": "R59.0", "chapter": "R - Symptoms", "ct_criteria": "Short axis >10mm" }
+    },
+    {
+      "category": "coding",
+      "title": "R59.1 - Generalized Enlarged Lymph Nodes",
+      "content": "Generalized lymphadenopathy. Enlarged lymph nodes in multiple regions. May indicate systemic disease: lymphoma, sarcoidosis, infection, or metastatic cancer.",
+      "metadata": { "icd_code": "R59.1", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "R59.9 - Enlarged Lymph Nodes, Unspecified",
+      "content": "Enlarged lymph nodes, unspecified. Lymphadenopathy without specification of location or distribution.",
+      "metadata": { "icd_code": "R59.9", "chapter": "R - Symptoms" }
+    },
+    {
+      "category": "coding",
+      "title": "S27.0XXA - Traumatic Pneumothorax, Initial Encounter",
+      "content": "Traumatic pneumothorax. Air in pleural space from chest trauma. CT is highly sensitive; look for associated rib fractures, pulmonary contusion.",
+      "metadata": { "icd_code": "S27.0XXA", "chapter": "S - Trauma", "context": "Trauma" }
+    },
+    {
+      "category": "coding",
+      "title": "S27.1XXA - Traumatic Hemothorax, Initial Encounter",
+      "content": "Traumatic hemothorax. Blood in pleural space from chest trauma. CT shows high-attenuation pleural fluid. May require chest tube drainage.",
+      "metadata": { "icd_code": "S27.1XXA", "chapter": "S - Trauma", "context": "Trauma" }
+    },
+    {
+      "category": "coding",
+      "title": "S27.2XXA - Traumatic Hemopneumothorax, Initial Encounter",
+      "content": "Traumatic hemopneumothorax. Combined blood and air in pleural space from trauma. CT shows air-fluid level in pleural space.",
+      "metadata": { "icd_code": "S27.2XXA", "chapter": "S - Trauma" }
+    },
+    {
+      "category": "coding",
+      "title": "S27.321A - Contusion of Lung, Unilateral, Initial Encounter",
+      "content": "Pulmonary contusion, unilateral. Lung parenchymal injury from blunt trauma. CT shows patchy GGO or consolidation not conforming to anatomic boundaries.",
+      "metadata": { "icd_code": "S27.321A", "chapter": "S - Trauma", "ct_finding": "Patchy GGO/consolidation in trauma setting" }
+    },
+    {
+      "category": "coding",
+      "title": "S27.329A - Contusion of Lung, Bilateral, Initial Encounter",
+      "content": "Bilateral pulmonary contusion. Lung injury affecting both lungs from severe trauma. CT shows bilateral patchy opacities.",
+      "metadata": { "icd_code": "S27.329A", "chapter": "S - Trauma" }
+    },
+    {
+      "category": "coding",
+      "title": "S27.331A - Laceration of Lung, Unilateral, Initial Encounter",
+      "content": "Pulmonary laceration, unilateral. Tear in lung parenchyma from trauma. CT shows cavity or cyst within area of contusion, may have air-fluid level.",
+      "metadata": { "icd_code": "S27.331A", "chapter": "S - Trauma", "ct_finding": "Traumatic pneumatocele" }
+    },
+    {
+      "category": "coding",
+      "title": "T79.0XXA - Air Embolism (Traumatic), Initial Encounter",
+      "content": "Traumatic air embolism. Air in pulmonary vasculature or systemic circulation. CT may show air in pulmonary arteries or cardiac chambers.",
+      "metadata": { "icd_code": "T79.0XXA", "chapter": "T - Trauma complications", "urgency": "Emergency" }
+    },
+    {
+      "category": "coding",
+      "title": "Z90.2 - Acquired Absence of Lung",
+      "content": "Acquired absence of lung (post-pneumonectomy). Status post lung removal. CT shows empty hemithorax with mediastinal shift and compensatory hyperinflation of remaining lung.",
+      "metadata": { "icd_code": "Z90.2", "chapter": "Z - Factors", "surgical_history": "Pneumonectomy" }
+    },
+    {
+      "category": "coding",
+      "title": "Z93.0 - Tracheostomy Status",
+      "content": "Tracheostomy status. Patient has tracheostomy tube. May be seen on chest CT. Note position and any complications.",
+      "metadata": { "icd_code": "Z93.0", "chapter": "Z - Factors" }
+    },
+    {
+      "category": "coding",
+      "title": "Z96.1 - Presence of Intraocular Lens",
+      "content": "Presence of intraocular lens. Post-cataract surgery status. Occasionally noted as incidental finding when brain included on chest CT.",
+      "metadata": { "icd_code": "Z96.1", "chapter": "Z - Factors" }
+    },
+    {
+      "category": "coding",
+      "title": "Z98.0 - Intestinal Bypass and Anastomosis Status",
+      "content": "Post-surgical intestinal status. May be relevant if abdominal portion of chest CT shows surgical changes.",
+      "metadata": { "icd_code": "Z98.0", "chapter": "Z - Factors" }
+    },
+    {
+      "category": "coding",
+      "title": "Z98.890 - Other Specified Postprocedural States",
+      "content": "Other postprocedural states. Includes post-radiation therapy status, post-ablation, and other relevant surgical histories.",
+      "metadata": { "icd_code": "Z98.890", "chapter": "Z - Factors" }
+    }
+  ]
+}

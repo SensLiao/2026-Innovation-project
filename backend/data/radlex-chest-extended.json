@@ -1,0 +1,643 @@
+{
+  "source": "RadLex",
+  "version": "4.1-extended",
+  "description": "Extended RadLex Radiology Lexicon - Comprehensive Chest CT Terminology",
+  "entries": [
+    {
+      "category": "terminology",
+      "title": "Acinus",
+      "content": "The functional unit of the lung supplied by a single terminal bronchiole. Contains respiratory bronchioles, alveolar ducts, alveolar sacs, and alveoli. Multiple acini form a secondary pulmonary lobule.",
+      "metadata": { "radlex_id": "RID1301", "parent_term": "Pulmonary anatomy" }
+    },
+    {
+      "category": "terminology",
+      "title": "Air Bronchiologram",
+      "content": "Air-filled bronchioles visible within an area of ground-glass opacity or consolidation. Smaller caliber than air bronchogram. Indicates patent small airways with surrounding alveolar pathology.",
+      "metadata": { "radlex_id": "RID28801", "parent_term": "Pulmonary sign" }
+    },
+    {
+      "category": "terminology",
+      "title": "Air Trapping",
+      "content": "Retention of air in the lung distal to an obstruction, seen as areas of decreased attenuation on expiratory CT. Indicates small airways disease. Quantified by expiratory/inspiratory attenuation ratio.",
+      "metadata": { "radlex_id": "RID28802", "synonyms": ["Expiratory air trapping"], "ct_technique": "Expiratory CT" }
+    },
+    {
+      "category": "terminology",
+      "title": "Airspace Disease",
+      "content": "Pathologic process involving the alveolar airspaces, manifesting as consolidation or ground-glass opacity on CT. Includes pneumonia, pulmonary edema, hemorrhage, and neoplasia.",
+      "metadata": { "radlex_id": "RID28803", "parent_term": "Pulmonary opacity" }
+    },
+    {
+      "category": "terminology",
+      "title": "Anterior Junction Line",
+      "content": "A thin vertical line on frontal chest imaging where the two lungs approximate anteriorly, between the sternum and great vessels. Normal variant, should not be confused with pathology.",
+      "metadata": { "radlex_id": "RID28804", "parent_term": "Normal anatomy" }
+    },
+    {
+      "category": "terminology",
+      "title": "Aortopulmonary Window",
+      "content": "Mediastinal space bounded by the aortic arch superiorly, pulmonary artery inferiorly, and mediastinal pleura laterally. Contains lymph nodes (station 5). Enlargement of nodes here is significant.",
+      "metadata": { "radlex_id": "RID1343", "lymph_node_station": "5" }
+    },
+    {
+      "category": "terminology",
+      "title": "Apical Cap",
+      "content": "Focal opacity at the lung apex. May represent pleural thickening, extrapleural fat, or apical scar. Asymmetric or growing apical cap should raise concern for Pancoast tumor.",
+      "metadata": { "radlex_id": "RID28805", "differential": ["Pleural thickening", "Extrapleural fat", "Pancoast tumor"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Architectural Distortion",
+      "content": "Abnormal displacement of bronchi, vessels, fissures, or septa from their normal anatomic position. Indicates fibrosis or scarring. May be associated with traction bronchiectasis.",
+      "metadata": { "radlex_id": "RID28806", "indicates": "Fibrosis" }
+    },
+    {
+      "category": "terminology",
+      "title": "Atoll Sign",
+      "content": "See Reversed Halo Sign. A focal rounded area of ground-glass opacity surrounded by a ring or crescent of consolidation. Originally described in organizing pneumonia.",
+      "metadata": { "radlex_id": "RID28807", "synonyms": ["Reversed halo sign"], "classic_association": "Organizing pneumonia" }
+    },
+    {
+      "category": "terminology",
+      "title": "Azygos Fissure",
+      "content": "Anomalous fissure in the right upper lobe created by aberrant lateral position of the azygos vein during development. Contains four layers of pleura. Normal variant, no clinical significance.",
+      "metadata": { "radlex_id": "RID28808", "significance": "Normal variant" }
+    },
+    {
+      "category": "terminology",
+      "title": "Bat Wing Distribution",
+      "content": "Bilateral perihilar airspace disease sparing the periphery, creating a butterfly or bat wing appearance. Classic for cardiogenic pulmonary edema. Also seen in Pneumocystis pneumonia.",
+      "metadata": { "radlex_id": "RID28809", "classic_association": "Pulmonary edema" }
+    },
+    {
+      "category": "terminology",
+      "title": "Beaded Septum Sign",
+      "content": "Irregular nodular thickening of interlobular septa, giving a beaded appearance. Characteristic of lymphangitic carcinomatosis. Differs from smooth septal thickening of edema.",
+      "metadata": { "radlex_id": "RID28810", "classic_association": "Lymphangitic carcinomatosis" }
+    },
+    {
+      "category": "terminology",
+      "title": "Bleb",
+      "content": "Small (<1cm) cystic airspace within or just beneath the visceral pleura. Often found at lung apices. May rupture to cause spontaneous pneumothorax.",
+      "metadata": { "radlex_id": "RID28811", "size": "<1cm", "location": "Subpleural" }
+    },
+    {
+      "category": "terminology",
+      "title": "Bronchial Atresia",
+      "content": "Congenital abnormality with obliteration of a segmental or subsegmental bronchus. CT shows focal bronchocele (mucoid impaction) with surrounding hyperinflated lung from collateral ventilation.",
+      "metadata": { "radlex_id": "RID28812", "ct_finding": "Bronchocele with surrounding hyperlucency" }
+    },
+    {
+      "category": "terminology",
+      "title": "Bronchocele",
+      "content": "Mucus-filled dilated bronchus. Appears as tubular or branching structure of soft tissue or fluid attenuation. Causes include bronchial atresia, obstruction, and ABPA.",
+      "metadata": { "radlex_id": "RID28813", "synonyms": ["Mucocele", "Mucoid impaction"], "appearance": "Finger-in-glove" }
+    },
+    {
+      "category": "terminology",
+      "title": "Bronchovascular Bundle Thickening",
+      "content": "Abnormal thickening of the peribronchovascular interstitium surrounding the bronchovascular bundles. Seen in sarcoidosis, lymphangitic carcinomatosis, and pulmonary edema.",
+      "metadata": { "radlex_id": "RID28814", "differential": ["Sarcoidosis", "Lymphangitic spread", "Edema"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Bulla",
+      "content": "Emphysematous space >1cm in diameter with thin (<1mm) wall. May occur in paraseptal emphysema, post-infectious, or idiopathic. Giant bullae can occupy significant lung volume.",
+      "metadata": { "radlex_id": "RID28815", "size": ">1cm", "wall_thickness": "<1mm" }
+    },
+    {
+      "category": "terminology",
+      "title": "Calcified Granuloma",
+      "content": "Completely calcified nodule representing healed granulomatous infection (histoplasmosis, TB). Benign finding. May have central, diffuse, or laminated calcification pattern.",
+      "metadata": { "radlex_id": "RID28816", "significance": "Benign", "etiology": ["Histoplasmosis", "TB"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Carina",
+      "content": "The cartilaginous ridge at the bifurcation of the trachea into the right and left main bronchi. Normally at T5-T6 level. Widening or distortion indicates subcarinal pathology.",
+      "metadata": { "radlex_id": "RID1304", "level": "T5-T6" }
+    },
+    {
+      "category": "terminology",
+      "title": "Carinal Angle",
+      "content": "The angle formed by the right and left main bronchi at the carina. Normal angle is 60-100 degrees. Widening (>90-100 degrees) may indicate subcarinal mass or left atrial enlargement.",
+      "metadata": { "radlex_id": "RID28817", "normal_range": "60-100 degrees" }
+    },
+    {
+      "category": "terminology",
+      "title": "Cavity",
+      "content": "Gas-filled space within a pulmonary nodule, mass, or area of consolidation. Distinguished from cyst by thicker wall (>4mm). Seen in infection, malignancy, and vasculitis.",
+      "metadata": { "radlex_id": "RID28818", "wall_thickness": ">4mm", "differential": ["Infection", "Malignancy", "Vasculitis"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Central Dot Sign",
+      "content": "A pulmonary artery seen as a dot within a dilated bronchus on cross-section in bronchiectasis. Represents the normal-sized artery within the abnormally dilated bronchus.",
+      "metadata": { "radlex_id": "RID28819", "seen_in": "Bronchiectasis" }
+    },
+    {
+      "category": "terminology",
+      "title": "Centrilobular",
+      "content": "Located in the center of the secondary pulmonary lobule, around the centrilobular artery and bronchiole. Centrilobular nodules are separated from pleura by several millimeters.",
+      "metadata": { "radlex_id": "RID28820", "distance_from_pleura": "Few mm" }
+    },
+    {
+      "category": "terminology",
+      "title": "Comet Tail Sign",
+      "content": "Curved band of atelectatic lung tissue and vessels extending from a rounded atelectasis to the hilum. Resembles a comet tail. Pathognomonic for rounded atelectasis.",
+      "metadata": { "radlex_id": "RID28821", "diagnostic_for": "Rounded atelectasis" }
+    },
+    {
+      "category": "terminology",
+      "title": "Costophrenic Angle",
+      "content": "The angle formed by the chest wall and diaphragm at the lateral lung base. Normally sharp on frontal imaging. Blunting indicates pleural effusion or thickening.",
+      "metadata": { "radlex_id": "RID28822", "normal": "Sharp angle" }
+    },
+    {
+      "category": "terminology",
+      "title": "CT Angiogram Sign",
+      "content": "Enhancement of pulmonary vessels within a low-attenuation mass or consolidation on contrast CT. Suggests neoplasm (especially mucinous adenocarcinoma) rather than infection.",
+      "metadata": { "radlex_id": "RID28823", "suggests": "Mucinous adenocarcinoma" }
+    },
+    {
+      "category": "terminology",
+      "title": "Cylindrical Bronchiectasis",
+      "content": "Mild form of bronchiectasis with uniform dilation of the bronchus without significant tapering. The mildest form of bronchiectatic change.",
+      "metadata": { "radlex_id": "RID28824", "severity": "Mild" }
+    },
+    {
+      "category": "terminology",
+      "title": "Cyst",
+      "content": "A rounded, circumscribed space with thin wall (<2mm) containing air or fluid. Distinguished from cavity by thin wall. Causes include LAM, LIP, PLCH, and infection.",
+      "metadata": { "radlex_id": "RID28825", "wall_thickness": "<2mm", "differential": ["LAM", "LIP", "PLCH", "Infection"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Cystic Bronchiectasis",
+      "content": "Severe form of bronchiectasis with saccular or cystic dilation of bronchi, often with air-fluid levels. The most severe form of bronchiectatic change.",
+      "metadata": { "radlex_id": "RID28826", "severity": "Severe" }
+    },
+    {
+      "category": "terminology",
+      "title": "Dependent Opacity",
+      "content": "Increased attenuation in dependent (posterior when supine) lung regions. May be physiologic (gravity-dependent atelectasis) or pathologic. Prone imaging distinguishes the two.",
+      "metadata": { "radlex_id": "RID28827", "technique": "Prone imaging to differentiate" }
+    },
+    {
+      "category": "terminology",
+      "title": "Diffuse Alveolar Damage (DAD)",
+      "content": "Histopathologic pattern of acute lung injury. CT shows diffuse GGO and consolidation. Seen in ARDS, acute interstitial pneumonia, and drug toxicity.",
+      "metadata": { "radlex_id": "RID28828", "ct_pattern": "Diffuse GGO and consolidation" }
+    },
+    {
+      "category": "terminology",
+      "title": "Double Bronchial Wall Sign",
+      "content": "Visualization of both walls of a bronchus, indicating bronchial wall thickening. Normal bronchial wall should be imperceptible except at perpendicular angles.",
+      "metadata": { "radlex_id": "RID28829", "indicates": "Bronchial wall thickening" }
+    },
+    {
+      "category": "terminology",
+      "title": "Eggshell Calcification",
+      "content": "Calcification in a ring-like pattern in the periphery of lymph nodes. Classic for silicosis and coal worker's pneumoconiosis. Can also be seen in sarcoidosis and post-radiation.",
+      "metadata": { "radlex_id": "RID28830", "classic_association": "Silicosis" }
+    },
+    {
+      "category": "terminology",
+      "title": "Expiratory CT",
+      "content": "CT images obtained at end-expiration. Used to detect air trapping, which appears as areas of persistent low attenuation compared to inspiratory images.",
+      "metadata": { "radlex_id": "RID28831", "purpose": "Detect air trapping" }
+    },
+    {
+      "category": "terminology",
+      "title": "Fat Attenuation",
+      "content": "CT attenuation in the range of -40 to -120 HU, indicating fat content. In pulmonary nodules, suggests hamartoma or lipoid pneumonia. Also seen in mediastinal lipomatosis.",
+      "metadata": { "radlex_id": "RID28832", "hu_range": "-40 to -120 HU" }
+    },
+    {
+      "category": "terminology",
+      "title": "Feeding Vessel",
+      "content": "A pulmonary artery leading directly to a nodule, mass, or area of consolidation. Suggests hematogenous origin such as septic embolism or metastasis.",
+      "metadata": { "radlex_id": "RID28833", "suggests": "Hematogenous spread" }
+    },
+    {
+      "category": "terminology",
+      "title": "Finger-in-Glove Sign",
+      "content": "Tubular or branching opacities representing mucoid impaction in dilated bronchi. Shaped like fingers of a glove. Classic for allergic bronchopulmonary aspergillosis (ABPA).",
+      "metadata": { "radlex_id": "RID28834", "classic_association": "ABPA" }
+    },
+    {
+      "category": "terminology",
+      "title": "Fleischner Criteria",
+      "content": "Guidelines for management of incidentally detected pulmonary nodules published by the Fleischner Society. Based on nodule size, type, and patient risk factors.",
+      "metadata": { "radlex_id": "RID28835", "source": "Fleischner Society" }
+    },
+    {
+      "category": "terminology",
+      "title": "Focal Lucency",
+      "content": "Localized area of decreased attenuation within the lung. May represent emphysema, cyst, cavity, or air trapping. Context and morphology determine significance.",
+      "metadata": { "radlex_id": "RID28836", "differential": ["Emphysema", "Cyst", "Cavity", "Air trapping"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Galaxy Sign",
+      "content": "A large nodule or mass surrounded by multiple smaller satellite nodules. Classic for sarcoidosis. The central lesion and satellites have perilymphatic distribution.",
+      "metadata": { "radlex_id": "RID28837", "classic_association": "Sarcoidosis" }
+    },
+    {
+      "category": "terminology",
+      "title": "Ground-Glass Attenuation",
+      "content": "See Ground-Glass Opacity. Area of hazy increased lung attenuation through which normal structures remain visible. Does not obscure underlying vasculature.",
+      "metadata": { "radlex_id": "RID28838", "synonyms": ["GGO", "GGA"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Head Cheese Sign",
+      "content": "Geographic areas of three different attenuations in the lung: normal, ground-glass (infiltrative disease), and low attenuation (air trapping). Named after the meat product with mixed colors.",
+      "metadata": { "radlex_id": "RID28839", "seen_in": "Hypersensitivity pneumonitis" }
+    },
+    {
+      "category": "terminology",
+      "title": "Hepatization",
+      "content": "Dense consolidation of the lung that resembles liver on CT (similar attenuation). Indicates complete alveolar filling. Classic in lobar pneumonia.",
+      "metadata": { "radlex_id": "RID28840", "indicates": "Complete alveolar filling" }
+    },
+    {
+      "category": "terminology",
+      "title": "Hilar Overlay Sign",
+      "content": "Preservation of the normal hilar structures through an apparent hilar mass, indicating the mass is actually anterior or posterior to the hilum, not within it.",
+      "metadata": { "radlex_id": "RID28841", "interpretation": "Mass not in hilum" }
+    },
+    {
+      "category": "terminology",
+      "title": "Hounsfield Unit (HU)",
+      "content": "Unit of measurement for CT attenuation. Water = 0 HU, air = -1000 HU, bone = +1000 HU. Used to characterize tissue composition.",
+      "metadata": { "radlex_id": "RID28842", "reference_values": "Water=0, Air=-1000, Bone=+1000" }
+    },
+    {
+      "category": "terminology",
+      "title": "Incomplete Fissure",
+      "content": "Absence of part of the pulmonary fissure, allowing direct communication between adjacent lobes. May facilitate spread of disease between lobes.",
+      "metadata": { "radlex_id": "RID28843", "clinical_significance": "Facilitates disease spread" }
+    },
+    {
+      "category": "terminology",
+      "title": "Interface Sign",
+      "content": "Irregular interface between lung and mediastinum, pleura, or vessels. Indicates parenchymal abnormality (fibrosis, inflammation) at the interface.",
+      "metadata": { "radlex_id": "RID28844", "indicates": "Parenchymal abnormality" }
+    },
+    {
+      "category": "terminology",
+      "title": "Interlobular Septum",
+      "content": "The thin connective tissue boundary of the secondary pulmonary lobule containing pulmonary veins and lymphatics. Thickening indicates edema, fibrosis, or lymphangitic spread.",
+      "metadata": { "radlex_id": "RID28845", "contents": ["Pulmonary veins", "Lymphatics"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Juxtaphrenic Peak",
+      "content": "Triangular shadow at the diaphragm apex seen with upper lobe volume loss. Created by upward traction on the inferior accessory fissure or the inferior pulmonary ligament.",
+      "metadata": { "radlex_id": "RID28846", "indicates": "Upper lobe volume loss" }
+    },
+    {
+      "category": "terminology",
+      "title": "Kerley A Lines",
+      "content": "Long (2-6cm) linear opacities in the upper lungs representing thickened deep interlobular septa or connective tissue around bronchovascular bundles. Seen in pulmonary edema.",
+      "metadata": { "radlex_id": "RID28847", "length": "2-6cm", "location": "Upper lungs" }
+    },
+    {
+      "category": "terminology",
+      "title": "Kerley B Lines",
+      "content": "Short (1-2cm) horizontal lines at the lung bases perpendicular to the pleural surface representing thickened interlobular septa. Classic for pulmonary edema.",
+      "metadata": { "radlex_id": "RID28848", "length": "1-2cm", "location": "Lung bases" }
+    },
+    {
+      "category": "terminology",
+      "title": "Lingula",
+      "content": "Tongue-like projection of the left upper lobe, homologous to the right middle lobe. Bounded by the major fissure posteriorly. Has superior and inferior segments.",
+      "metadata": { "radlex_id": "RID1306", "location": "Left upper lobe" }
+    },
+    {
+      "category": "terminology",
+      "title": "Lobular Core",
+      "content": "The center of the secondary pulmonary lobule containing the centrilobular artery and bronchiole. Centrilobular abnormalities affect this region.",
+      "metadata": { "radlex_id": "RID28849", "contents": ["Centrilobular artery", "Bronchiole"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Lobar Collapse",
+      "content": "Complete atelectasis of a pulmonary lobe. Each lobe has characteristic pattern of collapse with specific fissural displacement and mediastinal shift.",
+      "metadata": { "radlex_id": "RID28850", "synonyms": ["Lobar atelectasis"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Luftsichel Sign",
+      "content": "Crescent of hyperinflated superior segment of lower lobe interposed between the aorta and collapsed upper lobe. Sign of left upper lobe collapse.",
+      "metadata": { "radlex_id": "RID28851", "diagnostic_for": "Left upper lobe collapse" }
+    },
+    {
+      "category": "terminology",
+      "title": "Lung Density",
+      "content": "The CT attenuation of lung parenchyma. Normal lung is approximately -850 to -700 HU. Increased density (less negative) indicates GGO or consolidation.",
+      "metadata": { "radlex_id": "RID28852", "normal_range": "-850 to -700 HU" }
+    },
+    {
+      "category": "terminology",
+      "title": "Lymphangitic Carcinomatosis",
+      "content": "Tumor spread through pulmonary lymphatics. CT shows thickened interlobular septa (smooth or nodular), bronchovascular bundle thickening, and preserved lung architecture.",
+      "metadata": { "radlex_id": "RID28853", "ct_pattern": "Beaded septal thickening, preserved architecture" }
+    },
+    {
+      "category": "terminology",
+      "title": "Main Bronchus",
+      "content": "The primary bronchus on each side arising from the tracheal bifurcation. Right main bronchus is shorter, wider, and more vertical than left.",
+      "metadata": { "radlex_id": "RID1305", "anatomic_note": "Right is shorter and more vertical" }
+    },
+    {
+      "category": "terminology",
+      "title": "Mediastinal Compartment",
+      "content": "Division of mediastinum into anterior, middle, and posterior compartments. Location of mass helps narrow differential diagnosis.",
+      "metadata": { "radlex_id": "RID28854", "compartments": ["Anterior", "Middle", "Posterior"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Mediastinal Fat Stranding",
+      "content": "Increased attenuation and haziness in mediastinal fat, indicating inflammation, edema, or infiltration. May be seen with mediastinitis or post-procedural changes.",
+      "metadata": { "radlex_id": "RID28855", "indicates": "Inflammation or infiltration" }
+    },
+    {
+      "category": "terminology",
+      "title": "Mediastinal Window",
+      "content": "CT display window optimized for soft tissue visualization (typically W350 L40). Used to evaluate mediastinum, lymph nodes, and solid components of nodules.",
+      "metadata": { "radlex_id": "RID28856", "settings": "W350 L40" }
+    },
+    {
+      "category": "terminology",
+      "title": "Miliary Pattern",
+      "content": "Innumerable tiny (1-3mm) nodules uniformly distributed throughout both lungs. Random distribution suggests hematogenous spread. Classic for miliary TB and metastases.",
+      "metadata": { "radlex_id": "RID28857", "nodule_size": "1-3mm", "distribution": "Random" }
+    },
+    {
+      "category": "terminology",
+      "title": "Mucoid Impaction",
+      "content": "Mucus plugging within bronchi appearing as tubular or branching opacities. Seen in ABPA, bronchial obstruction, cystic fibrosis, and asthma.",
+      "metadata": { "radlex_id": "RID28858", "synonyms": ["Bronchocele", "Mucus plug"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Nodular Septal Thickening",
+      "content": "Beaded or nodular appearance of thickened interlobular septa. Characteristic of lymphangitic carcinomatosis and sarcoidosis. Distinguished from smooth thickening in edema.",
+      "metadata": { "radlex_id": "RID28859", "differential": ["Lymphangitic carcinomatosis", "Sarcoidosis"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Nodule Enhancement",
+      "content": "Increase in CT attenuation of a nodule after IV contrast. Enhancement >15HU suggests vascularity and favors malignancy over benign nodule.",
+      "metadata": { "radlex_id": "RID28860", "threshold": ">15HU increase suggests malignancy" }
+    },
+    {
+      "category": "terminology",
+      "title": "Obstructive Atelectasis",
+      "content": "Lung collapse due to bronchial obstruction (tumor, mucus plug, foreign body). Air absorbed from obstructed segment. May have associated post-obstructive pneumonia.",
+      "metadata": { "radlex_id": "RID28861", "mechanism": "Bronchial obstruction" }
+    },
+    {
+      "category": "terminology",
+      "title": "Panacinar Emphysema",
+      "content": "See Panlobular Emphysema. Uniform destruction involving the entire acinus. Associated with alpha-1 antitrypsin deficiency. Lower lobe predominant.",
+      "metadata": { "radlex_id": "RID28862", "synonyms": ["Panlobular emphysema"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Paraseptal Emphysema",
+      "content": "Emphysematous changes located along interlobular septa and pleura. Often subpleural. May lead to bullae and spontaneous pneumothorax.",
+      "metadata": { "radlex_id": "RID28863", "location": "Subpleural, along septa" }
+    },
+    {
+      "category": "terminology",
+      "title": "Parenchymal Band",
+      "content": "Non-tapering linear opacity 2-5cm long extending to the pleura. Represents fibrotic scar, atelectasis, or lymphatic tissue. Common in asbestos-related disease.",
+      "metadata": { "radlex_id": "RID28864", "length": "2-5cm" }
+    },
+    {
+      "category": "terminology",
+      "title": "Peripheral Distribution",
+      "content": "Abnormalities predominantly located in the outer third of the lung, along the pleural surfaces. Characteristic of organizing pneumonia, UIP, and chronic eosinophilic pneumonia.",
+      "metadata": { "radlex_id": "RID28865", "differential": ["OP", "UIP", "CEP"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Pleural Calcification",
+      "content": "Calcification within the pleural layers. May be focal or diffuse. Causes include asbestos exposure, empyema, TB, and hemothorax. Bilateral pleural plaques suggest asbestos.",
+      "metadata": { "radlex_id": "RID28866", "differential": ["Asbestos", "Prior empyema", "Prior TB"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Pleural Plaque",
+      "content": "Discrete area of pleural thickening, usually on parietal pleura. Frequently calcified. Bilateral plaques are highly specific for asbestos exposure.",
+      "metadata": { "radlex_id": "RID28867", "specificity": "Bilateral plaques specific for asbestos" }
+    },
+    {
+      "category": "terminology",
+      "title": "Pleural Tail Sign",
+      "content": "Linear opacity extending from a pulmonary nodule to the pleura. Suggests malignancy but not specific. Also called pleural tag.",
+      "metadata": { "radlex_id": "RID28868", "synonyms": ["Pleural tag"], "suggests": "Possible malignancy" }
+    },
+    {
+      "category": "terminology",
+      "title": "Pneumatocele",
+      "content": "Thin-walled, gas-filled space in the lung parenchyma, usually developing after infection (especially staphylococcal pneumonia) or trauma. Typically resolves spontaneously.",
+      "metadata": { "radlex_id": "RID28869", "etiology": ["Post-infectious", "Post-traumatic"], "prognosis": "Usually resolves" }
+    },
+    {
+      "category": "terminology",
+      "title": "Posterior Recess",
+      "content": "The posterolateral portion of the costophrenic sulcus where small pleural effusions first accumulate. Most dependent part of pleural space when supine.",
+      "metadata": { "radlex_id": "RID28870", "clinical_note": "First location for effusion accumulation" }
+    },
+    {
+      "category": "terminology",
+      "title": "Progressive Massive Fibrosis (PMF)",
+      "content": "Conglomerate upper lobe masses in coal worker's pneumoconiosis and silicosis. Formed by coalescence of nodules. May have calcification and cavitation.",
+      "metadata": { "radlex_id": "RID28871", "association": ["Silicosis", "CWP"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Pseudocavitation",
+      "content": "Small air-containing cystic spaces within a ground-glass nodule representing uninvolved lung or dilated bronchioles. Seen in adenocarcinoma with lepidic growth.",
+      "metadata": { "radlex_id": "RID28872", "association": "Adenocarcinoma" }
+    },
+    {
+      "category": "terminology",
+      "title": "Pulmonary Arterial Hypertension",
+      "content": "Elevated pulmonary artery pressure. CT signs include main PA diameter >29mm, PA:Aorta ratio >1, right heart enlargement, and mosaic attenuation.",
+      "metadata": { "radlex_id": "RID28873", "ct_criteria": "PA >29mm, PA:Aorta >1" }
+    },
+    {
+      "category": "terminology",
+      "title": "Pulmonary Ligament",
+      "content": "Double layer of pleura extending from the hilum to the diaphragm. Contains inferior pulmonary vein. Inferior pulmonary ligament nodal station (9).",
+      "metadata": { "radlex_id": "RID1307", "lymph_node_station": "9" }
+    },
+    {
+      "category": "terminology",
+      "title": "Random Distribution",
+      "content": "Nodules distributed without respect to pulmonary lobular structures or lymphatic pathways. Suggests hematogenous spread. Seen in miliary TB and metastases.",
+      "metadata": { "radlex_id": "RID28874", "suggests": "Hematogenous spread" }
+    },
+    {
+      "category": "terminology",
+      "title": "Reticulation",
+      "content": "Network pattern of innumerable interlacing lines on CT. Indicates interstitial thickening. May be fine (early fibrosis) or coarse (established fibrosis).",
+      "metadata": { "radlex_id": "RID28875", "indicates": "Interstitial thickening" }
+    },
+    {
+      "category": "terminology",
+      "title": "Ring Shadow",
+      "content": "Circular or ring-like opacity representing a bronchiectatic airway seen end-on. The signet ring sign is a variant where the ring is next to a smaller dot (artery).",
+      "metadata": { "radlex_id": "RID28876", "seen_in": "Bronchiectasis" }
+    },
+    {
+      "category": "terminology",
+      "title": "Rounded Atelectasis",
+      "content": "Atelectasis appearing as a round or oval mass-like opacity, usually adjacent to pleural disease. Classic comet-tail sign of vessels and bronchi curving into the mass.",
+      "metadata": { "radlex_id": "RID28877", "diagnostic_sign": "Comet-tail sign", "association": "Pleural disease" }
+    },
+    {
+      "category": "terminology",
+      "title": "S Sign of Golden",
+      "content": "Central mass causing collapse of right upper lobe, with concave lateral margin of the collapsed lobe and convex medial margin from the mass. Classic for central lung cancer.",
+      "metadata": { "radlex_id": "RID28878", "diagnostic_for": "Central RUL cancer" }
+    },
+    {
+      "category": "terminology",
+      "title": "Saber-Sheath Trachea",
+      "content": "Trachea with decreased coronal diameter and increased sagittal diameter (coronal:sagittal ratio <0.6). Associated with COPD.",
+      "metadata": { "radlex_id": "RID28879", "ratio": "Coronal:sagittal <0.6", "association": "COPD" }
+    },
+    {
+      "category": "terminology",
+      "title": "Satellite Nodules",
+      "content": "Small nodules surrounding a larger nodule or mass. May indicate benign granulomatous disease (TB, fungal) or multifocal malignancy.",
+      "metadata": { "radlex_id": "RID28880", "differential": ["Granulomatous infection", "Malignancy"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Septal Lines",
+      "content": "Linear opacities representing thickened interlobular septa. Kerley A and B lines on radiography. On CT, seen as a network of lines at the lung periphery.",
+      "metadata": { "radlex_id": "RID28881", "indicates": "Septal thickening" }
+    },
+    {
+      "category": "terminology",
+      "title": "Signet Ring Sign",
+      "content": "Cross-sectional appearance of dilated bronchus (ring) adjacent to its accompanying pulmonary artery (dot), with bronchus larger than artery. Diagnostic for bronchiectasis.",
+      "metadata": { "radlex_id": "RID28882", "diagnostic_for": "Bronchiectasis" }
+    },
+    {
+      "category": "terminology",
+      "title": "Silhouette Sign",
+      "content": "Loss of normal interface between structures of similar density. Indicates pathology in the same plane. Classic example: RML pneumonia obscures right heart border.",
+      "metadata": { "radlex_id": "RID28883", "principle": "Loss of normal interface" }
+    },
+    {
+      "category": "terminology",
+      "title": "Solid Component",
+      "content": "The portion of a part-solid nodule that completely obscures underlying structures, best measured on mediastinal window. Size of solid component determines malignancy risk.",
+      "metadata": { "radlex_id": "RID28884", "measurement": "Mediastinal window", "significance": "Determines malignancy risk" }
+    },
+    {
+      "category": "terminology",
+      "title": "Split Pleura Sign",
+      "content": "Enhancement of separated visceral and parietal pleura with fluid between them. Indicates empyema. The pleural layers enhance due to inflammation.",
+      "metadata": { "radlex_id": "RID28885", "diagnostic_for": "Empyema" }
+    },
+    {
+      "category": "terminology",
+      "title": "Subcarinal Space",
+      "content": "Mediastinal space below the carina between the main bronchi. Contains subcarinal lymph nodes (station 7). Enlargement indicates adenopathy.",
+      "metadata": { "radlex_id": "RID1308", "lymph_node_station": "7" }
+    },
+    {
+      "category": "terminology",
+      "title": "Subpleural",
+      "content": "Located immediately beneath and parallel to the pleural surface. Subpleural distribution is characteristic of UIP, asbestosis, and some infectious processes.",
+      "metadata": { "radlex_id": "RID28886", "association": ["UIP", "Asbestosis"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Subpleural Curvilinear Line",
+      "content": "Thin curvilinear opacity within 1cm of and parallel to the pleural surface. Indicates early fibrosis or gravity-dependent atelectasis.",
+      "metadata": { "radlex_id": "RID28887", "differential": ["Early fibrosis", "Dependent atelectasis"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Subsolid Nodule",
+      "content": "Pulmonary nodule with less than completely solid attenuation. Includes pure ground-glass nodules and part-solid nodules. Higher likelihood of adenocarcinoma spectrum.",
+      "metadata": { "radlex_id": "RID28888", "subtypes": ["Pure GGN", "Part-solid"], "malignancy_spectrum": "Adenocarcinoma" }
+    },
+    {
+      "category": "terminology",
+      "title": "Target Sign",
+      "content": "Nodule with central low attenuation and peripheral rim, resembling a target. May be seen in metastases, septic emboli, and some granulomatous diseases.",
+      "metadata": { "radlex_id": "RID28889", "differential": ["Metastases", "Septic emboli"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Thoracic Inlet",
+      "content": "The superior opening of the thorax bounded by T1 vertebra, first ribs, and manubrium. Important landmark for thyroid and vascular pathology.",
+      "metadata": { "radlex_id": "RID1309", "boundaries": ["T1", "First ribs", "Manubrium"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Tracheal Bronchus",
+      "content": "Anomalous bronchus arising from trachea above the carina, usually supplying the right upper lobe apical segment. Usually asymptomatic anatomic variant.",
+      "metadata": { "radlex_id": "RID28890", "synonyms": ["Pig bronchus"], "significance": "Usually incidental" }
+    },
+    {
+      "category": "terminology",
+      "title": "Tram Track Sign",
+      "content": "Parallel linear opacities representing dilated bronchus seen along its length. A sign of bronchiectasis. Named for resemblance to railroad tracks.",
+      "metadata": { "radlex_id": "RID28891", "diagnostic_for": "Bronchiectasis" }
+    },
+    {
+      "category": "terminology",
+      "title": "Tree-in-Bud Pattern",
+      "content": "Centrilobular branching linear opacities with nodular tips resembling a budding tree. Represents bronchiolar impaction with inflammatory or infectious material.",
+      "metadata": { "radlex_id": "RID28892", "indicates": "Small airways disease", "differential": ["TB", "MAC", "Aspiration"] }
+    },
+    {
+      "category": "terminology",
+      "title": "UIP Pattern",
+      "content": "Usual Interstitial Pneumonia pattern on CT: subpleural, basal predominant reticulation with honeycombing and traction bronchiectasis. Diagnostic pattern for IPF.",
+      "metadata": { "radlex_id": "RID28893", "features": ["Honeycombing", "Traction bronchiectasis", "Basal, subpleural distribution"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Varicose Bronchiectasis",
+      "content": "Bronchiectasis with alternating areas of dilation and constriction giving a beaded appearance. Intermediate severity between cylindrical and cystic bronchiectasis.",
+      "metadata": { "radlex_id": "RID28894", "severity": "Intermediate" }
+    },
+    {
+      "category": "terminology",
+      "title": "Volume Doubling Time (VDT)",
+      "content": "Time required for a nodule to double in volume (equivalent to 26% increase in diameter). VDT <400 days suggests malignancy; >600 days suggests benign.",
+      "metadata": { "radlex_id": "RID28895", "malignancy_threshold": "<400 days" }
+    },
+    {
+      "category": "terminology",
+      "title": "Volume Loss",
+      "content": "Reduction in lung volume indicated by fissural displacement, mediastinal shift, elevation of hemidiaphragm, and crowding of pulmonary vessels. Seen in atelectasis and fibrosis.",
+      "metadata": { "radlex_id": "RID28896", "signs": ["Fissural shift", "Mediastinal shift", "Hemidiaphragm elevation"] }
+    },
+    {
+      "category": "terminology",
+      "title": "Westermark Sign",
+      "content": "Focal area of decreased pulmonary vascularity distal to a pulmonary embolism. Results from oligemia in the affected segment. Can be subtle on CT.",
+      "metadata": { "radlex_id": "RID28897", "seen_in": "Pulmonary embolism" }
+    },
+    {
+      "category": "terminology",
+      "title": "Windmill Sign",
+      "content": "Appearance of multiple dilated bronchi radiating from the hilum in severe bronchiectasis, resembling windmill blades. Indicates severe airways disease.",
+      "metadata": { "radlex_id": "RID28898", "seen_in": "Severe bronchiectasis" }
+    }
+  ]
+}

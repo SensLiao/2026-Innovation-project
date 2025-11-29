@@ -1,0 +1,235 @@
+{
+  "source": "Clinical Radiology Guidelines",
+  "version": "2024",
+  "description": "Differential diagnosis knowledge for common chest CT findings",
+  "entries": [
+    {
+      "category": "classification",
+      "title": "Solitary Pulmonary Nodule - Differential Diagnosis",
+      "content": "Differential diagnosis for solitary pulmonary nodule (SPN): MALIGNANT: Primary lung cancer (adenocarcinoma most common), solitary metastasis, carcinoid tumor. BENIGN: Granuloma (histoplasmosis, TB, coccidioidomycosis), hamartoma, intrapulmonary lymph node, rounded atelectasis, AVM. Features favoring malignancy: spiculated margins, upper lobe location, size >8mm, growth on serial imaging, FDG-avid. Features favoring benign: calcification (central, popcorn, laminated), fat content, stable >2 years, perifissural location with triangular shape.",
+      "metadata": { "finding_type": "Solitary nodule", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Multiple Pulmonary Nodules - Differential Diagnosis",
+      "content": "Differential diagnosis for multiple pulmonary nodules: MALIGNANT: Metastatic disease (common primaries: breast, colon, kidney, melanoma, thyroid), multifocal adenocarcinoma. INFECTIOUS: Septic emboli, fungal infection (histoplasmosis, coccidioidomycosis), TB. INFLAMMATORY: Sarcoidosis, rheumatoid nodules, granulomatosis with polyangiitis (GPA). OTHER: Amyloidosis, pulmonary arteriovenous malformations. Distribution pattern helps: random distribution suggests hematogenous spread; perilymphatic suggests sarcoidosis; centrilobular suggests infectious or hypersensitivity.",
+      "metadata": { "finding_type": "Multiple nodules", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Ground-Glass Opacity - Differential Diagnosis",
+      "content": "Differential diagnosis for ground-glass opacity (GGO): ACUTE: Infection (viral including COVID-19, PCP, CMV), pulmonary edema, hemorrhage, acute interstitial pneumonia, drug toxicity. CHRONIC: Adenocarcinoma spectrum (AIS, MIA, invasive), hypersensitivity pneumonitis, DIP, RB-ILD, NSIP, organizing pneumonia. FOCAL GGO: preinvasive/minimally invasive adenocarcinoma, focal infection, focal hemorrhage. DIFFUSE GGO: pulmonary edema, PCP, viral pneumonia, ARDS, drug toxicity.",
+      "metadata": { "finding_type": "Ground-glass opacity", "clinical_significance": "Variable" }
+    },
+    {
+      "category": "classification",
+      "title": "Consolidation - Differential Diagnosis",
+      "content": "Differential diagnosis for pulmonary consolidation: INFECTIOUS: Bacterial pneumonia (lobar pattern), TB, fungal infection. NON-INFECTIOUS: Organizing pneumonia, pulmonary edema, hemorrhage, adenocarcinoma (mucinous), pulmonary infarct, aspiration, radiation pneumonitis, eosinophilic pneumonia. Pattern helps: lobar = bacterial pneumonia; peribronchovascular = organizing pneumonia; dependent = aspiration; peripheral = chronic eosinophilic pneumonia.",
+      "metadata": { "finding_type": "Consolidation", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Cavitary Lesion - Differential Diagnosis",
+      "content": "Differential diagnosis for cavitary lung lesion: MALIGNANT: Squamous cell carcinoma (most common cavitating primary), metastases. INFECTIOUS: TB, non-tuberculous mycobacteria, fungal (aspergilloma, histoplasmosis), bacterial abscess, septic emboli. INFLAMMATORY: Granulomatosis with polyangiitis (GPA), rheumatoid nodules. Wall thickness helps: thin wall (<4mm) favors benign; thick wall (>15mm) favors malignancy or abscess. Location: upper lobe cavity in smoker highly suspicious for cancer or TB.",
+      "metadata": { "finding_type": "Cavitary lesion", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Cystic Lung Disease - Differential Diagnosis",
+      "content": "Differential diagnosis for multiple lung cysts: LAM (lymphangioleiomyomatosis): women, diffuse round cysts. PLCH (Langerhans cell histiocytosis): smokers, upper lobe bizarre-shaped cysts with nodules. LIP (lymphoid interstitial pneumonia): Sjogren's, lower lobe cysts with GGO. Birt-Hogg-Dube: basilar cysts, skin findings. Cystic bronchiectasis: dilated airways, wall thickening. Pneumatoceles: post-infectious, resolving. Honeycombing: fibrosis, clustered subpleural cysts.",
+      "metadata": { "finding_type": "Cystic disease", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Interstitial Lung Disease - Differential Diagnosis",
+      "content": "Differential diagnosis by CT pattern: UIP PATTERN (basal, subpleural honeycombing + traction bronchiectasis): IPF, chronic HP, CTD-ILD, drug toxicity. NSIP PATTERN (basal GGO + reticulation, subpleural sparing): CTD-ILD, drug toxicity, idiopathic NSIP. OP PATTERN (peripheral consolidation, reversed halo): COP, secondary OP, infection. DAD PATTERN (diffuse GGO + consolidation): ARDS, AIP, drug toxicity. HP PATTERN (centrilobular nodules + mosaic + air trapping): hypersensitivity pneumonitis.",
+      "metadata": { "finding_type": "Interstitial lung disease", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Tree-in-Bud Pattern - Differential Diagnosis",
+      "content": "Differential diagnosis for tree-in-bud pattern: INFECTIOUS: TB, NTM (MAC), bacterial bronchiolitis, viral bronchiolitis, fungal infection. ASPIRATION: Chronic aspiration, post-obstructive pneumonia. AIRWAYS DISEASE: Cystic fibrosis, diffuse panbronchiolitis, ABPA. CONNECTIVE TISSUE: RA-associated bronchiolitis. MALIGNANT: Tumor emboli (rare). Clinical context key: immunocompromised suggests infection; recurrent suggests aspiration or structural airways disease.",
+      "metadata": { "finding_type": "Tree-in-bud pattern", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Mosaic Attenuation - Differential Diagnosis",
+      "content": "Differential diagnosis for mosaic attenuation pattern: SMALL AIRWAYS DISEASE: Obliterative bronchiolitis, hypersensitivity pneumonitis, asthma. VASCULAR: Chronic PE, pulmonary hypertension, pulmonary veno-occlusive disease. INFILTRATIVE: Patchy GGO from infection or inflammation. Differentiation: expiratory CT shows air trapping in airways disease (low attenuation areas persist); vascular causes show vessel size differences (smaller vessels in hypoperfused areas); infiltrative causes show GGO areas become denser on expiration.",
+      "metadata": { "finding_type": "Mosaic attenuation", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Mediastinal Lymphadenopathy - Differential Diagnosis",
+      "content": "Differential diagnosis for mediastinal lymphadenopathy (short axis >10mm): MALIGNANT: Lung cancer metastases, lymphoma, metastatic disease (breast, GI, melanoma). GRANULOMATOUS: Sarcoidosis (bilateral hilar + right paratracheal pattern), TB, histoplasmosis. REACTIVE: Infection, pneumoconiosis, drug reaction. Location pattern helps: bilateral symmetric hilar = sarcoidosis; unilateral hilar = lung cancer; anterior mediastinal = lymphoma, thymoma; posterior mediastinal = neurogenic tumor.",
+      "metadata": { "finding_type": "Mediastinal adenopathy", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Anterior Mediastinal Mass - Differential Diagnosis",
+      "content": "Differential diagnosis for anterior mediastinal mass (4 T's): THYMOMA: Most common anterior mediastinal tumor in adults, may have calcification. THYROID: Substernal goiter, continuous with cervical thyroid. TERATOMA/GERM CELL: Young adults, may contain fat, calcium, or fluid. TERRIBLE LYMPHOMA: Hodgkin's or non-Hodgkin's lymphoma. Additional considerations: thymic cyst, thymic hyperplasia, thymic carcinoma.",
+      "metadata": { "finding_type": "Anterior mediastinal mass", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Middle Mediastinal Mass - Differential Diagnosis",
+      "content": "Differential diagnosis for middle mediastinal mass: VASCULAR: Aortic aneurysm, anomalous vessel. LYMPH NODES: Lymphadenopathy (see lymphadenopathy DDx). CYSTIC: Bronchogenic cyst, pericardial cyst, esophageal duplication cyst. TRACHEAL: Tracheal tumor, tracheal stenosis. ESOPHAGEAL: Esophageal tumor, hiatal hernia.",
+      "metadata": { "finding_type": "Middle mediastinal mass", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Posterior Mediastinal Mass - Differential Diagnosis",
+      "content": "Differential diagnosis for posterior mediastinal mass: NEUROGENIC: Schwannoma, neurofibroma, ganglioneuroma, neuroblastoma. Most common posterior mediastinal masses. SPINAL: Lateral meningocele, vertebral tumor extension. VASCULAR: Descending aortic aneurysm. OTHER: Extramedullary hematopoiesis, paraspinal abscess, foregut duplication cyst.",
+      "metadata": { "finding_type": "Posterior mediastinal mass", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Pleural Effusion - Differential Diagnosis",
+      "content": "Differential diagnosis for pleural effusion: TRANSUDATIVE: Heart failure (bilateral), hepatic hydrothorax (right), nephrotic syndrome. EXUDATIVE: Parapneumonic/empyema, malignancy, TB, pulmonary embolism, connective tissue disease. HEMORRHAGIC: Trauma, malignancy, pulmonary infarction, aortic rupture. Imaging features: simple effusion = homogeneous, meniscus sign; complicated = loculations, septations, pleural thickening; empyema = split pleura sign.",
+      "metadata": { "finding_type": "Pleural effusion", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Pleural Thickening - Differential Diagnosis",
+      "content": "Differential diagnosis for pleural thickening: BENIGN: Asbestos plaques (bilateral, calcified), prior empyema/hemothorax, prior TB, radiation. MALIGNANT: Mesothelioma, metastatic pleural disease, pleural invasion by lung cancer. Features suggesting malignancy: nodular thickening, circumferential involvement, mediastinal pleural involvement, associated mass. Features suggesting benign: calcification, bilateral symmetric plaques, history of asbestos exposure.",
+      "metadata": { "finding_type": "Pleural thickening", "clinical_significance": "Moderate to High" }
+    },
+    {
+      "category": "classification",
+      "title": "Pneumothorax - Differential Diagnosis",
+      "content": "Classification of pneumothorax by cause: PRIMARY SPONTANEOUS: No underlying lung disease, typically young, tall, thin males. Often from apical bleb rupture. SECONDARY SPONTANEOUS: Underlying lung disease (COPD most common, also LAM, PLCH, cystic fibrosis, PCP, TB). TRAUMATIC: Blunt or penetrating chest trauma. IATROGENIC: Post-procedure (biopsy, central line, thoracentesis, mechanical ventilation). CATAMENIAL: Women, associated with menstruation, endometriosis.",
+      "metadata": { "finding_type": "Pneumothorax", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Pulmonary Embolism - Risk Stratification",
+      "content": "CT findings for pulmonary embolism risk stratification: HIGH RISK: Saddle embolus, bilateral main PA involvement, RV:LV ratio >1, interventricular septal bowing, contrast reflux into IVC/hepatic veins. INTERMEDIATE RISK: Segmental PE, RV enlargement without overt dysfunction markers. LOW RISK: Subsegmental PE, normal RV size. Clot characteristics: acute PE has central filling defect with acute angle to vessel wall; chronic PE has eccentric wall-adherent thrombus, webs, calcification.",
+      "metadata": { "finding_type": "Pulmonary embolism", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Emphysema Subtypes - CT Classification",
+      "content": "Classification of emphysema by CT appearance and distribution: CENTRILOBULAR: Upper lobe predominant, smoking-related, patchy low attenuation areas in center of lobule. PANLOBULAR: Lower lobe predominant, uniform destruction, associated with alpha-1 antitrypsin deficiency. PARASEPTAL: Subpleural and along fissures, may cause blebs/bullae, associated with spontaneous pneumothorax. Quantification: Visual scoring (mild/moderate/severe) or automated software (% low attenuation areas <-950 HU).",
+      "metadata": { "finding_type": "Emphysema", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Bronchiectasis - CT Classification and Causes",
+      "content": "Classification of bronchiectasis by morphology: CYLINDRICAL (mild): Uniform dilation, smooth walls, least severe. VARICOSE (moderate): Alternating dilation and constriction, beaded appearance. CYSTIC (severe): Saccular dilation with air-fluid levels, most severe. Causes: Post-infectious (childhood pneumonia, TB, MAC), cystic fibrosis, primary ciliary dyskinesia, ABPA, immunodeficiency, aspiration, idiopathic. Distribution pattern: upper lobe suggests CF, TB, ABPA; lower lobe suggests aspiration, MAC, idiopathic.",
+      "metadata": { "finding_type": "Bronchiectasis", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Crazy-Paving Pattern - Differential Diagnosis",
+      "content": "Differential diagnosis for crazy-paving pattern (GGO + septal thickening): ACUTE: Pulmonary alveolar proteinosis (classic), ARDS, acute interstitial pneumonia, pulmonary hemorrhage, drug toxicity, lipoid pneumonia, COVID-19 pneumonia. CHRONIC/SUBACUTE: Organizing pneumonia, adenocarcinoma with lepidic growth. Clinical context and distribution help: PAP is often geographic; ARDS is diffuse and dependent; hemorrhage may have clinical history; COVID-19 often peripheral.",
+      "metadata": { "finding_type": "Crazy-paving pattern", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Halo Sign - Differential Diagnosis",
+      "content": "Differential diagnosis for halo sign (nodule with surrounding GGO): INFECTIOUS: Angioinvasive aspergillosis (classic, in immunocompromised), mucormycosis, Candida, CMV, HSV, TB. MALIGNANT: Hemorrhagic metastases (choriocarcinoma, melanoma, RCC), adenocarcinoma with lepidic spread. OTHER: Organizing pneumonia, granulomatosis with polyangiitis, Kaposi sarcoma. Clinical context is key: immunocompromised with halo sign strongly suggests angioinvasive fungal infection.",
+      "metadata": { "finding_type": "Halo sign", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Air Crescent Sign - Differential Diagnosis",
+      "content": "Differential diagnosis for air crescent sign: RECOVERING ANGIOINVASIVE ASPERGILLOSIS: Classic setting is neutropenic patient with recovering WBC count, represents retraction of necrotic tissue. ASPERGILLOMA (MYCETOMA): Fungus ball in pre-existing cavity, mobile with position change. LUNG CANCER: Cavitating carcinoma with internal necrosis. ABSCESS: Draining abscess cavity. TB: Rasmussen aneurysm or cavitary TB.",
+      "metadata": { "finding_type": "Air crescent sign", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Reversed Halo Sign (Atoll Sign) - Differential Diagnosis",
+      "content": "Differential diagnosis for reversed halo sign (GGO center with consolidation rim): PRIMARY: Organizing pneumonia (classic). INFECTIOUS: Fungal infection (mucormycosis, aspergillosis), TB, PCP, bacterial pneumonia. MALIGNANT: Adenocarcinoma. INFLAMMATORY: Granulomatosis with polyangiitis, sarcoidosis. VASCULAR: Pulmonary infarction. Context matters: organizing pneumonia is the most common cause; in immunocompromised, consider fungal infection.",
+      "metadata": { "finding_type": "Reversed halo sign", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Feeding Vessel Sign - Differential Diagnosis",
+      "content": "Differential diagnosis for feeding vessel sign (pulmonary artery entering nodule): SEPTIC EMBOLI: Most characteristic, multiple peripheral nodules with feeding vessels, may cavitate. Often from endocarditis or IV drug use. METASTASES: Hematogenous metastases may show feeding vessel, especially hypervascular primaries. AVM: Pulmonary arteriovenous malformation with feeding artery and draining vein. PULMONARY INFARCT: Wedge-shaped opacity with feeding vessel.",
+      "metadata": { "finding_type": "Feeding vessel sign", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Upper Lobe Predominant Disease - Differential Diagnosis",
+      "content": "Differential diagnosis for upper lobe predominant lung disease: INFECTIOUS: TB, chronic aspiration (in recumbent patients). INFLAMMATORY/OCCUPATIONAL: Silicosis, coal worker's pneumoconiosis, chronic hypersensitivity pneumonitis. AIRWAYS: Cystic fibrosis, ABPA. CYSTIC: PLCH, paraseptal emphysema. FIBROTIC: Ankylosing spondylitis-associated fibrosis, chronic radiation fibrosis. VASCULAR: AVM (upper lobe in HHT). Mnemonic: SCANT - Silicosis, CF, Ankylosing spondylitis, Necrotizing infections (TB), Talking (aspiration).",
+      "metadata": { "finding_type": "Upper lobe disease", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Lower Lobe Predominant Disease - Differential Diagnosis",
+      "content": "Differential diagnosis for lower lobe predominant lung disease: FIBROTIC: UIP/IPF, asbestosis, CTD-ILD. INFECTION: Aspiration pneumonia (dependent segments), MAC infection. AIRWAYS: Bronchiectasis (aspiration-related, idiopathic). CYSTIC: LAM, Birt-Hogg-Dube. VASCULAR: Chronic PE with infarcts. EMPHYSEMA: Panlobular emphysema (alpha-1 antitrypsin deficiency). The most common lower lobe predominant ILD is IPF/UIP pattern.",
+      "metadata": { "finding_type": "Lower lobe disease", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Peripheral vs Central Distribution - Clinical Significance",
+      "content": "Clinical significance of distribution pattern: PERIPHERAL (subpleural): UIP/IPF, organizing pneumonia, chronic eosinophilic pneumonia, pulmonary infarct, peripheral adenocarcinoma. CENTRAL (perihilar): Pulmonary edema (bat-wing pattern), sarcoidosis, lymphoma, Kaposi sarcoma. PERIBRONCHOVASCULAR: Sarcoidosis, lymphangitic carcinomatosis, Kaposi sarcoma, pulmonary hemorrhage syndromes. Distribution is a key feature for pattern recognition and narrowing differential.",
+      "metadata": { "finding_type": "Distribution pattern", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Calcified Pulmonary Nodule - Differential Diagnosis",
+      "content": "Differential diagnosis by calcification pattern: BENIGN PATTERNS: Central (granuloma), diffuse (granuloma), laminated/concentric (granuloma), popcorn (hamartoma). SUSPICIOUS PATTERNS: Eccentric (may be malignant), stippled (may be malignant). DENSE CALCIFICATION: Likely granuloma from histoplasmosis, TB, or coccidioidomycosis. FAT + CALCIFICATION: Hamartoma. Note: Calcification does not exclude malignancy; scar carcinomas and carcinoid tumors may calcify.",
+      "metadata": { "finding_type": "Calcified nodule", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Chest Wall Mass - Differential Diagnosis",
+      "content": "Differential diagnosis for chest wall mass: BONE ORIGIN: Fibrous dysplasia, chondrosarcoma, Ewing sarcoma, metastasis, multiple myeloma, osteomyelitis. SOFT TISSUE: Lipoma, desmoid tumor, soft tissue sarcoma, hematoma. NEURAL: Schwannoma, neurofibroma (may extend through neural foramen). INFECTIOUS: Actinomycosis, TB. LUNG/PLEURAL EXTENSION: Pancoast tumor, mesothelioma with chest wall invasion. Look for rib destruction, neural foramen widening, and lung parenchymal connection.",
+      "metadata": { "finding_type": "Chest wall mass", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Pericardial Effusion - Differential Diagnosis",
+      "content": "Differential diagnosis for pericardial effusion on chest CT: TRANSUDATIVE: Heart failure, renal failure, hypoalbuminemia, hypothyroidism. EXUDATIVE: Infection (viral, bacterial, TB), malignancy, uremia, post-cardiac surgery, autoimmune. HEMORRHAGIC: Trauma, aortic dissection with rupture, malignancy, anticoagulation. Simple effusion: homogeneous low attenuation. Complex effusion: heterogeneous, septations, nodularity (suggests malignancy or infection).",
+      "metadata": { "finding_type": "Pericardial effusion", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Tracheal Narrowing - Differential Diagnosis",
+      "content": "Differential diagnosis for tracheal narrowing/stenosis: INTRINSIC: Post-intubation stenosis (most common), tracheal tumors (SCC, adenoid cystic), granulomatosis with polyangiitis, amyloidosis, relapsing polychondritis, sarcoidosis. EXTRINSIC: Thyroid goiter, mediastinal mass compression, vascular ring. DIFFUSE: Tracheobronchopathia osteochondroplastica, relapsing polychondritis, amyloidosis. FUNCTIONAL: Tracheomalacia (dynamic narrowing on expiration).",
+      "metadata": { "finding_type": "Tracheal narrowing", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Pulmonary Arterial Dilation - Differential Diagnosis",
+      "content": "Differential diagnosis for pulmonary arterial dilation (main PA >29mm): PULMONARY HYPERTENSION: Primary PAH, secondary (chronic PE, heart failure, ILD, COPD). INCREASED FLOW: Left-to-right shunt (ASD, VSD, PDA). VALVULAR: Pulmonic stenosis (post-stenotic dilation). CONNECTIVE TISSUE: Marfan syndrome. Associated findings: RV dilation, interventricular septal flattening, IVC dilation, mosaic perfusion pattern.",
+      "metadata": { "finding_type": "PA dilation", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Hilar Mass - Differential Diagnosis",
+      "content": "Differential diagnosis for hilar mass: MALIGNANT: Primary lung cancer (central, small cell or squamous), lymphoma, metastatic adenopathy. INFECTIOUS: TB adenopathy, fungal adenopathy. INFLAMMATORY: Sarcoidosis (symmetric bilateral). VASCULAR: Pulmonary artery aneurysm. Differentiate mass from vascular structure with contrast enhancement. Hilar overlay sign suggests anterior/posterior mediastinal mass rather than true hilar lesion.",
+      "metadata": { "finding_type": "Hilar mass", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Miliary Nodules - Differential Diagnosis",
+      "content": "Differential diagnosis for miliary nodular pattern (innumerable 1-3mm nodules): INFECTIOUS: Miliary TB (classic), fungal (histoplasmosis, coccidioidomycosis). MALIGNANT: Miliary metastases (thyroid, renal, melanoma). INFLAMMATORY: Sarcoidosis (typically perilymphatic). OTHER: Pneumoconiosis, Langerhans cell histiocytosis. Random distribution suggests hematogenous spread; perilymphatic distribution suggests sarcoidosis or lymphangitic disease.",
+      "metadata": { "finding_type": "Miliary nodules", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Part-Solid Nodule - Management Approach",
+      "content": "Management of part-solid (subsolid) nodule based on size and solid component: <6mm total: Annual follow-up if persistent. >=6mm total with solid <6mm: Follow at 3-6 months, then annual. Solid component >=6mm: PET/CT, biopsy, or resection. Key points: Measure solid component on mediastinal window. Part-solid nodules have higher malignancy rate than solid nodules of same size. Persistent part-solid nodule likely represents adenocarcinoma spectrum. Growth of solid component is most concerning feature.",
+      "metadata": { "finding_type": "Part-solid nodule", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Atelectasis - Pattern Recognition",
+      "content": "Atelectasis patterns by lobe: RUL COLLAPSE: Elevated minor fissure, opacity in right upper zone. RML COLLAPSE: Silhouettes right heart border, triangular opacity on lateral. RLL COLLAPSE: Posterior opacity, displaced major fissure. LUL COLLAPSE: Veil-like opacity, luftsichel sign, tracheal deviation. LLL COLLAPSE: Triangular retrocardiac opacity, depressed hilum. OBSTRUCTIVE vs NON-OBSTRUCTIVE: Obstructive has central mass; non-obstructive from compression, surfactant loss, or fibrosis.",
+      "metadata": { "finding_type": "Atelectasis patterns", "clinical_significance": "Moderate" }
+    },
+    {
+      "category": "classification",
+      "title": "Lung Cancer Staging - T Descriptor CT Features",
+      "content": "Lung cancer T staging by CT: T1: <=3cm, surrounded by lung or visceral pleura. T1a <=1cm, T1b >1-2cm, T1c >2-3cm. T2: >3-5cm, or involves main bronchus (not carina), or visceral pleural invasion, or atelectasis to hilum. T3: >5-7cm, or chest wall/pericardium/phrenic nerve invasion, or separate nodule in same lobe. T4: >7cm, or mediastinum/heart/great vessels/trachea/carina/esophagus/vertebra invasion, or separate nodule in different ipsilateral lobe.",
+      "metadata": { "finding_type": "Lung cancer staging", "clinical_significance": "High" }
+    },
+    {
+      "category": "classification",
+      "title": "Post-COVID Lung Changes - CT Patterns",
+      "content": "CT patterns in COVID-19 and post-COVID: ACUTE: Bilateral peripheral GGO (early), consolidation with GGO (progressive), crazy-paving pattern. ORGANIZING: Consolidation, reversed halo sign, perilobular pattern (4-8 weeks). POST-COVID: Fibrotic-like changes (reticulation, traction bronchiectasis, rare honeycombing), ground-glass opacities (may persist months), organizing pneumonia pattern. Most patients improve; minority develop persistent fibrotic changes.",
+      "metadata": { "finding_type": "COVID-19 patterns", "clinical_significance": "Moderate" }
+    }
+  ]
+}
