@@ -16,12 +16,116 @@
  */
 
 import express from 'express';
+import Anthropic from '@anthropic-ai/sdk';
 import { Orchestrator } from '../agents/index.js';
 import { ChatMode } from '../agents/alignmentAgent.js';
 import { sessionManager } from '../utils/sessionManager.js';
 import { diagnosisService } from '../services/diagnosisService.js';
 
 const router = express.Router();
+
+// Anthropic client for image classification
+const anthropic = new Anthropic();
+
+/**
+ * POST /classify_image
+ * 使用 Claude Vision 自动识别医学图像类型
+ *
+ * Body: { imageData: "data:image/png;base64,..." }
+ * Returns: { modality, bodyPart, examType, confidence }
+ */
+router.post('/classify_image', async (req, res) => {
+  const { imageData } = req.body;
+
+  if (!imageData || !imageData.startsWith('data:image')) {
+    return res.status(400).json({ error: 'Invalid image data' });
+  }
+
+  try {
+    // Extract base64 data
+    const matches = imageData.match(/^data:(.+);base64,(.+)$/);
+    if (!matches) {
+      return res.status(400).json({ error: 'Invalid base64 format' });
+    }
+
+    const mediaType = matches[1];
+    const base64Data = matches[2];
+
+    console.log('[ClassifyImage] Analyzing image with Claude Vision...');
+
+    const response = await anthropic.messages.create({
+      model: 'claude-3-5-haiku-20241022', // Fast model for classification
+      max_tokens: 500,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType,
+                data: base64Data,
+              },
+            },
+            {
+              type: 'text',
+              text: `Analyze this medical image and identify:
+1. Imaging modality (CT, MRI, X-ray, Ultrasound)
+2. Body part/region (Chest, Abdomen, Brain, Spine, etc.)
+3. Whether contrast was likely used (for CT/MRI)
+
+Output ONLY valid JSON in this exact format:
+{
+  "modality": "CT" or "MRI" or "X-ray" or "Ultrasound",
+  "bodyPart": "Chest" or "Abdomen" or "Brain" or other,
+  "contrast": true or false,
+  "examType": "full exam type string like CT Chest with Contrast",
+  "confidence": 0.0 to 1.0
+}
+
+Be concise. Output only JSON, no explanation.`
+            }
+          ]
+        }
+      ]
+    });
+
+    // Parse the response
+    const text = response.content[0]?.text || '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      console.warn('[ClassifyImage] Could not parse JSON from response:', text);
+      return res.status(200).json({
+        success: true,
+        classification: {
+          modality: 'CT',
+          bodyPart: 'Chest',
+          contrast: false,
+          examType: 'CT Chest',
+          confidence: 0.5
+        },
+        raw: text
+      });
+    }
+
+    const classification = JSON.parse(jsonMatch[0]);
+    console.log('[ClassifyImage] Classification result:', classification);
+
+    return res.status(200).json({
+      success: true,
+      classification
+    });
+
+  } catch (error) {
+    console.error('[ClassifyImage] Error:', error.message);
+    return res.status(500).json({
+      error: 'Classification failed',
+      message: error.message
+    });
+  }
+});
 
 /**
  * POST /medical_report_init
@@ -871,6 +975,31 @@ router.get('/diagnosis/:id', async (req, res) => {
   } catch (error) {
     console.error('[AgentRoute] Get diagnosis error:', error);
     return res.status(500).json({ error: 'Failed to fetch diagnosis' });
+  }
+});
+
+// Get latest diagnosis for a patient (for auto-fill clinical context)
+router.get('/diagnosis/patient/:patientId/latest', async (req, res) => {
+  const { patientId } = req.params;
+
+  try {
+    const diagnosis = await diagnosisService.getLatestDiagnosisByPatient(parseInt(patientId));
+
+    if (!diagnosis) {
+      return res.status(200).json({
+        success: true,
+        diagnosis: null,
+        message: 'No diagnosis found for this patient'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      diagnosis
+    });
+  } catch (error) {
+    console.error('[AgentRoute] Get latest diagnosis error:', error);
+    return res.status(500).json({ error: 'Failed to fetch latest diagnosis' });
   }
 });
 

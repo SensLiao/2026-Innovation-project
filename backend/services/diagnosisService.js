@@ -438,6 +438,46 @@ class DiagnosisService {
       return [];
     }
   }
+
+  /**
+   * 获取病人最新的诊断记录 (用于自动填充临床上下文)
+   * @param {number} patientId - 病人 ID
+   * @returns {Object|null} - 最新诊断记录
+   */
+  async getLatestDiagnosisByPatient(patientId) {
+    try {
+      const result = await sql`
+        SELECT
+          dr.*,
+          p.name as patient_name,
+          p.mrn as patient_mrn
+        FROM diagnosis_records dr
+        LEFT JOIN patients p ON dr.patient_id = p.pid
+        WHERE dr.patient_id = ${patientId}
+        ORDER BY dr.created_at DESC
+        LIMIT 1
+      `;
+
+      if (result.length === 0) return null;
+
+      const row = result[0];
+      return {
+        id: row.id,
+        status: row.status,
+        clinicalContext: {
+          clinicalIndication: row.clinical_indication,
+          examType: row.exam_type,
+          examDate: row.exam_date,
+          smokingHistory: row.smoking_history,
+          relevantHistory: row.relevant_history,
+          priorImagingDate: row.prior_imaging_date
+        }
+      };
+    } catch (error) {
+      console.error('[DiagnosisService] Get latest diagnosis error:', error.message);
+      return null;
+    }
+  }
 }
 
 // 导出单例
