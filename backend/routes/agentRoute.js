@@ -11,13 +11,11 @@
  */
 
 import express from 'express';
-import { Orchestrator, sessionManager } from '../agents/index.js';
+import { Orchestrator } from '../agents/index.js';
 import { ChatMode } from '../agents/alignmentAgent.js';
+import { sessionManager } from '../utils/sessionManager.js';
 
 const router = express.Router();
-
-// 简单的请求-session 映射 (生产环境应使用更健壮的方案)
-const activeOrchestrators = new Map();
 
 /**
  * POST /medical_report_init
@@ -43,7 +41,7 @@ router.post('/medical_report_init', async (req, res) => {
     const sessionId = orchestrator.sessionId;
 
     // 保存到活跃会话
-    activeOrchestrators.set(sessionId, orchestrator);
+    sessionManager.set(sessionId, orchestrator);
 
     // 准备输入数据
     const input = {
@@ -119,13 +117,13 @@ router.post('/medical_report_rein', async (req, res) => {
     // 查找现有会话或创建新的
     let orchestrator;
 
-    if (sessionId && activeOrchestrators.has(sessionId)) {
-      orchestrator = activeOrchestrators.get(sessionId);
+    if (sessionId && sessionManager.has(sessionId)) {
+      orchestrator = sessionManager.get(sessionId);
       console.log(`[AgentRoute] Using existing session: ${sessionId}`);
     } else {
       // 没有活跃会话，创建新的 (降级模式)
       orchestrator = new Orchestrator();
-      activeOrchestrators.set(orchestrator.sessionId, orchestrator);
+      sessionManager.set(orchestrator.sessionId, orchestrator);
       console.log(`[AgentRoute] Created new session: ${orchestrator.sessionId}`);
     }
 
@@ -187,12 +185,12 @@ router.post('/chat_stream', async (req, res) => {
 
   // Get or create orchestrator
   let orchestrator;
-  if (sessionId && activeOrchestrators.has(sessionId)) {
-    orchestrator = activeOrchestrators.get(sessionId);
+  if (sessionId && sessionManager.has(sessionId)) {
+    orchestrator = sessionManager.get(sessionId);
     console.log(`[ChatStream] Using existing session: ${sessionId}`);
   } else {
     orchestrator = new Orchestrator();
-    activeOrchestrators.set(orchestrator.sessionId, orchestrator);
+    sessionManager.set(orchestrator.sessionId, orchestrator);
     console.log(`[ChatStream] Created new session: ${orchestrator.sessionId}`);
   }
 
@@ -349,7 +347,7 @@ router.post('/medical_report_stream', async (req, res) => {
 
   const orchestrator = new Orchestrator();
   const sessionId = orchestrator.sessionId;
-  activeOrchestrators.set(sessionId, orchestrator);
+  sessionManager.set(sessionId, orchestrator);
 
   // 发送会话信息
   res.write(`data: ${JSON.stringify({ type: 'session', sessionId })}\n\n`);
@@ -404,7 +402,7 @@ router.post('/medical_report_stream', async (req, res) => {
  */
 router.get('/session/:sessionId', (req, res) => {
   const { sessionId } = req.params;
-  const orchestrator = activeOrchestrators.get(sessionId);
+  const orchestrator = sessionManager.get(sessionId);
 
   if (!orchestrator) {
     return res.status(404).json({ error: 'Session not found' });
@@ -424,8 +422,8 @@ router.get('/session/:sessionId', (req, res) => {
 router.delete('/session/:sessionId', (req, res) => {
   const { sessionId } = req.params;
 
-  if (activeOrchestrators.has(sessionId)) {
-    activeOrchestrators.delete(sessionId);
+  if (sessionManager.has(sessionId)) {
+    sessionManager.delete(sessionId);
     return res.status(200).json({ message: 'Session closed' });
   }
 
@@ -439,7 +437,7 @@ router.delete('/session/:sessionId', (req, res) => {
 router.get('/health', (req, res) => {
   return res.status(200).json({
     status: 'ok',
-    activeSessions: activeOrchestrators.size,
+    ...sessionManager.getStats(),
     timestamp: new Date().toISOString()
   });
 });
