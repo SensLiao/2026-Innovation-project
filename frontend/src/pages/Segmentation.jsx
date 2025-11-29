@@ -72,7 +72,22 @@ const SegmentationPage = () => {
   // 色板
   const maskColors = ["#1E90FF","#00BFFF","#7FFF00","#FFD700","#FF7F50","#FF1493","#8A2BE2"];
 
-  // ===== iter4: Patient & Clinical Context =====
+  // ═══════════════════════════════════════════════════════════════════════════
+  // iter4: Patient & Clinical Context - 病人信息与临床上下文
+  // ═══════════════════════════════════════════════════════════════════════════
+  /**
+   * 病人选择与临床上下文状态管理
+   *
+   * 功能：
+   * - 病人下拉选择 (从数据库加载)
+   * - 自动填充历史临床上下文
+   * - 临床指征、吸烟史、既往影像等输入
+   * - 检查类型自动识别 (Claude Vision)
+   *
+   * 安全措施：
+   * - 使用 isCurrent 标志防止异步竞态条件
+   * - 使用 currentFileRef 防止内存泄漏
+   */
   const [patientInfoOpen, setPatientInfoOpen] = useState(false);
   const [patients, setPatients] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState(null);
@@ -85,7 +100,10 @@ const SegmentationPage = () => {
     priorImagingDate: ''
   });
 
-  // Fetch patients list on mount
+  /**
+   * 加载病人列表 (组件挂载时)
+   * 用于前端下拉选择器
+   */
   useEffect(() => {
     async function fetchPatients() {
       try {
@@ -98,14 +116,26 @@ const SegmentationPage = () => {
     fetchPatients();
   }, []);
 
-  // When selected patient changes, fetch full patient info and latest diagnosis
+  /**
+   * 病人选择变更处理
+   *
+   * 职责：
+   * - 获取病人详细信息
+   * - 获取该病人最新诊断记录
+   * - 自动填充临床上下文 (如有历史记录)
+   *
+   * 竞态条件防护：
+   * - 使用 isCurrent 标志跟踪当前请求
+   * - 如果用户在请求完成前切换病人，丢弃旧响应
+   * - cleanup 函数在组件卸载或依赖变化时设置 isCurrent = false
+   */
   useEffect(() => {
     if (!selectedPatientId) {
       setSelectedPatient(null);
       return;
     }
 
-    let isCurrent = true; // Prevent race condition with stale data
+    let isCurrent = true; // 竞态条件防护：防止过期数据更新
 
     async function fetchPatientInfo() {
       try {
@@ -167,11 +197,30 @@ const SegmentationPage = () => {
     }
   }, [sessionId]);
 
-  // ======= 文件处理 =======
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 文件处理 - 图像上传与模型加载
+  // ═══════════════════════════════════════════════════════════════════════════
+  /**
+   * handleFile - 医学图像处理管道
+   *
+   * 职责：
+   * 1. 转换文件为 DataURL 并预览
+   * 2. 调用 /api/load_model 获取图像嵌入
+   * 3. 调用 /api/classify_image 自动识别检查类型 (Claude Vision)
+   * 4. 更新 UI 状态
+   *
+   * 内存泄漏防护：
+   * - 使用 currentFileRef 追踪当前处理的文件
+   * - 每个异步步骤后检查文件是否变更
+   * - 若用户上传新文件，立即中止旧文件的处理流程
+   *
+   * 状态管理：
+   * - finally 块确保 isRunning 在所有情况下重置 (包括 early return)
+   */
   async function handleFile(f) {
     setFileName(f.name);
     setIsRunning(true);
-    currentFileRef.current = f; // Track current file to prevent stale updates
+    currentFileRef.current = f; // 内存泄漏防护：追踪当前文件
 
     try {
       const dataURL = await fileToDataURL(f);
