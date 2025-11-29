@@ -1590,9 +1590,9 @@ const SegmentationPage = () => {
                       </span>
                       <select value={targetAgent} onChange={(e) => setTargetAgent(e.target.value)} className="rounded-md border px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150 cursor-pointer">
                         <option value="auto">Auto (Smart Routing)</option>
-                        <option value="radiologist">Radiologist Agent</option>
-                        <option value="pathologist">Pathologist Agent</option>
-                        <option value="report_writer">Report Writer</option>
+                        <option value="radiologist">Radiology Analysis Agent</option>
+                        <option value="pathologist">Pathology Diagnosis Agent</option>
+                        <option value="report_writer">Report Drafting Agent</option>
                       </select>
                     </div>
 
