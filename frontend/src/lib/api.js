@@ -38,7 +38,7 @@ api.interceptors.response.use(
  * @returns {Promise<{abort: Function}>} - 返回可用于中止请求的对象
  */
 export async function streamRequest(endpoint, body, callbacks = {}) {
-  const { onProgress, onComplete, onError } = callbacks;
+  const { onProgress, onComplete, onError, onLog } = callbacks;
 
   const controller = new AbortController();
 
@@ -82,6 +82,9 @@ export async function streamRequest(endpoint, body, callbacks = {}) {
                 case 'session':
                 case 'progress':
                   onProgress?.(data);
+                  break;
+                case 'log':
+                  onLog?.(data);
                   break;
                 case 'complete':
                   onComplete?.(data);
@@ -220,51 +223,67 @@ export async function streamChat(params, callbacks = {}) {
 
 /**
  * Progress phase mapping for UI display
+ * Updated: Agent names added for display
  */
 export const ANALYSIS_PHASES = {
+  preparing: {
+    label: 'Preparing image...',
+    detail: 'Processing segmentation data',
+    progress: 5,
+    agent: null
+  },
   session: {
     label: 'Initializing analysis...',
     detail: 'Setting up multi-agent system',
-    progress: 0
+    progress: 8,
+    agent: 'Orchestrator'
   },
   phase1_start: {
-    label: 'Radiologist analyzing image...',
+    label: 'Starting image analysis...',
     detail: 'Identifying lesions, measuring dimensions, describing characteristics',
-    progress: 10
+    progress: 10,
+    agent: 'RadiologistAgent'
   },
   radiologist_done: {
     label: 'Image analysis complete',
     detail: 'Findings documented',
-    progress: 25
+    progress: 25,
+    agent: 'RadiologistAgent'
   },
   phase2_start: {
-    label: 'Pathologist diagnosing...',
+    label: 'Analyzing findings and generating diagnosis...',
     detail: 'Generating differential diagnosis based on imaging findings',
-    progress: 30
+    progress: 30,
+    agent: 'PathologistAgent'
   },
   pathologist_done: {
     label: 'Diagnosis complete',
     detail: 'Differential diagnosis generated',
-    progress: 50
+    progress: 50,
+    agent: 'PathologistAgent'
   },
   phase3_start: {
     label: 'Writing medical report...',
     detail: 'Synthesizing findings into structured report format',
-    progress: 55
+    progress: 55,
+    agent: 'ReportWriterAgent'
   },
   report_draft_done: {
     label: 'Report draft complete',
     detail: 'Proceeding to quality review',
-    progress: 75
+    progress: 75,
+    agent: 'ReportWriterAgent'
   },
   phase4_start: {
-    label: 'Quality control review...',
+    label: 'Running quality control checks...',
     detail: 'Checking terminology, consistency and completeness',
-    progress: 80
+    progress: 80,
+    agent: 'QCReviewerAgent'
   },
   analysis_complete: {
     label: 'Analysis complete!',
     detail: 'Report ready for physician review',
-    progress: 100
+    progress: 100,
+    agent: null
   },
 };
