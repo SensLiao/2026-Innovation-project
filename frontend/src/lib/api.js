@@ -133,6 +133,7 @@ export async function streamRequest(endpoint, body, callbacks = {}) {
  * @param {string} params.message - User message
  * @param {string} params.sessionId - Session ID
  * @param {string} params.mode - 'auto' | 'question' | 'info' | 'revision'
+ * @param {string} params.targetAgent - 'radiologist' | 'pathologist' | 'report_writer' | undefined (auto)
  * @param {Object} callbacks - Callback functions
  * @param {Function} callbacks.onIntent - Intent classification callback
  * @param {Function} callbacks.onChunk - Text chunk callback (streaming)
@@ -141,7 +142,7 @@ export async function streamRequest(endpoint, body, callbacks = {}) {
  * @returns {Promise<{abort: Function}>}
  */
 export async function streamChat(params, callbacks = {}) {
-  const { message, sessionId, mode = 'auto' } = params;
+  const { message, sessionId, mode = 'auto', targetAgent } = params;
   const { onIntent, onChunk, onRevision, onError, onDone } = callbacks;
 
   const controller = new AbortController();
@@ -152,7 +153,7 @@ export async function streamChat(params, callbacks = {}) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message, sessionId, mode }),
+      body: JSON.stringify({ message, sessionId, mode, targetAgent }),
       credentials: 'include',
       signal: controller.signal,
     });
