@@ -17,7 +17,7 @@ const SegmentationPage = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [reportText, setReportText] = useState(defaultReport);
   const [question, setQuestion] = useState("");
-  const [model, setModel] = useState("SOMA-CT-v1");
+  const [targetAgent, setTargetAgent] = useState("auto"); // auto, radiologist, pathologist, report_writer
 
   // === 同原实现 ===
   const [mode, setMode] = useState("foreground");
@@ -612,7 +612,7 @@ const SegmentationPage = () => {
 
     try {
       await streamChat(
-        { message: content, sessionId: sessionId || undefined },
+        { message: content, sessionId: sessionId || undefined, targetAgent: targetAgent !== 'auto' ? targetAgent : undefined },
         {
           onIntent: (data) => {
             console.log("[Chat] Intent:", data.intent, data.confidence);
@@ -1173,8 +1173,6 @@ const SegmentationPage = () => {
                   <ReportPanel
                     reportText={reportText}
                     onChangeText={setReportText}
-                    model={model}
-                    onChangeModel={setModel}
                     samples={{ medical: sampleGeneratedReport, formal: defaultReport }}
                     uploadedImage={uploadedImage}
                     masks={masks}
@@ -1186,8 +1184,8 @@ const SegmentationPage = () => {
               {/* Right: Chat */}
                 <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col min-h-[500px]">
 
-                {/* Messages area - grows to fill space, scrolls when needed */}
-                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3 mb-3">
+                {/* Messages area - fixed max height with scroll */}
+                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3 mb-3 max-h-[400px]">
                   {messages.length === 0 ? (
                     <>
                       <div className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
@@ -1236,12 +1234,13 @@ const SegmentationPage = () => {
                       <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
                         <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Add">+</button>
                         <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Settings">⚙</button>
-                        Models
+                        Agent
                       </span>
-                      <select value={model} onChange={(e) => setModel(e.target.value)} className="rounded-md border px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150 cursor-pointer">
-                        <option value="SOMA-CT-v1">SOMA-CT-v1</option>
-                        <option value="SOMA-CT-v2">SOMA-CT-v2</option>
-                        <option value="General-4o-mini">General-4o-mini</option>
+                      <select value={targetAgent} onChange={(e) => setTargetAgent(e.target.value)} className="rounded-md border px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150 cursor-pointer">
+                        <option value="auto">Auto (Smart Routing)</option>
+                        <option value="radiologist">Radiologist Agent</option>
+                        <option value="pathologist">Pathologist Agent</option>
+                        <option value="report_writer">Report Writer</option>
                       </select>
                     </div>
 

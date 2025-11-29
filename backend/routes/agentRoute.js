@@ -163,7 +163,12 @@ router.post('/medical_report_rein', async (req, res) => {
  * POST /chat_stream
  * SSE streaming chat for questions and info requests
  *
- * Body: { message: string, sessionId?: string, mode?: 'auto' | 'question' | 'info' | 'revision' }
+ * Body: {
+ *   message: string,
+ *   sessionId?: string,
+ *   mode?: 'auto' | 'question' | 'info' | 'revision',
+ *   targetAgent?: 'radiologist' | 'pathologist' | 'report_writer' (bypasses AlignmentAgent routing)
+ * }
  * SSE Events:
  *   - { type: 'intent', intent: string, confidence: number }
  *   - { type: 'chunk', text: string }
@@ -171,7 +176,7 @@ router.post('/medical_report_rein', async (req, res) => {
  *   - { type: 'done' }
  */
 router.post('/chat_stream', async (req, res) => {
-  const { message, sessionId, mode = 'auto' } = req.body;
+  const { message, sessionId, mode = 'auto', targetAgent } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'No message provided' });
@@ -198,16 +203,98 @@ router.post('/chat_stream', async (req, res) => {
   res.write(`data: ${JSON.stringify({ type: 'session', sessionId: orchestrator.sessionId })}\n\n`);
 
   try {
-    // Step 1: Get agents and classify intent (fast, no LLM call)
     const agents = await orchestrator.getAgents();
-    const alignmentAgent = agents?.alignment;
-    let intent;
+    const currentReport = orchestrator.getLatestReport();
 
-    if (mode !== 'auto') {
-      intent = { mode: mode.toUpperCase(), confidence: 1.0 };
-    } else if (alignmentAgent?.classifyIntentFast) {
-      intent = alignmentAgent.classifyIntentFast(message);
+    // Handle direct agent targeting (bypasses AlignmentAgent routing)
+    if (targetAgent && targetAgent !== 'auto') {
+      console.log(`[ChatStream] Direct agent call: ${targetAgent}`);
+      res.write(`data: ${JSON.stringify({ type: 'intent', intent: 'DIRECT_AGENT', confidence: 1.0, targetAgent })}\n\n`);
+
+      if (!currentReport) {
+        res.write(`data: ${JSON.stringify({ type: 'chunk', text: 'Please generate a report first by clicking "Analyse" before asking agent-specific questions.' })}\n\n`);
+      } else {
+        // Route to specific agent
+        const agentResults = orchestrator.agentResults || {};
+        let response = '';
+
+        switch (targetAgent) {
+          case 'radiologist':
+            // Answer questions about imaging findings
+            const radiologistData = agentResults.radiologist;
+            if (radiologistData) {
+              response = `**Radiologist Agent Response:**\n\nBased on the imaging analysis:\n`;
+              if (radiologistData.findings?.length > 0) {
+                response += `\n**Findings (${radiologistData.findings.length}):**\n`;
+                radiologistData.findings.forEach((f, i) => {
+                  response += `${i + 1}. ${f.description || f.type || 'Finding'}\n`;
+                  if (f.location) response += `   - Location: ${f.location}\n`;
+                  if (f.size) response += `   - Size: ${f.size}\n`;
+                });
+              }
+              response += `\n**Your question:** "${message}"\n\nThe imaging shows the findings listed above. Let me know if you need more specific details about any particular finding.`;
+            } else {
+              response = `I don't have imaging analysis data yet. Please run the Analyse function first to generate findings.`;
+            }
+            break;
+
+          case 'pathologist':
+            // Answer questions about diagnosis
+            const pathologistData = agentResults.pathologist;
+            if (pathologistData) {
+              response = `**Pathologist Agent Response:**\n\nBased on the diagnostic analysis:\n`;
+              if (pathologistData.primaryDiagnosis) {
+                response += `\n**Primary Diagnosis:** ${pathologistData.primaryDiagnosis.name || 'N/A'}`;
+                if (pathologistData.primaryDiagnosis.confidence) {
+                  response += ` (Confidence: ${Math.round(pathologistData.primaryDiagnosis.confidence * 100)}%)`;
+                }
+              }
+              if (pathologistData.differentialDiagnoses?.length > 0) {
+                response += `\n\n**Differential Diagnoses:**\n`;
+                pathologistData.differentialDiagnoses.forEach((d, i) => {
+                  response += `${i + 1}. ${d.name || d}\n`;
+                });
+              }
+              response += `\n\n**Your question:** "${message}"\n\nThe diagnosis is based on the imaging findings. Would you like me to elaborate on any specific aspect?`;
+            } else {
+              response = `I don't have diagnostic data yet. Please run the Analyse function first to generate a diagnosis.`;
+            }
+            break;
+
+          case 'report_writer':
+            // Direct report modification - route to revision flow
+            res.write(`data: ${JSON.stringify({ type: 'status', message: 'Processing report modification...' })}\n\n`);
+            const revisionResult = await orchestrator.handleFeedback(message);
+            if (revisionResult.success) {
+              response = revisionResult.response || `I've processed your report modification request.`;
+              if (revisionResult.report) {
+                res.write(`data: ${JSON.stringify({
+                  type: 'revision_complete',
+                  updatedReport: revisionResult.report,
+                  changes: revisionResult.changes || []
+                })}\n\n`);
+              }
+            } else {
+              response = `Sorry, I couldn't process that modification. Please try rephrasing your request.`;
+            }
+            break;
+
+          default:
+            response = `Unknown agent: ${targetAgent}. Available agents: radiologist, pathologist, report_writer`;
+        }
+
+        res.write(`data: ${JSON.stringify({ type: 'chunk', text: response })}\n\n`);
+      }
     } else {
+      // Normal flow: AlignmentAgent handles routing
+      const alignmentAgent = agents?.alignment;
+      let intent;
+
+      if (mode !== 'auto') {
+        intent = { mode: mode.toUpperCase(), confidence: 1.0 };
+      } else if (alignmentAgent?.classifyIntentFast) {
+        intent = alignmentAgent.classifyIntentFast(message);
+      } else {
       // Fallback: simple keyword check
       const lowerMsg = message.toLowerCase();
       if (lowerMsg.includes('?') || lowerMsg.includes('why') || lowerMsg.includes('how')) {
@@ -293,6 +380,7 @@ router.post('/chat_stream', async (req, res) => {
         text: "I'm not sure what you're asking. Could you please clarify your request? You can:\n• Ask questions about the report (e.g., \"Why is this diagnosis suggested?\")\n• Request changes (e.g., \"Change the impression to...\")\n• Ask for recommendations"
       })}\n\n`);
     }
+    } // Close the else block for normal flow (non-targetAgent)
 
   } catch (error) {
     console.error('[ChatStream] Error:', error);
