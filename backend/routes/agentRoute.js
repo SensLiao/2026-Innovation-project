@@ -928,8 +928,14 @@ router.get('/patients/search', async (req, res) => {
 router.get('/patients/:id', async (req, res) => {
   const { id } = req.params;
 
+  // Validate patient ID is a positive integer
+  const patientId = parseInt(id, 10);
+  if (isNaN(patientId) || patientId <= 0) {
+    return res.status(400).json({ error: 'Invalid patient ID' });
+  }
+
   try {
-    const patient = await diagnosisService.getPatient(parseInt(id));
+    const patient = await diagnosisService.getPatient(patientId);
 
     if (!patient) {
       return res.status(404).json({ error: 'Patient not found' });
@@ -961,8 +967,14 @@ router.get('/patients/:id', async (req, res) => {
 router.get('/diagnosis/:id', async (req, res) => {
   const { id } = req.params;
 
+  // Validate diagnosis ID is a positive integer
+  const diagnosisId = parseInt(id, 10);
+  if (isNaN(diagnosisId) || diagnosisId <= 0) {
+    return res.status(400).json({ error: 'Invalid diagnosis ID' });
+  }
+
   try {
-    const diagnosis = await diagnosisService.getDiagnosisWithPatient(parseInt(id));
+    const diagnosis = await diagnosisService.getDiagnosisWithPatient(diagnosisId);
 
     if (!diagnosis) {
       return res.status(404).json({ error: 'Diagnosis not found' });
@@ -982,8 +994,14 @@ router.get('/diagnosis/:id', async (req, res) => {
 router.get('/diagnosis/patient/:patientId/latest', async (req, res) => {
   const { patientId } = req.params;
 
+  // Validate patient ID is a positive integer
+  const validPatientId = parseInt(patientId, 10);
+  if (isNaN(validPatientId) || validPatientId <= 0) {
+    return res.status(400).json({ error: 'Invalid patient ID' });
+  }
+
   try {
-    const diagnosis = await diagnosisService.getLatestDiagnosisByPatient(parseInt(patientId));
+    const diagnosis = await diagnosisService.getLatestDiagnosisByPatient(validPatientId);
 
     if (!diagnosis) {
       return res.status(200).json({

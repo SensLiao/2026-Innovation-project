@@ -406,7 +406,9 @@ class DiagnosisService {
    */
   async searchPatients(query) {
     try {
-      const searchTerm = `%${query}%`;
+      // Sanitize: escape LIKE special characters to prevent SQL injection
+      const sanitized = query.replace(/[%_\\]/g, '\\$&');
+      const searchTerm = `%${sanitized}%`;
       const result = await sql`
         SELECT pid, name, age, gender, mrn
         FROM patients
