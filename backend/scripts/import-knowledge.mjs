@@ -4,10 +4,14 @@
  *
  * 从 data/ 目录读取预处理的 JSON 文件，导入到 PostgreSQL (pgvector)
  *
- * 数据文件:
- * - data/lung-rads-v2022.json   (Lung-RADS 分类)
- * - data/icd10-respiratory.json (ICD-10 编码)
- * - data/radlex-chest.json      (RadLex 术语)
+ * 数据文件 (扩展版 ~565 entries):
+ * - data/lung-rads-v2022.json         (Lung-RADS 分类, ~23 entries)
+ * - data/icd10-respiratory.json       (ICD-10 基础编码, ~50 entries)
+ * - data/icd10-respiratory-extended.json (ICD-10 扩展, ~130 entries)
+ * - data/radlex-chest.json            (RadLex 基础术语, ~44 entries)
+ * - data/radlex-chest-extended.json   (RadLex 扩展, ~100 entries)
+ * - data/clinical-differential.json   (鉴别诊断, ~36 entries)
+ * - data/clinical-guidelines.json     (临床指南, ~35 entries)
  *
  * 运行方式:
  *   # 需要先启动 embedding 服务
@@ -15,6 +19,9 @@
  *
  *   # 然后运行导入
  *   node backend/scripts/import-knowledge.mjs
+ *
+ *   # 清空后重新导入
+ *   CLEAR_FIRST=true node backend/scripts/import-knowledge.mjs
  *
  *   # 使用 mock 模式测试 (无需 embedding 服务)
  *   EMBEDDING_PROVIDER=mock node backend/scripts/import-knowledge.mjs
@@ -33,17 +40,35 @@ const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, '../data');
 
 const DATA_FILES = [
+  // 基础数据
   {
     file: 'lung-rads-v2022.json',
     description: 'Lung-RADS v2022 Classifications'
   },
   {
     file: 'icd10-respiratory.json',
-    description: 'ICD-10 Respiratory Codes'
+    description: 'ICD-10 Respiratory Codes (Base)'
   },
   {
     file: 'radlex-chest.json',
-    description: 'RadLex Chest Terminology'
+    description: 'RadLex Chest Terminology (Base)'
+  },
+  // 扩展数据
+  {
+    file: 'icd10-respiratory-extended.json',
+    description: 'ICD-10 Extended Codes (TB, Neoplasms, ILD, PE, etc.)'
+  },
+  {
+    file: 'radlex-chest-extended.json',
+    description: 'RadLex Extended Terminology (Signs, Patterns, Anatomy)'
+  },
+  {
+    file: 'clinical-differential.json',
+    description: 'Clinical Differential Diagnosis by Finding Type'
+  },
+  {
+    file: 'clinical-guidelines.json',
+    description: 'Clinical Guidelines (Fleischner, ACR, Lung-RADS, TNM)'
   }
 ];
 
@@ -161,9 +186,16 @@ async function importKnowledge() {
     console.log('\n[5/5] Testing queries...');
 
     const testQueries = [
+      // 基础测试
       { text: '15mm solid nodule in right upper lobe', expected: 'Lung-RADS' },
       { text: 'pulmonary nodule incidental finding', expected: 'ICD-10' },
-      { text: 'ground glass opacity definition', expected: 'RadLex' }
+      { text: 'ground glass opacity definition', expected: 'RadLex' },
+      // 扩展测试
+      { text: 'tuberculosis cavity upper lobe', expected: 'ICD-10/DDx' },
+      { text: 'tree-in-bud pattern differential diagnosis', expected: 'DDx' },
+      { text: 'Fleischner guideline 8mm nodule follow up', expected: 'Guideline' },
+      { text: 'signet ring sign bronchiectasis', expected: 'RadLex' },
+      { text: 'UIP pattern honeycomb IPF', expected: 'DDx/Guideline' }
     ];
 
     for (const { text, expected } of testQueries) {
