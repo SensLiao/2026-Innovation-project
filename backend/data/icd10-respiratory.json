@@ -1,0 +1,550 @@
+{
+  "source": "ICD-10-CM 2024",
+  "version": "2024",
+  "url": "https://www.cms.gov/medicare/coding/icd10",
+  "description": "International Classification of Diseases, 10th Revision, Clinical Modification - Respiratory and Related Codes",
+  "entries": [
+    {
+      "category": "coding",
+      "title": "R91.1 - Solitary Pulmonary Nodule",
+      "content": "Solitary pulmonary nodule (SPN). A single, well-defined round or oval lesion in the lung parenchyma, typically less than 3 cm in diameter, surrounded by normal lung tissue. May be incidentally detected on chest imaging. Requires characterization and follow-up based on size, morphology, and patient risk factors.",
+      "metadata": {
+        "icd_code": "R91.1",
+        "chapter": "R - Symptoms, signs and abnormal clinical and laboratory findings",
+        "billable": true,
+        "common_associations": ["Lung cancer screening", "Incidental finding", "CT chest"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "R91.8 - Other Nonspecific Abnormal Findings of Lung Field",
+      "content": "Other nonspecific abnormal findings of lung field. Includes multiple pulmonary nodules, diffuse lung abnormalities, or other non-specific pulmonary findings that do not fit specific diagnostic categories. May require additional workup or correlation.",
+      "metadata": {
+        "icd_code": "R91.8",
+        "chapter": "R - Symptoms, signs and abnormal clinical and laboratory findings",
+        "billable": true,
+        "common_associations": ["Multiple nodules", "Interstitial changes", "Atelectasis"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "C34.10 - Malignant Neoplasm of Upper Lobe, Unspecified Bronchus or Lung",
+      "content": "Malignant neoplasm (primary lung cancer) of the upper lobe, bronchus or lung, side unspecified. Upper lobe is the most common location for primary lung cancer. Includes adenocarcinoma, squamous cell carcinoma, and other primary lung malignancies in this location.",
+      "metadata": {
+        "icd_code": "C34.10",
+        "chapter": "C - Neoplasms",
+        "billable": true,
+        "laterality_codes": ["C34.11 (right)", "C34.12 (left)"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "C34.11 - Malignant Neoplasm of Upper Lobe, Right Bronchus or Lung",
+      "content": "Malignant neoplasm of the right upper lobe bronchus or lung. Primary lung cancer in the right upper lobe, the most common site for lung malignancy. Right lung has three lobes (upper, middle, lower).",
+      "metadata": {
+        "icd_code": "C34.11",
+        "chapter": "C - Neoplasms",
+        "billable": true,
+        "anatomic_location": "Right upper lobe"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "C34.12 - Malignant Neoplasm of Upper Lobe, Left Bronchus or Lung",
+      "content": "Malignant neoplasm of the left upper lobe bronchus or lung. Primary lung cancer in the left upper lobe. Left lung has two lobes (upper and lower), with lingula being part of the upper lobe.",
+      "metadata": {
+        "icd_code": "C34.12",
+        "chapter": "C - Neoplasms",
+        "billable": true,
+        "anatomic_location": "Left upper lobe"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "C34.2 - Malignant Neoplasm of Middle Lobe, Bronchus or Lung",
+      "content": "Malignant neoplasm of the middle lobe bronchus or lung. Primary lung cancer in the right middle lobe. Note: Only the right lung has a middle lobe; the left lung has no middle lobe equivalent.",
+      "metadata": {
+        "icd_code": "C34.2",
+        "chapter": "C - Neoplasms",
+        "billable": true,
+        "anatomic_location": "Right middle lobe"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "C34.30 - Malignant Neoplasm of Lower Lobe, Unspecified Bronchus or Lung",
+      "content": "Malignant neoplasm of the lower lobe, bronchus or lung, side unspecified. Primary lung cancer in the lower lobe. Both right and left lungs have lower lobes.",
+      "metadata": {
+        "icd_code": "C34.30",
+        "chapter": "C - Neoplasms",
+        "billable": true,
+        "laterality_codes": ["C34.31 (right)", "C34.32 (left)"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "C34.31 - Malignant Neoplasm of Lower Lobe, Right Bronchus or Lung",
+      "content": "Malignant neoplasm of the right lower lobe bronchus or lung. Primary lung cancer in the right lower lobe.",
+      "metadata": {
+        "icd_code": "C34.31",
+        "chapter": "C - Neoplasms",
+        "billable": true,
+        "anatomic_location": "Right lower lobe"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "C34.32 - Malignant Neoplasm of Lower Lobe, Left Bronchus or Lung",
+      "content": "Malignant neoplasm of the left lower lobe bronchus or lung. Primary lung cancer in the left lower lobe.",
+      "metadata": {
+        "icd_code": "C34.32",
+        "chapter": "C - Neoplasms",
+        "billable": true,
+        "anatomic_location": "Left lower lobe"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "C34.80 - Malignant Neoplasm of Overlapping Sites of Bronchus and Lung",
+      "content": "Malignant neoplasm of overlapping sites of bronchus and lung. Use when tumor involves multiple lobes or when the origin cannot be assigned to a single lobe.",
+      "metadata": {
+        "icd_code": "C34.80",
+        "chapter": "C - Neoplasms",
+        "billable": true,
+        "usage": "Multiple lobes involved or indeterminate origin"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "C34.90 - Malignant Neoplasm of Unspecified Part of Bronchus or Lung",
+      "content": "Malignant neoplasm of unspecified part of bronchus or lung. Primary lung cancer, location not specified. Use when documentation does not specify the anatomic lobe or when tumor location is unknown.",
+      "metadata": {
+        "icd_code": "C34.90",
+        "chapter": "C - Neoplasms",
+        "billable": true,
+        "laterality_codes": ["C34.91 (right)", "C34.92 (left)"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "C78.00 - Secondary Malignant Neoplasm of Lung, Unspecified",
+      "content": "Secondary malignant neoplasm of unspecified lung. Metastatic cancer to the lung from a primary site elsewhere. Lung is a common site for metastatic disease from breast, colon, kidney, and other primary cancers.",
+      "metadata": {
+        "icd_code": "C78.00",
+        "chapter": "C - Neoplasms",
+        "billable": true,
+        "note": "Use for metastatic disease to lung, not primary lung cancer"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "C78.01 - Secondary Malignant Neoplasm of Right Lung",
+      "content": "Secondary malignant neoplasm of right lung. Metastatic cancer to the right lung from primary malignancy elsewhere.",
+      "metadata": {
+        "icd_code": "C78.01",
+        "chapter": "C - Neoplasms",
+        "billable": true,
+        "anatomic_location": "Right lung"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "C78.02 - Secondary Malignant Neoplasm of Left Lung",
+      "content": "Secondary malignant neoplasm of left lung. Metastatic cancer to the left lung from primary malignancy elsewhere.",
+      "metadata": {
+        "icd_code": "C78.02",
+        "chapter": "C - Neoplasms",
+        "billable": true,
+        "anatomic_location": "Left lung"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "D14.30 - Benign Neoplasm of Unspecified Bronchus and Lung",
+      "content": "Benign neoplasm of unspecified bronchus and lung. Includes hamartoma (most common benign lung tumor), lipoma, fibroma, and other benign tumors of the lung.",
+      "metadata": {
+        "icd_code": "D14.30",
+        "chapter": "D - Neoplasms",
+        "billable": true,
+        "common_examples": ["Hamartoma", "Lipoma", "Fibroma"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "D38.1 - Neoplasm of Uncertain Behavior of Trachea, Bronchus and Lung",
+      "content": "Neoplasm of uncertain behavior of trachea, bronchus and lung. Use when the behavior (benign vs malignant) of a pulmonary neoplasm cannot be determined. May require tissue diagnosis for definitive classification.",
+      "metadata": {
+        "icd_code": "D38.1",
+        "chapter": "D - Neoplasms",
+        "billable": true,
+        "usage": "When malignant potential is uncertain"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J84.10 - Pulmonary Fibrosis, Unspecified",
+      "content": "Pulmonary fibrosis, unspecified. Chronic progressive scarring of the lung parenchyma. May be idiopathic (IPF) or secondary to known causes. CT findings include reticular opacities, honeycombing, and traction bronchiectasis.",
+      "metadata": {
+        "icd_code": "J84.10",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "ct_findings": ["Reticular opacities", "Honeycombing", "Traction bronchiectasis"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J84.112 - Idiopathic Pulmonary Fibrosis",
+      "content": "Idiopathic pulmonary fibrosis (IPF). Chronic, progressive fibrosing interstitial pneumonia of unknown cause, primarily occurring in older adults. CT shows usual interstitial pneumonia (UIP) pattern with basal and peripheral predominance.",
+      "metadata": {
+        "icd_code": "J84.112",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "ct_pattern": "UIP (Usual Interstitial Pneumonia)"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J84.89 - Other Specified Interstitial Pulmonary Diseases",
+      "content": "Other specified interstitial pulmonary diseases. Includes organizing pneumonia, lymphoid interstitial pneumonia, and other named interstitial lung diseases not classified elsewhere.",
+      "metadata": {
+        "icd_code": "J84.89",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "examples": ["Organizing pneumonia", "LIP", "DIP"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J84.9 - Interstitial Pulmonary Disease, Unspecified",
+      "content": "Interstitial pulmonary disease, unspecified. Use when interstitial lung disease is present but specific type is not documented or cannot be determined.",
+      "metadata": {
+        "icd_code": "J84.9",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J43.9 - Emphysema, Unspecified",
+      "content": "Emphysema, unspecified. Chronic obstructive pulmonary disease characterized by destruction of alveolar walls leading to airspace enlargement. CT shows areas of decreased attenuation without visible walls (low attenuation areas).",
+      "metadata": {
+        "icd_code": "J43.9",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "ct_findings": ["Low attenuation areas", "Bullae", "Air trapping"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J43.0 - Unilateral Pulmonary Emphysema",
+      "content": "Unilateral pulmonary emphysema (MacLeod syndrome, Swyer-James syndrome). Acquired hyperlucent lung, typically unilateral, often following childhood respiratory infection. CT shows unilateral air trapping and decreased vascularity.",
+      "metadata": {
+        "icd_code": "J43.0",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "synonyms": ["MacLeod syndrome", "Swyer-James syndrome"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J43.1 - Panlobular Emphysema",
+      "content": "Panlobular emphysema (panacinar emphysema). Uniform destruction of the entire acinus, typically associated with alpha-1 antitrypsin deficiency. Often has lower lobe predominance.",
+      "metadata": {
+        "icd_code": "J43.1",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "association": "Alpha-1 antitrypsin deficiency"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J43.2 - Centrilobular Emphysema",
+      "content": "Centrilobular emphysema (centriacinar emphysema). Destruction centered on the respiratory bronchiole in the center of the secondary lobule. Most common form, typically smoking-related with upper lobe predominance.",
+      "metadata": {
+        "icd_code": "J43.2",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "association": "Smoking",
+        "distribution": "Upper lobe predominant"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J18.9 - Pneumonia, Unspecified Organism",
+      "content": "Pneumonia, unspecified organism. Acute infection of the lung parenchyma when the causative organism is not identified. CT may show consolidation, ground-glass opacity, or tree-in-bud nodularity.",
+      "metadata": {
+        "icd_code": "J18.9",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "ct_findings": ["Consolidation", "Ground-glass opacity", "Air bronchograms"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J18.1 - Lobar Pneumonia, Unspecified Organism",
+      "content": "Lobar pneumonia, unspecified organism. Pneumonia affecting an entire lobe of the lung. Classic pattern with dense consolidation confined to a single lobe with air bronchograms.",
+      "metadata": {
+        "icd_code": "J18.1",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "pattern": "Lobar consolidation"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J90 - Pleural Effusion, Not Elsewhere Classified",
+      "content": "Pleural effusion, not elsewhere classified. Abnormal accumulation of fluid in the pleural space. May be transudative or exudative. CT shows dependent fluid density in the pleural space.",
+      "metadata": {
+        "icd_code": "J90",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "types": ["Transudative", "Exudative"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J91.0 - Malignant Pleural Effusion",
+      "content": "Malignant pleural effusion. Pleural effusion due to malignancy, either primary pleural malignancy or metastatic disease. May be associated with pleural nodularity or thickening on CT.",
+      "metadata": {
+        "icd_code": "J91.0",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "code_also": "Code also the underlying malignancy"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J93.0 - Spontaneous Tension Pneumothorax",
+      "content": "Spontaneous tension pneumothorax. Life-threatening condition with progressive air accumulation in pleural space causing mediastinal shift. Requires emergent decompression.",
+      "metadata": {
+        "icd_code": "J93.0",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "urgency": "Emergent"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J93.11 - Primary Spontaneous Pneumothorax",
+      "content": "Primary spontaneous pneumothorax. Pneumothorax occurring without apparent underlying lung disease, typically in young, tall, thin males. Often associated with apical blebs.",
+      "metadata": {
+        "icd_code": "J93.11",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "risk_factors": ["Young age", "Tall stature", "Thin body habitus", "Smoking"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J93.12 - Secondary Spontaneous Pneumothorax",
+      "content": "Secondary spontaneous pneumothorax. Pneumothorax occurring as complication of underlying lung disease such as COPD, cystic fibrosis, or interstitial lung disease.",
+      "metadata": {
+        "icd_code": "J93.12",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "associated_conditions": ["COPD", "Cystic fibrosis", "ILD", "Pneumonia"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J98.4 - Other Disorders of Lung",
+      "content": "Other disorders of lung. Includes pulmonary calcification, cystic lung disease, and other specified lung disorders not classified elsewhere.",
+      "metadata": {
+        "icd_code": "J98.4",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "includes": ["Pulmonary calcification", "Lung cyst"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J98.2 - Interstitial Emphysema",
+      "content": "Interstitial emphysema (pneumomediastinum). Air in the mediastinal tissues, often from alveolar rupture. May track along bronchovascular bundles. Usually benign and self-limiting.",
+      "metadata": {
+        "icd_code": "J98.2",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "synonyms": ["Mediastinal emphysema", "Pneumomediastinum"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J98.11 - Atelectasis",
+      "content": "Atelectasis. Collapse or incomplete expansion of lung tissue. May be obstructive, compressive, or passive. CT shows volume loss with displacement of fissures and crowding of vessels.",
+      "metadata": {
+        "icd_code": "J98.11",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "types": ["Obstructive", "Compressive", "Passive", "Cicatricial"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J47.0 - Bronchiectasis with Acute Lower Respiratory Infection",
+      "content": "Bronchiectasis with acute lower respiratory infection. Chronic irreversible dilation of bronchi with superimposed acute infection. CT shows dilated, thick-walled airways with acute inflammatory changes.",
+      "metadata": {
+        "icd_code": "J47.0",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J47.1 - Bronchiectasis with (Acute) Exacerbation",
+      "content": "Bronchiectasis with acute exacerbation. Chronic bronchiectasis with worsening symptoms but without documented infection. May show increased secretions or wall thickening on CT.",
+      "metadata": {
+        "icd_code": "J47.1",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true
+      }
+    },
+    {
+      "category": "coding",
+      "title": "J47.9 - Bronchiectasis, Uncomplicated",
+      "content": "Bronchiectasis, uncomplicated. Chronic irreversible dilation of bronchi without acute exacerbation. CT shows signet ring sign (dilated bronchus larger than adjacent vessel), tram track sign, or cluster of grapes appearance.",
+      "metadata": {
+        "icd_code": "J47.9",
+        "chapter": "J - Diseases of the respiratory system",
+        "billable": true,
+        "ct_signs": ["Signet ring sign", "Tram track sign", "Cluster of grapes"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "Z87.09 - Personal History of Other Diseases of the Respiratory System",
+      "content": "Personal history of other diseases of the respiratory system. History of previous respiratory conditions that may be relevant to current care, such as prior tuberculosis, prior pneumonia, or resolved lung disease.",
+      "metadata": {
+        "icd_code": "Z87.09",
+        "chapter": "Z - Factors influencing health status",
+        "billable": true,
+        "use_case": "Document relevant respiratory history"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "Z85.118 - Personal History of Other Malignant Neoplasm of Bronchus and Lung",
+      "content": "Personal history of other malignant neoplasm of bronchus and lung. History of lung cancer that has been treated and is no longer present. Important for surveillance imaging interpretation.",
+      "metadata": {
+        "icd_code": "Z85.118",
+        "chapter": "Z - Factors influencing health status",
+        "billable": true,
+        "use_case": "Prior lung cancer surveillance"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "Z87.01 - Personal History of Pneumonia (Recurrent)",
+      "content": "Personal history of pneumonia (recurrent). History of recurrent pneumonia episodes. May indicate underlying structural abnormality, immunodeficiency, or aspiration risk.",
+      "metadata": {
+        "icd_code": "Z87.01",
+        "chapter": "Z - Factors influencing health status",
+        "billable": true
+      }
+    },
+    {
+      "category": "coding",
+      "title": "Z12.2 - Encounter for Screening for Malignant Neoplasm of Respiratory Organs",
+      "content": "Encounter for screening for malignant neoplasm of respiratory organs. Use for lung cancer screening CT in eligible patients. Per USPSTF: annual LDCT for adults 50-80 years with >=20 pack-year smoking history.",
+      "metadata": {
+        "icd_code": "Z12.2",
+        "chapter": "Z - Factors influencing health status",
+        "billable": true,
+        "screening_criteria": "50-80 years, >=20 pack-year history"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "Z77.22 - Contact with and (Suspected) Exposure to Environmental Tobacco Smoke",
+      "content": "Contact with and suspected exposure to environmental tobacco smoke (secondhand smoke). Relevant risk factor for lung disease and lung cancer screening considerations.",
+      "metadata": {
+        "icd_code": "Z77.22",
+        "chapter": "Z - Factors influencing health status",
+        "billable": true
+      }
+    },
+    {
+      "category": "coding",
+      "title": "F17.210 - Nicotine Dependence, Cigarettes, Uncomplicated",
+      "content": "Nicotine dependence, cigarettes, uncomplicated. Active cigarette smoking without documented complications. Important risk factor to document for lung imaging studies.",
+      "metadata": {
+        "icd_code": "F17.210",
+        "chapter": "F - Mental and behavioral disorders",
+        "billable": true,
+        "clinical_relevance": "Major risk factor for lung cancer"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "Z72.0 - Tobacco Use",
+      "content": "Tobacco use. Current tobacco use when dependence is not documented. Use when patient uses tobacco but does not meet criteria for dependence diagnosis.",
+      "metadata": {
+        "icd_code": "Z72.0",
+        "chapter": "Z - Factors influencing health status",
+        "billable": true
+      }
+    },
+    {
+      "category": "coding",
+      "title": "Z87.891 - Personal History of Nicotine Dependence",
+      "content": "Personal history of nicotine dependence. Former smoker. Important for lung cancer screening eligibility (quit within 15 years) and interpreting lung findings.",
+      "metadata": {
+        "icd_code": "Z87.891",
+        "chapter": "Z - Factors influencing health status",
+        "billable": true,
+        "note": "Still eligible for screening if quit <15 years ago"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "R05.9 - Cough, Unspecified",
+      "content": "Cough, unspecified. Symptom that may prompt chest imaging. Chronic cough (>8 weeks) warrants evaluation for underlying pulmonary pathology.",
+      "metadata": {
+        "icd_code": "R05.9",
+        "chapter": "R - Symptoms, signs and abnormal clinical and laboratory findings",
+        "billable": true
+      }
+    },
+    {
+      "category": "coding",
+      "title": "R06.02 - Shortness of Breath",
+      "content": "Shortness of breath (dyspnea). Common symptom prompting chest imaging. May indicate pulmonary, cardiac, or other systemic disease.",
+      "metadata": {
+        "icd_code": "R06.02",
+        "chapter": "R - Symptoms, signs and abnormal clinical and laboratory findings",
+        "billable": true,
+        "synonyms": ["Dyspnea", "Breathlessness"]
+      }
+    },
+    {
+      "category": "coding",
+      "title": "R04.2 - Hemoptysis",
+      "content": "Hemoptysis. Coughing up blood or blood-stained sputum. Requires investigation to rule out malignancy, infection, or vascular abnormality.",
+      "metadata": {
+        "icd_code": "R04.2",
+        "chapter": "R - Symptoms, signs and abnormal clinical and laboratory findings",
+        "billable": true,
+        "workup": "CT chest to evaluate for source"
+      }
+    },
+    {
+      "category": "coding",
+      "title": "R09.89 - Other Specified Symptoms and Signs Involving the Circulatory and Respiratory Systems",
+      "content": "Other specified symptoms and signs involving the circulatory and respiratory systems. Includes chest wall tenderness, abnormal sputum, and other respiratory symptoms not classified elsewhere.",
+      "metadata": {
+        "icd_code": "R09.89",
+        "chapter": "R - Symptoms, signs and abnormal clinical and laboratory findings",
+        "billable": true
+      }
+    },
+    {
+      "category": "coding",
+      "title": "R22.2 - Localized Swelling, Mass and Lump, Trunk",
+      "content": "Localized swelling, mass and lump, trunk. May be used for palpable chest wall mass prompting imaging evaluation.",
+      "metadata": {
+        "icd_code": "R22.2",
+        "chapter": "R - Symptoms, signs and abnormal clinical and laboratory findings",
+        "billable": true
+      }
+    }
+  ]
+}

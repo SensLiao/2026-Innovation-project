@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 import Header from "../components/Header";
 import main from "../assets/images/Main.png";
 import Decoration from "../assets/images/main2.png";
@@ -6,7 +7,8 @@ import "./patient.css";
 import axios from "axios";
 import ReportPanel from "../components/ReportPanel";
 import SegmentationActionsBar from "../components/SegmentationActionsBar";
-import { Eye, EyeOff, Trash2, ChevronDown } from "lucide-react";
+import { Eye, EyeOff, Trash2, ChevronDown, User, FileText } from "lucide-react";
+import { streamRequest, streamChat, ANALYSIS_PHASES, api } from "../lib/api";
 
 const SegmentationPage = () => {
   const [activeTab, setActiveTab] = useState("segmentation");
@@ -15,7 +17,7 @@ const SegmentationPage = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [reportText, setReportText] = useState(defaultReport);
   const [question, setQuestion] = useState("");
-  const [model, setModel] = useState("SOMA-CT-v1");
+  const [targetAgent, setTargetAgent] = useState("auto"); // auto, radiologist, pathologist, report_writer
 
   // === 同原实现 ===
   const [mode, setMode] = useState("foreground");
@@ -45,7 +47,19 @@ const SegmentationPage = () => {
   const [messages, setMessages] = useState([]);
   const [isAnalysisTriggered, setIsAnalysisTriggered] = useState(false);
 
+  // SSE Progress tracking
+  const [analysisProgress, setAnalysisProgress] = useState(null); // { step, label, progress }
+  const [agentLogs, setAgentLogs] = useState([]); // [{agent, message, level, timestamp}]
+  const [showCompletion, setShowCompletion] = useState(false); // Completion animation state
+  const [analysisStatus, setAnalysisStatus] = useState(null); // 'completed' | 'canceled' | 'failed' | null
+  const abortControllerRef = useRef(null); // For canceling SSE requests
+  const [sessionId, setSessionId] = useState(() => {
+    // Initialize from localStorage
+    return localStorage.getItem('medicalReportSessionId') || null;
+  });
+
   const inputRef = useRef(null);
+  const currentFileRef = useRef(null); // Track current file to prevent memory leaks
 
   // 叠加画布
   const canvasRef = useRef(null);
@@ -60,6 +74,112 @@ const SegmentationPage = () => {
   // 色板
   const maskColors = ["#1E90FF","#00BFFF","#7FFF00","#FFD700","#FF7F50","#FF1493","#8A2BE2"];
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // iter4: Patient & Clinical Context - 病人信息与临床上下文
+  // ═══════════════════════════════════════════════════════════════════════════
+  /**
+   * 病人选择与临床上下文状态管理
+   *
+   * 功能：
+   * - 病人下拉选择 (从数据库加载)
+   * - 自动填充历史临床上下文
+   * - 临床指征、吸烟史、既往影像等输入
+   * - 检查类型自动识别 (Claude Vision)
+   *
+   * 安全措施：
+   * - 使用 isCurrent 标志防止异步竞态条件
+   * - 使用 currentFileRef 防止内存泄漏
+   */
+  const [patientInfoOpen, setPatientInfoOpen] = useState(false);
+  const [patients, setPatients] = useState([]);
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [clinicalContext, setClinicalContext] = useState({
+    clinicalIndication: '',
+    examType: 'CT Chest',
+    smokingHistory: { status: 'never', packYears: 0 },
+    relevantHistory: '',
+    priorImagingDate: ''
+  });
+
+  /**
+   * 加载病人列表 (组件挂载时)
+   * 用于前端下拉选择器
+   */
+  useEffect(() => {
+    async function fetchPatients() {
+      try {
+        const res = await api.get('/patients');
+        setPatients(res.data.data || res.data.patients || []);
+      } catch (err) {
+        console.error('Failed to fetch patients:', err);
+      }
+    }
+    fetchPatients();
+  }, []);
+
+  /**
+   * 病人选择变更处理
+   *
+   * 职责：
+   * - 获取病人详细信息
+   * - 获取该病人最新诊断记录
+   * - 自动填充临床上下文 (如有历史记录)
+   *
+   * 竞态条件防护：
+   * - 使用 isCurrent 标志跟踪当前请求
+   * - 如果用户在请求完成前切换病人，丢弃旧响应
+   * - cleanup 函数在组件卸载或依赖变化时设置 isCurrent = false
+   */
+  useEffect(() => {
+    if (!selectedPatientId) {
+      setSelectedPatient(null);
+      return;
+    }
+
+    let isCurrent = true; // 竞态条件防护：防止过期数据更新
+
+    async function fetchPatientInfo() {
+      try {
+        const res = await api.get(`/patients/${selectedPatientId}`);
+        if (!isCurrent) return; // Selection changed, abort
+        setSelectedPatient(res.data.patient || res.data.data || null);
+
+        // Also fetch latest diagnosis for this patient to auto-fill clinical context
+        const diagRes = await api.get(`/diagnosis/patient/${selectedPatientId}/latest`);
+        if (!isCurrent) return; // Selection changed, abort
+        if (diagRes.data.success && diagRes.data.diagnosis?.clinicalContext) {
+          const ctx = diagRes.data.diagnosis.clinicalContext;
+          setClinicalContext({
+            clinicalIndication: ctx.clinicalIndication || '',
+            examType: ctx.examType || 'CT Chest',
+            smokingHistory: ctx.smokingHistory || { status: 'never', packYears: 0 },
+            relevantHistory: ctx.relevantHistory || '',
+            priorImagingDate: ctx.priorImagingDate ? ctx.priorImagingDate.split('T')[0] : ''
+          });
+        }
+      } catch (err) {
+        if (isCurrent) {
+          console.error('Failed to fetch patient info:', err);
+        }
+      }
+    }
+    fetchPatientInfo();
+
+    return () => { isCurrent = false; }; // Cleanup on unmount or re-run
+  }, [selectedPatientId]);
+
+  // Helper to update clinical context fields
+  const updateClinicalContext = (field, value) => {
+    setClinicalContext(prev => ({ ...prev, [field]: value }));
+  };
+  const updateSmokingHistory = (field, value) => {
+    setClinicalContext(prev => ({
+      ...prev,
+      smokingHistory: { ...prev.smokingHistory, [field]: value }
+    }));
+  };
+
   // 窗口变化重绘
   useEffect(() => {
     const onResize = () => setRedrawTick((t) => t + 1);
@@ -72,15 +192,45 @@ const SegmentationPage = () => {
     if (activeTab === "segmentation") setRedrawTick((t) => t + 1);
   }, [activeTab]);
 
-  // ======= 文件处理 =======
+  // Persist sessionId to localStorage
+  useEffect(() => {
+    if (sessionId) {
+      localStorage.setItem('medicalReportSessionId', sessionId);
+    }
+  }, [sessionId]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 文件处理 - 图像上传与模型加载
+  // ═══════════════════════════════════════════════════════════════════════════
+  /**
+   * handleFile - 医学图像处理管道
+   *
+   * 职责：
+   * 1. 转换文件为 DataURL 并预览
+   * 2. 调用 /api/load_model 获取图像嵌入
+   * 3. 调用 /api/classify_image 自动识别检查类型 (Claude Vision)
+   * 4. 更新 UI 状态
+   *
+   * 内存泄漏防护：
+   * - 使用 currentFileRef 追踪当前处理的文件
+   * - 每个异步步骤后检查文件是否变更
+   * - 若用户上传新文件，立即中止旧文件的处理流程
+   *
+   * 状态管理：
+   * - finally 块确保 isRunning 在所有情况下重置 (包括 early return)
+   */
   async function handleFile(f) {
     setFileName(f.name);
     setIsRunning(true);
+    currentFileRef.current = f; // 内存泄漏防护：追踪当前文件
+
     try {
       const dataURL = await fileToDataURL(f);
+      if (currentFileRef.current !== f) return; // File changed, abort
       setUploadedImage(dataURL);
 
       const { natW, natH } = await loadImageOffscreen(dataURL);
+      if (currentFileRef.current !== f) return;
       setOrigImSize([natH, natW]);
 
       const im = new Image();
@@ -90,9 +240,44 @@ const SegmentationPage = () => {
       const form = new FormData();
       form.append("image", f);
       const resp = await axios.post("http://localhost:3000/api/load_model", form);
+      if (currentFileRef.current !== f) return;
       setImageEmbeddings(resp.data.image_embeddings || []);
       setEmbeddingsDims(resp.data.embedding_dims || []);
 
+      // Auto-classify image type using Claude Vision
+      try {
+        const classifyResp = await api.post('/classify_image', { imageData: dataURL });
+        if (currentFileRef.current !== f) return; // File changed during classification
+        if (classifyResp.data.success && classifyResp.data.classification) {
+          const { examType, modality, bodyPart, contrast } = classifyResp.data.classification;
+          // Map to dropdown options
+          const examTypeMap = {
+            'CT Chest': 'CT Chest',
+            'CT Chest with Contrast': 'CT Chest with Contrast',
+            'Low-dose CT Chest': 'Low-dose CT Chest',
+            'CT Abdomen': 'CT Abdomen',
+            'CT Abdomen with Contrast': 'CT Abdomen',
+            'MRI Brain': 'MRI Brain',
+            'MRI Brain with Contrast': 'MRI Brain',
+            'X-ray Chest': 'X-ray Chest',
+            'Chest X-ray': 'X-ray Chest',
+          };
+          // Try exact match first, then construct from modality+bodyPart
+          let detectedExamType = examTypeMap[examType];
+          if (!detectedExamType && modality && bodyPart) {
+            const constructed = `${modality} ${bodyPart}${contrast ? ' with Contrast' : ''}`;
+            detectedExamType = examTypeMap[constructed] || constructed;
+          }
+          if (detectedExamType) {
+            updateClinicalContext('examType', detectedExamType);
+            console.log('[AutoClassify] Detected exam type:', detectedExamType);
+          }
+        }
+      } catch (classifyErr) {
+        console.warn('[AutoClassify] Classification failed (non-critical):', classifyErr.message);
+      }
+
+      if (currentFileRef.current !== f) return;
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 1200);
     } catch (e) {
@@ -443,18 +628,60 @@ const SegmentationPage = () => {
     setRedrawTick((t) => t + 1);
   }
 
-  // 生成报告
-  async function handleAnalysis() {
+  // 取消分析
+  function cancelAnalysis() {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setAnalysisStatus('canceled');
+    setShowCompletion(true);
+    setTimeout(() => {
+      setShowCompletion(false);
+      setAnalysisStatus(null);
+      setAnalysisProgress(null);
+      setIsRunning(false);
+    }, 2000);
+  }
+
+  // 生成报告 (支持 SSE 流式进度)
+  async function handleAnalysis(useStreaming = true) {
+    // Validation: Check if patient is selected (show friendly animation instead of alert)
+    if (!selectedPatient) {
+      setAnalysisStatus('no_patient');
+      setShowCompletion(true);
+      setTimeout(() => {
+        setShowCompletion(false);
+        setAnalysisStatus(null);
+      }, 2500);
+      return;
+    }
     if (!imageEmbeddings.length) {
-      alert("Please upload an image and wait for embeddings before analyzing.");
+      setAnalysisStatus('no_image');
+      setShowCompletion(true);
+      setTimeout(() => {
+        setShowCompletion(false);
+        setAnalysisStatus(null);
+      }, 2500);
       return;
     }
     if (!imgElRef.current || !masks || masks.length === 0) {
-      alert("No segmentation mask found. Please run the model first.");
+      setAnalysisStatus('no_mask');
+      setShowCompletion(true);
+      setTimeout(() => {
+        setShowCompletion(false);
+        setAnalysisStatus(null);
+      }, 2500);
       return;
     }
     setIsRunning(true);
+    setAgentLogs([]); // Clear previous logs
+    setAnalysisStatus(null); // Reset status
+    setAnalysisProgress({ step: 'preparing', label: 'Preparing image...', progress: 5, agent: null });
+    abortControllerRef.current = new AbortController(); // Create new abort controller
+
     try {
+      // 准备叠加图像
       const natW = imgElRef.current.naturalWidth;
       const natH = imgElRef.current.naturalHeight;
       const out = document.createElement("canvas");
@@ -487,20 +714,121 @@ const SegmentationPage = () => {
                    (await new Promise((resolve) => out.toBlob(resolve, "image/png")));
       const image_base64 = await blobToDataURL(blob);
 
-      const res = await axios.post("http://localhost:3000/api/medical_report_init", { final_image: image_base64 });
-      const report = res.data?.report || sampleGeneratedReport;
-      setReportText(report);
-      setActiveTab("report");
-      setIsAnalysisTriggered(true);
+      if (useStreaming) {
+        // SSE 流式请求 (iter4: include patientInfo and clinicalContext)
+        const requestBody = {
+          final_image: image_base64,
+          patientInfo: selectedPatient ? {
+            id: selectedPatient.pid,
+            name: selectedPatient.name,
+            age: selectedPatient.age,
+            gender: selectedPatient.gender,
+            mrn: selectedPatient.mrn,
+            dob: selectedPatient.dateofbirth
+          } : null,
+          clinicalContext: clinicalContext
+        };
+        await streamRequest('/medical_report_stream', requestBody, {
+          onProgress: (data) => {
+            console.log('[SSE Progress] raw data:', JSON.stringify(data));
+            // Try to get step from multiple possible locations
+            const stepKey = data.step || data.phase || data.type;
+            console.log('[SSE Progress] stepKey:', stepKey, 'ANALYSIS_PHASES keys:', Object.keys(ANALYSIS_PHASES));
+
+            const phaseInfo = ANALYSIS_PHASES[stepKey] || {
+              label: data.message || 'Processing...',
+              progress: Math.min(90, (analysisProgress?.progress || 5) + 5), // Increment progress
+              detail: data.detail || '',
+              agent: data.agent || null
+            };
+            console.log('[SSE Progress] phaseInfo:', phaseInfo);
+
+            setAnalysisProgress({
+              step: stepKey,
+              label: phaseInfo.label,
+              detail: phaseInfo.detail,
+              progress: phaseInfo.progress,
+              agent: phaseInfo.agent,
+            });
+            if (data.sessionId) {
+              setSessionId(data.sessionId);
+            }
+          },
+          onLog: (data) => {
+            console.log('[SSE Log]', data);
+            setAgentLogs(prev => [...prev, {
+              agent: data.agent,
+              message: data.message,
+              level: data.level,
+              timestamp: Date.now()
+            }]);
+          },
+          onComplete: (data) => {
+            console.log('[SSE Complete]', data);
+            const reportContent = typeof data.report === 'object' ? data.report?.content : data.report;
+            setReportText(reportContent || sampleGeneratedReport);
+
+            // Show completion animation
+            setAnalysisProgress({ step: 'complete', label: 'Report Generated', progress: 100, agent: null });
+            setAnalysisStatus('completed');
+            setShowCompletion(true);
+
+            // Hide completion animation after 2 seconds and switch to report tab
+            setTimeout(() => {
+              setShowCompletion(false);
+              setAnalysisStatus(null);
+              setAnalysisProgress(null);
+              setIsRunning(false);
+              setActiveTab("report");
+              setIsAnalysisTriggered(true);
+            }, 2000);
+          },
+          onError: (err) => {
+            console.error('[SSE Error]', err);
+            // Check if it was aborted (canceled)
+            if (err.name === 'AbortError' || abortControllerRef.current?.signal.aborted) {
+              return; // Already handled by cancelAnalysis
+            }
+            setAnalysisStatus('failed');
+            setShowCompletion(true);
+            setTimeout(() => {
+              setShowCompletion(false);
+              setAnalysisStatus(null);
+              setAnalysisProgress(null);
+              setIsRunning(false);
+            }, 2000);
+          }
+        });
+      } else {
+        // Fallback: 普通 POST 请求 (iter4: include patientInfo and clinicalContext)
+        const res = await axios.post("http://localhost:3000/api/medical_report_init", {
+          final_image: image_base64,
+          patientInfo: selectedPatient ? {
+            id: selectedPatient.pid,
+            name: selectedPatient.name,
+            age: selectedPatient.age,
+            gender: selectedPatient.gender,
+            mrn: selectedPatient.mrn,
+            dob: selectedPatient.dateofbirth
+          } : null,
+          clinicalContext: clinicalContext
+        });
+        const reportContent = typeof res.data?.report === 'object' ? res.data.report?.content : res.data?.report;
+        setReportText(reportContent || sampleGeneratedReport);
+        setActiveTab("report");
+        setIsAnalysisTriggered(true);
+        setAnalysisProgress(null);
+        setIsRunning(false);
+      }
     } catch (e) {
       console.error("medical_report_init error:", e);
-      alert("Report generation failed.");
-    } finally {
+      setAnalysisProgress(null);
       setIsRunning(false);
+      alert("Report generation failed.");
     }
   }
 
-  // Chat Reinforce
+  // Chat Reinforce - Streaming implementation
   async function sendMessage() {
     if (!imageEmbeddings.length) {
       alert("Please upload an image and wait for embeddings before sending a message.");
@@ -516,21 +844,71 @@ const SegmentationPage = () => {
     setMessages((prev) => [...prev, { role: "user", text: content }]);
     setQuestion("");
     setIsRunning(true);
+
+    // Add streaming placeholder message
+    const streamMsgId = Date.now();
+    setMessages((prev) => [...prev, { role: "assistant", text: "", id: streamMsgId, isStreaming: true }]);
+
     try {
-      setMessages((prev) => [...prev, { role: "assistant", text: "loading" }]);
-      const res = await axios.post("http://localhost:3000/api/medical_report_rein", { userMessage: content });
-      const reply = res.data?.reply || "Service is temporarily unavailable.";
-      setMessages((prev) => {
-        const arr = [...prev];
-        const idx = arr.findIndex((m) => m.role === "assistant" && m.text === "loading");
-        if (idx !== -1) arr[idx] = { role: "assistant", text: reply };
-        return arr;
-      });
+      await streamChat(
+        { message: content, sessionId: sessionId || undefined, targetAgent: targetAgent !== 'auto' ? targetAgent : undefined },
+        {
+          onIntent: (data) => {
+            console.log("[Chat] Intent:", data.intent, data.confidence);
+          },
+          onChunk: (chunk, fullText) => {
+            // Update streaming message with accumulated text
+            setMessages((prev) => {
+              const arr = [...prev];
+              const idx = arr.findIndex((m) => m.id === streamMsgId);
+              if (idx !== -1) arr[idx] = { ...arr[idx], text: fullText };
+              return arr;
+            });
+          },
+          onRevision: (data) => {
+            // Report was revised
+            if (data.updatedReport) {
+              const reportContent = typeof data.updatedReport === 'object'
+                ? data.updatedReport?.content
+                : data.updatedReport;
+              if (reportContent) setReportText(reportContent);
+            }
+            // Show response message
+            if (data.response) {
+              setMessages((prev) => {
+                const arr = [...prev];
+                const idx = arr.findIndex((m) => m.id === streamMsgId);
+                if (idx !== -1) arr[idx] = { ...arr[idx], text: data.response, isStreaming: false };
+                return arr;
+              });
+            }
+          },
+          onError: (err) => {
+            console.error("[Chat] Error:", err);
+            setMessages((prev) => {
+              const arr = [...prev];
+              const idx = arr.findIndex((m) => m.id === streamMsgId);
+              if (idx !== -1) arr[idx] = { ...arr[idx], text: "Service is temporarily unavailable.", isStreaming: false };
+              return arr;
+            });
+          },
+          onDone: () => {
+            // Mark streaming as complete
+            setMessages((prev) => {
+              const arr = [...prev];
+              const idx = arr.findIndex((m) => m.id === streamMsgId);
+              if (idx !== -1) arr[idx] = { ...arr[idx], isStreaming: false };
+              return arr;
+            });
+            setIsRunning(false);
+          }
+        }
+      );
     } catch {
       setMessages((prev) => {
         const arr = [...prev];
-        const idx = arr.findIndex((m) => m.role === "assistant" && m.text === "loading");
-        if (idx !== -1) arr[idx] = { role: "assistant", text: "Service is temporarily unavailable." };
+        const idx = arr.findIndex((m) => m.id === streamMsgId);
+        if (idx !== -1) arr[idx] = { ...arr[idx], text: "Service is temporarily unavailable.", isStreaming: false };
         return arr;
       });
     } finally {
@@ -735,10 +1113,142 @@ const SegmentationPage = () => {
               onAddPatientClick={() => document.getElementById("add_patient_modal").showModal()}
             />
             
-            {isRunning && (
+            {((isRunning && analysisProgress) || showCompletion) && (
               <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-30 rounded-3xl">
-                <div className="mr-3 h-7 w-7 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
-                <span className="text-blue-700 font-medium">Working…</span>
+                <div className="bg-white rounded-xl shadow-lg p-6 max-w-lg w-full mx-4 relative">
+                  {showCompletion ? (
+                    /* Status Animation (Success/Canceled/Failed) */
+                    <div className="flex flex-col items-center justify-center py-4 animate-[fadeIn_300ms_ease-out]">
+                      {analysisStatus === 'completed' ? (
+                        /* Success - Blue Checkmark */
+                        <>
+                          <div className="relative mb-4">
+                            <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                              <svg className="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 h-16 w-16 rounded-full bg-blue-400 animate-ping opacity-20" />
+                          </div>
+                          <h3 className="text-xl font-bold text-blue-700 mb-1">Report Generated</h3>
+                          <p className="text-gray-500 text-sm">Completed successfully</p>
+                        </>
+                      ) : analysisStatus === 'canceled' ? (
+                        /* Canceled - Orange/Yellow X */
+                        <>
+                          <div className="relative mb-4">
+                            <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                              <svg className="h-10 w-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 h-16 w-16 rounded-full bg-amber-400 animate-ping opacity-20" />
+                          </div>
+                          <h3 className="text-xl font-bold text-amber-700 mb-1">Analysis Canceled</h3>
+                          <p className="text-gray-500 text-sm">You can restart anytime</p>
+                        </>
+                      ) : analysisStatus === 'no_patient' ? (
+                        /* No Patient Selected - Purple Warning */
+                        <>
+                          <div className="relative mb-4">
+                            <div className="h-16 w-16 rounded-full bg-purple-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                              <svg className="h-10 w-10 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 h-16 w-16 rounded-full bg-purple-400 animate-ping opacity-20" />
+                          </div>
+                          <h3 className="text-xl font-bold text-purple-700 mb-1">Patient Required</h3>
+                          <p className="text-gray-500 text-sm">Please select a patient before generating report</p>
+                        </>
+                      ) : analysisStatus === 'no_image' ? (
+                        /* No Image - Blue Warning */
+                        <>
+                          <div className="relative mb-4">
+                            <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                              <svg className="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 h-16 w-16 rounded-full bg-blue-400 animate-ping opacity-20" />
+                          </div>
+                          <h3 className="text-xl font-bold text-blue-700 mb-1">Image Required</h3>
+                          <p className="text-gray-500 text-sm">Please upload an image and wait for processing</p>
+                        </>
+                      ) : analysisStatus === 'no_mask' ? (
+                        /* No Mask - Teal Warning */
+                        <>
+                          <div className="relative mb-4">
+                            <div className="h-16 w-16 rounded-full bg-teal-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                              <svg className="h-10 w-10 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 h-16 w-16 rounded-full bg-teal-400 animate-ping opacity-20" />
+                          </div>
+                          <h3 className="text-xl font-bold text-teal-700 mb-1">Segmentation Required</h3>
+                          <p className="text-gray-500 text-sm">Please click on the image to create a mask first</p>
+                        </>
+                      ) : (
+                        /* Failed - Red X */
+                        <>
+                          <div className="relative mb-4">
+                            <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center animate-[scaleIn_400ms_ease-out]">
+                              <svg className="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 h-16 w-16 rounded-full bg-red-400 animate-ping opacity-20" />
+                          </div>
+                          <h3 className="text-xl font-bold text-red-700 mb-1">Generation Failed</h3>
+                          <p className="text-gray-500 text-sm">Please try again</p>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    /* Progress Animation - Clean & Minimal */
+                    <div className="py-2">
+                      {/* Cancel button - top right */}
+                      <button
+                        onClick={cancelAnalysis}
+                        className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Cancel analysis"
+                      >
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                      {/* Spinner + Text row */}
+                      <div className="flex items-center gap-4 mb-5">
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600 flex-shrink-0" />
+                        <div className="text-left">
+                          {analysisProgress?.agent && (
+                            <p className="text-sm font-medium text-sky-500 mb-0.5 text-left">
+                              {analysisProgress.agent}
+                            </p>
+                          )}
+                          <p className="text-blue-700 font-semibold text-xl text-left">
+                            {analysisProgress?.label || 'Working…'}
+                          </p>
+                        </div>
+                      </div>
+                      {/* Progress bar */}
+                      {analysisProgress && (
+                        <div>
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 ease-out"
+                              style={{ width: `${analysisProgress.progress || 0}%` }}
+                            />
+                          </div>
+                          <p className="text-right text-[10px] text-gray-400 mt-1.5">
+                            {analysisProgress.progress || 0}%
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -767,8 +1277,8 @@ const SegmentationPage = () => {
             </div>
 
 
-            {/* <div className="mt-10 flex flex-col md:flex-row gap-6"> */}
-            <div className="mt-20 md:mt-28 relative z-10 flex flex-col md:flex-row gap-6">
+            {/* Left-Right panel container - items-stretch ensures equal height */}
+            <div className="mt-20 md:mt-28 relative z-10 flex flex-col md:flex-row md:items-stretch gap-6">
 
               {/* Left */}
               {/* <div className="md:basis-3/5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"> */}
@@ -800,6 +1310,39 @@ const SegmentationPage = () => {
 
                 {activeTab === "segmentation" ? (
                   <>
+                    {/* ======= Patient Info Bar (always visible above image) ======= */}
+                    {selectedPatient && (
+                      <div className="mb-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold">
+                              {selectedPatient.name?.charAt(0) || '?'}
+                            </div>
+                            <div>
+                              <div className="text-sm font-semibold text-gray-800">{selectedPatient.name}</div>
+                              <div className="text-xs text-gray-500">{selectedPatient.mrn || 'No MRN'}</div>
+                            </div>
+                          </div>
+                          <div className="hidden sm:flex items-center gap-4 text-xs text-gray-600">
+                            <span className="px-2 py-0.5 bg-white rounded-full border">{selectedPatient.age} years</span>
+                            <span className="px-2 py-0.5 bg-white rounded-full border">{selectedPatient.gender}</span>
+                            {clinicalContext.smokingHistory?.status !== 'never' && clinicalContext.smokingHistory?.packYears > 0 && (
+                              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full border border-amber-300">
+                                {clinicalContext.smokingHistory.packYears} pack-years
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setSelectedPatientId(null)}
+                          className="text-gray-400 hover:text-gray-600 text-xs"
+                          title="Clear patient selection"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
                     {/* 上传区 */}
                     <div
                       ref={dropZoneRef}
@@ -873,6 +1416,137 @@ const SegmentationPage = () => {
                           disableUndoPoints={clickPoints.length === 0}
                           showExport={uploadedImage && masks && masks.length > 0}
                         />
+                      </div>
+
+                      {/* ======= iter4: Patient & Clinical Context (collapsible) ======= */}
+                      <div className="col-span-2 md:col-span-4">
+                        <div className="rounded-2xl border border-gray-300 bg-white overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setPatientInfoOpen((o) => !o)}
+                            className="w-full flex items-center justify-between px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 focus:outline-none transition-colors duration-150"
+                          >
+                            <span className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              Patient & Clinical Context
+                              {selectedPatient && <span className="text-xs text-green-600 font-normal">({selectedPatient.name})</span>}
+                            </span>
+                            {patientInfoOpen ? (
+                              <span className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-full transition-colors duration-150 shadow-sm">
+                                Confirm
+                              </span>
+                            ) : (
+                              <ChevronDown className="h-4 w-4 transition-transform duration-300" />
+                            )}
+                          </button>
+
+                          <div
+                            className={`
+                              overflow-hidden transition-all duration-300 ease-in-out
+                              ${patientInfoOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}
+                            `}
+                          >
+                            <div className="px-4 py-3 border-t border-gray-200 space-y-3">
+                              {/* Patient Selection */}
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Patient</label>
+                                <select
+                                  value={selectedPatientId || ''}
+                                  onChange={(e) => setSelectedPatientId(e.target.value ? Number(e.target.value) : null)}
+                                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                  <option value="">-- Select Patient --</option>
+                                  {patients.map(p => (
+                                    <option key={p.pid} value={p.pid}>
+                                      {p.name} ({p.mrn || 'No MRN'}) - {p.age}yo {p.gender}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Clinical Indication */}
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Clinical Indication</label>
+                                <textarea
+                                  value={clinicalContext.clinicalIndication}
+                                  onChange={(e) => updateClinicalContext('clinicalIndication', e.target.value)}
+                                  placeholder="e.g., Rule out pulmonary nodule, follow-up for prior abnormality..."
+                                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm resize-none h-16 focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+
+                              {/* Exam Type */}
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Exam Type</label>
+                                  <select
+                                    value={clinicalContext.examType}
+                                    onChange={(e) => updateClinicalContext('examType', e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                                  >
+                                    <option value="CT Chest">CT Chest</option>
+                                    <option value="CT Chest with Contrast">CT Chest with Contrast</option>
+                                    <option value="Low-dose CT Chest">Low-dose CT Chest (Screening)</option>
+                                    <option value="CT Abdomen">CT Abdomen</option>
+                                    <option value="MRI Brain">MRI Brain</option>
+                                    <option value="X-ray Chest">X-ray Chest</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Prior Imaging Date</label>
+                                  <input
+                                    type="date"
+                                    value={clinicalContext.priorImagingDate}
+                                    onChange={(e) => updateClinicalContext('priorImagingDate', e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Smoking History */}
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Smoking History</label>
+                                <div className="flex items-center gap-3">
+                                  <select
+                                    value={clinicalContext.smokingHistory.status}
+                                    onChange={(e) => updateSmokingHistory('status', e.target.value)}
+                                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                                  >
+                                    <option value="never">Never smoker</option>
+                                    <option value="former">Former smoker</option>
+                                    <option value="current">Current smoker</option>
+                                    <option value="unknown">Unknown</option>
+                                  </select>
+                                  {(clinicalContext.smokingHistory.status === 'former' || clinicalContext.smokingHistory.status === 'current') && (
+                                    <div className="flex items-center gap-1">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={clinicalContext.smokingHistory.packYears}
+                                        onChange={(e) => updateSmokingHistory('packYears', parseInt(e.target.value) || 0)}
+                                        className="w-16 rounded-lg border border-gray-300 px-2 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500"
+                                      />
+                                      <span className="text-xs text-gray-500">pack-years</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Relevant History */}
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Relevant Medical History</label>
+                                <textarea
+                                  value={clinicalContext.relevantHistory}
+                                  onChange={(e) => updateClinicalContext('relevantHistory', e.target.value)}
+                                  placeholder="e.g., Hypertension, Diabetes, Family history of lung cancer..."
+                                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm resize-none h-16 focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
                       {/* ======= 新：折叠式 Masks List（默认关闭；最多显示 2 项） ======= */}
@@ -971,8 +1645,6 @@ const SegmentationPage = () => {
                   <ReportPanel
                     reportText={reportText}
                     onChangeText={setReportText}
-                    model={model}
-                    onChangeModel={setModel}
                     samples={{ medical: sampleGeneratedReport, formal: defaultReport }}
                     uploadedImage={uploadedImage}
                     masks={masks}
@@ -982,10 +1654,10 @@ const SegmentationPage = () => {
               </div>
 
               {/* Right: Chat */}
-              {/* <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col h-[560px]"> */}
-                <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col md:self-stretch">
+                <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col min-h-[500px]">
 
-                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3">
+                {/* Messages area - stretches to fill available space, scrolls when content overflows */}
+                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3 mb-3 min-h-0">
                   {messages.length === 0 ? (
                     <>
                       <div className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
@@ -1003,12 +1675,23 @@ const SegmentationPage = () => {
                     messages.map((m, i) =>
                       m.role === "user" ? (
                         <div key={i} className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
-                          <div className="max-w-[75%] rounded-full bg-blue-100 px-4 py-2 text-sm text-gray-800 transition-transform duration-200 hover:scale-[1.02]">{m.text}</div>
+                          <div className="max-w-[75%] rounded-2xl bg-blue-100 px-4 py-2 text-sm text-gray-800 text-left transition-transform duration-200 hover:scale-[1.02]">{m.text}</div>
                         </div>
                       ) : (
-                        <div key={i} className="mb-2 flex justify-start animate-[fadeIn_300ms_ease-out]">
-                          <div className="max-w-[75%] w-full rounded-2xl bg-white px-4 py-2 text-sm text-gray-900 border text-left transition-transform duration-200 hover:scale-[1.02]">
-                            {m.text === "loading" ? "…" : m.text}
+                        <div key={m.id || i} className="mb-2 flex justify-start animate-[fadeIn_300ms_ease-out]">
+                          <div className="max-w-[85%] w-full rounded-2xl bg-white px-4 py-2 text-sm text-gray-900 border text-left transition-transform duration-200 hover:scale-[1.01]">
+                            {m.isStreaming && !m.text ? (
+                              <span className="inline-flex items-center gap-1">
+                                <span className="animate-pulse">●</span>
+                                <span className="animate-pulse delay-100">●</span>
+                                <span className="animate-pulse delay-200">●</span>
+                              </span>
+                            ) : (
+                              <div className="prose prose-sm prose-gray max-w-none [&>h1]:text-lg [&>h1]:font-bold [&>h1]:mb-2 [&>h2]:text-base [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-sm [&>h3]:font-semibold [&>p]:mb-2 [&>ul]:my-1 [&>ol]:my-1 [&>li]:my-0.5 [&>strong]:font-semibold [&>hr]:my-2">
+                                <ReactMarkdown>{m.text || "…"}</ReactMarkdown>
+                                {m.isStreaming && <span className="ml-1 animate-pulse">▌</span>}
+                              </div>
+                            )}
                           </div>
                         </div>
                       )
@@ -1016,35 +1699,62 @@ const SegmentationPage = () => {
                   )}
                 </div>
 
-                <div className="mt-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
-                      <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Add">+</button>
-                      <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Settings">⚙</button>
-                      Models
-                    </span>
-                    <select value={model} onChange={(e) => setModel(e.target.value)} className="rounded-md border px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150 cursor-pointer">
-                      <option value="SOMA-CT-v1">SOMA-CT-v1</option>
-                      <option value="SOMA-CT-v2">SOMA-CT-v2</option>
-                      <option value="General-4o-mini">General-4o-mini</option>
-                    </select>
+                {/* Bottom controls - stays at bottom */}
+                <div className="mt-auto space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Add">+</button>
+                        <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded-full border text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150 active:scale-90" title="Settings">⚙</button>
+                        Agent
+                      </span>
+                      <select value={targetAgent} onChange={(e) => setTargetAgent(e.target.value)} className="rounded-md border px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150 cursor-pointer">
+                        <option value="auto">Auto (Smart Routing)</option>
+                        <option value="radiologist">Radiology Analysis Agent</option>
+                        <option value="pathologist">Pathology Diagnosis Agent</option>
+                        <option value="report_writer">Report Drafting Agent</option>
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={handleAnalysis}
+                      className={`ml-3 rounded-md px-3 py-1.5 text-sm font-semibold transition-all duration-200 ease-out active:scale-95 ${
+                        isAnalysisTriggered
+                          ? 'border text-gray-700 hover:bg-gray-50 hover:shadow-sm'
+                          : 'bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md'
+                      }`}
+                      title="Generate report from current mask"
+                    >
+                      Analyse
+                    </button>
                   </div>
 
-                  <button onClick={handleAnalysis} className="ml-3 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-blue-700 hover:shadow-md transition-all duration-200 ease-out active:scale-95" title="Generate report from current mask">
-                    Analyse
-                  </button>
-                </div>
-
-                <div className="mt-3 flex items-start gap-2">
-                  <textarea
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="Enter your questions…"
-                    className="flex-1 h-28 resize-none rounded-xl border bg-blue-50 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150"
-                  />
-                  <button onClick={sendMessage} className="h-10 shrink-0 rounded-md border px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-200 ease-out active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100" title="Send" disabled={isRunning}>
-                    Send
-                  </button>
+                  <div className="flex items-start gap-2">
+                    <textarea
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey && !isRunning && question.trim()) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      placeholder="Enter your questions… (Press Enter to send)"
+                      className="flex-1 h-24 resize-none rounded-xl border bg-blue-50 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-gray-400 transition-colors duration-150"
+                    />
+                    <button
+                      onClick={sendMessage}
+                      className={`h-10 shrink-0 rounded-md px-4 text-sm font-semibold transition-all duration-200 ease-out active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100 ${
+                        isAnalysisTriggered
+                          ? 'bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md'
+                          : 'border text-gray-700 hover:bg-gray-50 hover:shadow-sm'
+                      }`}
+                      title="Send (Enter)"
+                      disabled={isRunning}
+                    >
+                      Send
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
