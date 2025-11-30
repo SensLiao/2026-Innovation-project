@@ -4,7 +4,7 @@ import { usePatientDB } from "../useDB/usePatients";
 import Logo from "../assets/images/Logo.png";
 import { Edit, Trash2 } from "lucide-react";
 import { toDDMMYYYY } from "../components/Header";
-
+import Sample1 from "../assets/images/Sample1.png";
 
 const PatientProfilePage = () => {
   const { pid } = useParams();
@@ -16,13 +16,12 @@ const PatientProfilePage = () => {
     setPatientData,
     updatePatient,
     deletePatient,
-    error,
   } = usePatientDB();
 
   const [isEditing, setIsEditing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // ----------- local form data -----------
+  // Editable fields
   const [editFields, setEditFields] = useState({
     name: "",
     age: "",
@@ -39,32 +38,39 @@ const PatientProfilePage = () => {
     country: "",
   });
 
-  // Convert Firestore timestamp → yyyy-mm-dd for <input type="date">
+  // Sample placeholder CT & Report data
+  const ctData = [
+    { id: 1, type: "PDF", date: "12/05/2025" },
+    { id: 2, type: "PDF", date: "12/05/2025" },
+    { id: 3, type: "PDF", date: "12/05/2025" },
+  ];
+
+  const reportData = [
+    { id: 1, type: "PDF", date: "12/05/2025" },
+    { id: 2, type: "PDF", date: "12/05/2025" },
+    { id: 3, type: "PDF", date: "12/05/2025" },
+  ];
+
   const toISO = (v) => {
     if (!v) return "";
     if (v.seconds) return new Date(v.seconds * 1000).toISOString().slice(0, 10);
     if (typeof v === "string" && v.includes("T"))
       return new Date(v).toISOString().slice(0, 10);
-    if (v instanceof Date) return v.toISOString().slice(0, 10);
     return v;
   };
 
-  // Convert Firestore → dd/mm/yyyy for display
   const toDisplay = (v) => {
     if (!v) return "";
     if (v.seconds) return toDDMMYYYY(new Date(v.seconds * 1000));
     if (typeof v === "string" && v.includes("T"))
       return toDDMMYYYY(new Date(v));
-    if (v instanceof Date) return toDDMMYYYY(v);
     return v;
   };
 
-  // Load patient data from Firestore
   useEffect(() => {
     if (!currentPatient || String(currentPatient.pid) !== String(pid)) {
       fetchPatientByID(pid);
     } else if (!isEditing) {
-      // load editable values
       setEditFields({
         name: currentPatient.name || "",
         age: currentPatient.age ?? "",
@@ -81,13 +87,11 @@ const PatientProfilePage = () => {
         country: currentPatient.country || "",
       });
     }
-  }, [pid, currentPatient, fetchPatientByID, isEditing]);
+  }, [pid, currentPatient, isEditing, fetchPatientByID]);
 
-  if (error) return <div className="p-8 text-red-500">{error}</div>;
   if (!currentPatient) return <div className="p-8">Loading...</div>;
 
-  // helper for inputs
-  const makeInput = (label, key, readonly, formatter) => (
+  const makeInput = (label, key, readonly = false, formatter = null) => (
     <>
       <label className="text-sm text-gray-600">{label}</label>
       <input
@@ -100,7 +104,6 @@ const PatientProfilePage = () => {
         }
         readOnly={!isEditing || readonly}
         onChange={(e) =>
-          isEditing &&
           !readonly &&
           setEditFields((f) => ({ ...f, [key]: e.target.value }))
         }
@@ -116,14 +119,13 @@ const PatientProfilePage = () => {
   return (
     <div className="min-h-screen bg-[#C2DCE7] py-10">
 
-      {/* Success popup */}
       {showSuccess && (
-        <div className="fixed top-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-green-500 text-white rounded-lg shadow-lg">
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
           Update Successful
         </div>
       )}
 
-      <div className="w-[90%] max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl p-10 relative">
+      <div className="w-[90%] max-w-6xl mx-auto bg-white rounded-3xl shadow-2xl p-10">
 
         {/* Header */}
         <div className="flex justify-between items-center border-b pb-4 mb-8">
@@ -131,18 +133,19 @@ const PatientProfilePage = () => {
             <button onClick={() => navigate(-1)} className="text-3xl">←</button>
             Patient Profile
           </h1>
-          <img src={Logo} alt="Logo" className="w-[160px]" />
+          <img src={Logo} alt="Logo" className="w-[150px]" />
         </div>
 
         <div className="grid grid-cols-3 gap-10">
 
-          {/* LEFT: PHOTO + ACTIONS */}
-          <div>
-            <div className="w-36 h-36 bg-gray-200 rounded-lg flex items-center justify-center border-4 border-blue-200">
+          {/* LEFT COLUMN */}
+          <div className="space-y-6">
+
+            {/* Photo */}
+            <div className="w-36 h-36 bg-gray-200 rounded-lg border-4 border-blue-200 flex items-center justify-center">
               {currentPatient.profilephoto ? (
                 <img
                   src={currentPatient.profilephoto}
-                  alt="Profile"
                   className="w-full h-full object-cover rounded-lg"
                 />
               ) : (
@@ -150,151 +153,171 @@ const PatientProfilePage = () => {
               )}
             </div>
 
-            <div className="flex gap-3 mt-4">
-
-              {/* EDIT */}
+            {/* Edit/Delete */}
+            <div className="flex gap-3">
               {!isEditing && (
                 <button
-                  className="p-2 bg-gray-200 rounded hover:bg-gray-300"
+                  className="p-2 bg-gray-200 rounded"
                   onClick={() => setIsEditing(true)}
                 >
-                  <Edit className="text-gray-700 w-5 h-5" />
+                  <Edit className="w-5 h-5 text-gray-700" />
                 </button>
               )}
 
-              {/* SAVE — SAME METHOD AS PATIENT PAGE */}
               {isEditing && (
                 <button
-                  className="p-2 bg-green-200 rounded hover:bg-green-300 text-green-800"
+                  className="p-2 bg-green-200 rounded text-green-700"
                   onClick={async () => {
                     const updated = {
                       ...currentPatient,
                       ...editFields,
                       age: Number(editFields.age),
                     };
-
-                    // EXACT SAME METHOD as PatientPage
                     setPatientData(updated);
                     await updatePatient(pid);
-
                     setIsEditing(false);
                     setShowSuccess(true);
                     setTimeout(() => setShowSuccess(false), 2000);
-
                     fetchPatientByID(pid);
                   }}
                 >
-                  <svg viewBox="0 0 24 24" width="20" height="20">
-                    <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" />
-                  </svg>
+                  ✔
                 </button>
               )}
 
-              {/* CANCEL */}
               {isEditing && (
                 <button
-                  className="p-2 bg-gray-200 rounded hover:bg-gray-300"
+                  className="p-2 bg-gray-200 rounded"
                   onClick={() => setIsEditing(false)}
                 >
-                  <svg viewBox="0 0 24 24" width="20" height="20">
-                    <path d="M6 6l12 12M6 18L18 6" stroke="currentColor" strokeWidth="2" />
-                  </svg>
+                  ✖
                 </button>
               )}
 
-              {/* DELETE */}
               {!isEditing && (
                 <button
-                  className="p-2 bg-red-200 rounded hover:bg-red-300"
+                  className="p-2 bg-red-200 rounded"
                   onClick={async () => {
                     if (!window.confirm("Delete this patient?")) return;
                     await deletePatient(pid);
                     navigate("/patient");
                   }}
                 >
-                  <Trash2 className="text-red-700 w-5 h-5" />
+                  <Trash2 className="w-5 h-5 text-red-700" />
                 </button>
               )}
             </div>
 
-            <button className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg flex items-center justify-center">
-              Segmentation
-            </button>
+            {/* Segmentation */}
+            <button
+  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg w-44 flex justify-center ml-[4px]"
+>
+  Segmentation
+</button>
+
+
+
 
           </div>
 
-          {/* RIGHT: FORM FIELDS */}
-          <div className="col-span-2 space-y-10">
+          {/* MIDDLE COLUMN */}
+          <div className="col-span-1 space-y-10">
 
-            {/* PATIENT INFO */}
+            {/* Patient Info */}
             <section>
-              <h2 className="text-xl font-bold mb-3 flex items-center gap-3">
-                Patient Information
-                <div className="border-b flex-1"></div>
-              </h2>
-
+              <h2 className="text-xl font-bold mb-3">Patient Information</h2>
               <div className="grid grid-cols-[130px,1fr] gap-y-4 gap-x-4">
                 {makeInput("Name", "name")}
                 {makeInput("Patient ID", "pid", true)}
                 {makeInput("Gender", "gender")}
-
-                {/* DOB with Date Picker */}
-                <>
-                  <label className="text-sm text-gray-600">Date of Birth</label>
-                  {!isEditing ? (
-                    <input
-                      value={toDisplay(currentPatient.dateofbirth)}
-                      readOnly
-                      className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-1 text-sm"
-                    />
-                  ) : (
-                    <input
-                      type="date"
-                      value={editFields.dateofbirth}
-                      onChange={(e) =>
-                        setEditFields((f) => ({ ...f, dateofbirth: e.target.value }))
-                      }
-                      className="w-full border border-blue-400 rounded-lg px-3 py-1 text-sm bg-white"
-                    />
-                  )}
-                </>
-
+                {makeInput("Date of Birth", "dateofbirth", false)}
                 {makeInput("Register Date", "createdat", true, toDisplay)}
               </div>
             </section>
 
-            {/* EMERGENCY CONTACT */}
+            {/* Emergency Contact */}
             <section>
-              <h2 className="text-xl font-bold mb-3 flex items-center gap-3">
-                Emergency Contact
-                <div className="border-b flex-1"></div>
-              </h2>
-
+              <h2 className="text-xl font-bold mb-3">Emergency Contact</h2>
               <div className="grid grid-cols-[130px,1fr] gap-y-4 gap-x-4">
                 {makeInput("Name", "emergencycontactname")}
                 {makeInput("Phone", "emergencycontactphone")}
               </div>
             </section>
 
-            {/* ADDRESS */}
+            {/* Address */}
             <section>
-              <h2 className="text-xl font-bold mb-3 flex items-center gap-3">
-                Address
-                <div className="border-b flex-1"></div>
-              </h2>
-
+              <h2 className="text-xl font-bold mb-3">Address</h2>
               <div className="grid grid-cols-[130px,1fr] gap-y-4 gap-x-4">
-                {makeInput("Street", "streetaddress")}
+                {makeInput("Address", "streetaddress")}
                 {makeInput("Suburb", "suburb")}
                 {makeInput("State", "state")}
-                {makeInput("Postcode", "postcode")}
                 {makeInput("Country", "country")}
+                {makeInput("Postcode", "postcode")}
               </div>
+            </section>
+          </div>
+
+          {/* RIGHT COLUMN: CT + REPORT + SAMPLE1 */}
+          <div className="space-y-10">
+
+            {/* Recorded CT */}
+            <section>
+              <h3 className="text-lg font-bold mb-2">Recorded CT</h3>
+              <table className="w-full text-sm bg-blue-50 rounded-lg overflow-hidden">
+                <thead className="bg-blue-100">
+                  <tr>
+                    <th className="px-3 py-2">ID</th>
+                    <th className="px-3 py-2">Type</th>
+                    <th className="px-3 py-2">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ctData.map((r) => (
+                    <tr key={r.id}>
+                      <td className="px-3 py-2">{r.id}</td>
+                      <td className="px-3 py-2">{r.type}</td>
+                      <td className="px-3 py-2">{r.date}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+
+            {/* Report Table */}
+            <section>
+              <h3 className="text-lg font-bold mb-2">Report</h3>
+              <table className="w-full text-sm bg-blue-50 rounded-lg overflow-hidden">
+                <thead className="bg-blue-100">
+                  <tr>
+                    <th className="px-3 py-2">ID</th>
+                    <th className="px-3 py-2">Type</th>
+                    <th className="px-3 py-2">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reportData.map((r) => (
+                    <tr key={r.id}>
+                      <td className="px-3 py-2">{r.id}</td>
+                      <td className="px-3 py-2">{r.type}</td>
+                      <td className="px-3 py-2">{r.date}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+
+            {/* Sample1 under Report */}
+            <section>
+              <img
+                src={Sample1}
+                alt="Sample 1"
+                className="w-full rounded-lg shadow-md object-cover"
+              />
             </section>
 
           </div>
-        </div>
 
+        </div>
       </div>
     </div>
   );
