@@ -40,3 +40,10 @@ report.json
 # Coverage
 coverage/
 .nyc_output/
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
