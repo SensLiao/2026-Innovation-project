@@ -224,113 +224,30 @@ router.post('/run_model', async (req, res) => {
   }
 });
 
-// 9. Medical Analysis router -- need to be implemented
-router.post('/medical_report_init', async (req, res) => {
-  try {
-    const { final_image } = req.body;
+// ============================================================
+// N8N ROUTES - COMMENTED OUT (replaced by agentRoute.js)
+// ============================================================
+// 9. Medical Analysis router -- n8n version (deprecated)
+// router.post('/medical_report_init', async (req, res) => {
+//   try {
+//     const { final_image } = req.body;
+//     if (!final_image) {
+//       return res.status(400).json({ error: 'No final image provided' });
+//     }
+//     const systemPrompt = `...`;  // truncated for brevity
+//     const url = 'http://localhost:5678/webhook-test/15f56758-4d20-48e2-aca8-13188bf401d7';
+//     const response = await axios.post(url, message, { timeout: 120000 });
+//     return res.status(200).json({ message: 'Medical report generated successfully', report: response.data });
+//   } catch (error) {
+//     return res.status(500).json({ error: 'Failed to generate the medical report' });
+//   }
+// });
 
-    if (!final_image) {
-      return res.status(400).json({ error: 'No final image provided' });
-    }
-
-    // 1. prepare the json prompt message for report generation
-    const systemPrompt = `
-    # Role
-    You are a board-certified radiologist and medical imaging expert.
-
-    # Inputs
-    You will receive ONE overlay image (original image + lesion mask in blue). Pixel spacing may be unknown.
-
-    # Task
-    - Analyze ONLY the provided image.
-    - Describe objective findings (location, shape/margins, density/signal, relation to adjacent structures, pertinent negatives).
-    - Provide a concise impression with differentials ranked by likelihood and short justifications.
-    - Be conservative; clearly separate findings vs diagnostic impression.
-
-    # Hard Rules (Critical for automation)
-    1) Return **ONLY** a single valid JSON object. **No code fences, no prose, no Markdown, no trailing commas.**
-    2) Use **exact keys and types** as specified below. **Do not add extra keys. Do not rename keys.**
-    3) If a value is unknown, use an empty string '' or an empty array '[]' (avoid 'null').
-    4) Probabilities are **0.0-1.0**. Arrays may be empty but must exist where required.
-
-    # Additional guidance
-    - Keep text concise and clinically useful with inference detail.
-    - If spacing is unknown, keep sizes in pixels and state that limitation in disclaimers.`;
-
-    const userMessage_final = `
-    {
-      "images": {
-        "overlay": "<base64 or URL>",
-        "original": "<base64 or URL (optional)>"
-      },
-      "language": "Chinese",
-      "study_info": {
-        "modality": "<CXR | CT | MRI | US | Pathology …>",
-        "body_part": "<chest | brain | abdomen | pelvis | bone | …>",
-        "patient": {
-          "sex": "<M | F | Unknown>",
-          "age": "<number + unit, e.g., 63y>"
-        },
-        "acquisition_notes": "<CT-portal venous phase / MRI T2WI / DWI b=800, etc. (optional)>",
-        "pixel_spacing": "<e.g., 0.7x0.7 mm or 'N/A' if unknown (optional)>"
-      },
-      "roi_stats_px": {
-        "area_px": "<integer>",
-        "long_diameter_px": "<integer>",
-        "short_diameter_px": "<integer>",
-        "mean_intensity": "<float>",
-        "std_intensity": "<float>",
-        "multiplicity_n": "<integer if multiple; omit if single (optional)>"
-      },
-      "notes": "No physical spacing; all dimensions in pixels; blue is the ROI overlay."
-    }`;
-
-    const userMessage_test = `
-    {
-      "user message": "Please analyze the lesion area in this medical image and generate a report.",
-      "images": {
-        "overlay_image": ${JSON.stringify(final_image)}
-      }
-    }`;
-
-    const message = {
-      'user message': userMessage_test,
-      'system prompt': systemPrompt,
-      temperature: 0.1,
-      Language: 'Chinese'
-    };
-
-    // 2. Prepare the request to the medical report generation API
-    const url = 'http://localhost:5678/webhook-test/15f56758-4d20-48e2-aca8-13188bf401d7'; // n8n webhook URL
-
-    const response = await axios.post(url, message, {
-      timeout: 120000, // 超时毫秒
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    // 3. Send the response back to the frontend
-    const payloadOut = response.data?.data ?? response.data;
-    console.log('✅ Medical report generated successfully');
-    fs.writeFileSync('report.json', JSON.stringify(response.data, null, 2)); // 保存报告到文件
-    return res.status(200).json({ message: 'Medical report generated successfully', report: payloadOut });
-  } catch (error) {
-    console.error('❌ Error generating report:', error);
-    try {
-      const data = fs.readFileSync('report.json', 'utf8');
-      const json_data = JSON.parse(data);
-      const payloadOut = json_data?.data?.output ?? json_data;
-      return res.status(200).json({ message: 'Medical report generated successfully', report: payloadOut });
-    } catch {
-      return res.status(500).json({ error: 'Failed to generate the medical report' });
-    }
-  }
-});
-
-// 10. Report generation router -- need to be implemented
-router.post('/medical_report_rein', async (req, res) => {
-  console.log('🚧 This feature is not implemented yet');
-  res.status(501).json({ error: 'This feature is not implemented yet' });
-});
+// 10. Report refinement router -- n8n version (deprecated)
+// router.post('/medical_report_rein', async (req, res) => {
+//   res.status(501).json({ error: 'This feature is not implemented yet' });
+// });
+// ============================================================
 
 // 11.Testing functions
 async function test(fileBuffer) {

@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node tests/runAll.js",
+    "test:base": "node tests/baseAgent.test.js",
+    "test:agents": "node tests/agents.test.js",
+    "test:services": "node tests/services.test.js",
+    "test:db": "node tests/database.test.js",
+    "test:mock": "MOCK_MODE=true node tests/runAll.js",
+    "setup:dev-db": "node scripts/setup-dev-db.mjs",
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
@@ -13,6 +19,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0",
     "@neondatabase/serverless": "^1.0.1",
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
