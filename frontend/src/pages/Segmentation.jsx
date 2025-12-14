@@ -9,6 +9,8 @@ import ReportPanel from "../components/ReportPanel";
 import SegmentationActionsBar from "../components/SegmentationActionsBar";
 import { Eye, EyeOff, Trash2, ChevronDown, User, FileText } from "lucide-react";
 import { streamRequest, streamChat, ANALYSIS_PHASES, api } from "../lib/api";
+import { useSegDB } from "../useDB/useSeg";
+import { useAuth } from "../useDB/useAuth";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000/api";
 
@@ -20,6 +22,9 @@ const SegmentationPage = () => {
   const [reportText, setReportText] = useState(defaultReport);
   const [question, setQuestion] = useState("");
   const [targetAgent, setTargetAgent] = useState("auto"); // auto, radiologist, pathologist, report_writer
+  const [model, setModel] = useState("SOMA-CT-v1");
+  const { addSeg  } = useSegDB();
+  const {user, fetchMe } = useAuth();
 
   // === 同原实现 ===
   const [mode, setMode] = useState("foreground");
@@ -230,6 +235,7 @@ const SegmentationPage = () => {
       const dataURL = await fileToDataURL(f);
       if (currentFileRef.current !== f) return; // File changed, abort
       setUploadedImage(dataURL);
+      console.log(dataURL)
 
       const { natW, natH } = await loadImageOffscreen(dataURL);
       if (currentFileRef.current !== f) return;
@@ -552,7 +558,7 @@ const SegmentationPage = () => {
       const out = document.createElement("canvas");
       out.width = natW; out.height = natH;
       const octx = out.getContext("2d");
-      octx.drawImage(imgElRef.current, 0, 0, natW, natH);
+      octx.drawImage(imgElRef.current, 0, 0, natW, natH);      
 
       masks.forEach((mObj, idx) => {
         if (!mObj || !mObj.visible || !mObj.mask || !mObj.maskDims) return;
@@ -582,6 +588,17 @@ const SegmentationPage = () => {
         (await new Promise((resolve) => out.toBlob(resolve, "image/webp", 0.95)));
       const ts = new Date().toISOString().replace(/[:.]/g, "-");
       downloadBlob(outBlob, `overlay_${ts}.png`);
+      
+      // 保存到数据库
+      await addSeg({
+        uid: user.uid,
+        pid: 1,
+        model: model,
+        uploadimage: uploadedImage,
+        origimsize: origImSize,
+        masks: masks,
+      });
+
     } catch (err) {
       console.error("导出失败：", err);
       alert("导出失败，请查看控制台日志");

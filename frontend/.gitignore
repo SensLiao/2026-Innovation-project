@@ -22,7 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
+src/pages/ImageUploadTest.jsx
 src/pages/test.jsx
 ../node_modules/
 ../package-lock.json

@@ -13,6 +13,7 @@ import { sql } from './config/db.js';
 import globals from './globals.js';
 import * as modelModule from './routes/models.js';
 import buildAuthRouter from './routes/authRoute.js';
+import segRoute from './routes/segRoute.js';
 
 dotenv.config();
 
@@ -52,6 +53,7 @@ app.use('/api/publications', pubRoute);
 app.use('/api', modelModule.router);
 app.use('/api', agentRoute);  // Multi-agent medical report routes
 app.use('/api/auth', buildAuthRouter());
+app.use('/api/segs', segRoute);
 
 async function initDB() {
   // Initialize your database connection here if needed
@@ -104,7 +106,22 @@ async function initDB() {
         CONSTRAINT patient_exists UNIQUE (Name, Age, DateOfBirth, Gender, Phone, Email, ProfilePhoto)
       );
     `;
-    console.log('Database Users and Patients initialized');
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS segmentations (
+        sid SERIAL PRIMARY KEY,
+        pid INT NOT NULL REFERENCES patients(PID) ON DELETE CASCADE,
+        uid INT NOT NULL REFERENCES users(UID) ON DELETE CASCADE,
+        createdat TIMESTAMP DEFAULT NOW(),
+        model VARCHAR(50) NOT NULL,
+        uploadimage TEXT NOT NULL,
+        origimsize INT[] NOT NULL,
+        masks JSONB NOT NULL CHECK (jsonb_typeof(masks) = 'array')
+        
+      );
+    `;
+    
+    console.log('Database initialized');
   }catch (error) {
     console.error('Error initializing database:', error);
     process.exit(1);
