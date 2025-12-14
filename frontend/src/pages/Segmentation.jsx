@@ -7,6 +7,7 @@ import "./patient.css";
 import axios from "axios";
 import ReportPanel from "../components/ReportPanel";
 import SegmentationActionsBar from "../components/SegmentationActionsBar";
+import UserGuide from "../components/UserGuide";
 import { Eye, EyeOff, Trash2, ChevronDown, User, FileText } from "lucide-react";
 import { streamRequest, streamChat, ANALYSIS_PHASES, api } from "../lib/api";
 import { useSegDB } from "../useDB/useSeg";
@@ -67,6 +68,7 @@ const SegmentationPage = () => {
 
   const inputRef = useRef(null);
   const currentFileRef = useRef(null); // Track current file to prevent memory leaks
+  const messagesEndRef = useRef(null); // For auto-scrolling chat messages
 
   // 叠加画布
   const canvasRef = useRef(null);
@@ -205,6 +207,11 @@ const SegmentationPage = () => {
       localStorage.setItem('medicalReportSessionId', sessionId);
     }
   }, [sessionId]);
+
+  // Auto-scroll to latest message in chat
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 文件处理 - 图像上传与模型加载
@@ -1316,6 +1323,7 @@ const SegmentationPage = () => {
                     Segmentation
                   </button>
                   <button
+                    data-tour="report-tab"
                     onClick={() => setActiveTab("report")}
                     className={`rounded-md px-3 py-1 text-xs font-semibold shadow-sm transition-all duration-200 ease-out active:scale-95 ${
                       activeTab === "report" 
@@ -1364,6 +1372,7 @@ const SegmentationPage = () => {
 
                     {/* 上传区 */}
                     <div
+                      data-tour="upload-zone"
                       ref={dropZoneRef}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={handleDrop}
@@ -1401,7 +1410,7 @@ const SegmentationPage = () => {
                     </div>
 
                     {/* 选项 + 按钮 */}
-                    <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+                    <div data-tour="segmentation-tools" className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                       <fieldset className="col-span-2 flex flex-wrap items-center gap-3">
                         <legend className="mr-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Segmentation</legend>
                         {segOptions.map((opt) => (
@@ -1438,7 +1447,7 @@ const SegmentationPage = () => {
                       </div>
 
                       {/* ======= iter4: Patient & Clinical Context (collapsible) ======= */}
-                      <div className="col-span-2 md:col-span-4">
+                      <div data-tour="patient-info-section" className="col-span-2 md:col-span-4">
                         <div className="rounded-2xl border border-gray-300 bg-white overflow-hidden">
                           <button
                             type="button"
@@ -1569,7 +1578,7 @@ const SegmentationPage = () => {
                       </div>
 
                       {/* ======= 新：折叠式 Masks List（默认关闭；最多显示 2 项） ======= */}
-                      <div className="col-span-2 md:col-span-4">
+                      <div data-tour="masks-section" className="col-span-2 md:col-span-4">
                         <div
                           ref={listWrapRef}
                           className="rounded-2xl border border-gray-300 bg-white overflow-hidden"
@@ -1673,10 +1682,10 @@ const SegmentationPage = () => {
               </div>
 
               {/* Right: Chat */}
-                <div className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col min-h-[500px]">
+                <div data-tour="chat-section" className="md:basis-2/5 rounded-2xl border bg-white p-4 shadow-sm flex flex-col h-[600px]">
 
-                {/* Messages area - stretches to fill available space, scrolls when content overflows */}
-                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3 mb-3 min-h-0">
+                {/* Messages area - fixed height with scroll */}
+                <div className="flex-1 overflow-y-auto rounded-xl border bg-white p-3 mb-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
                   {messages.length === 0 ? (
                     <>
                       <div className="mb-2 flex justify-end animate-[fadeIn_300ms_ease-out]">
@@ -1716,6 +1725,8 @@ const SegmentationPage = () => {
                       )
                     )
                   )}
+                  {/* Invisible element to scroll to */}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Bottom controls - stays at bottom */}
@@ -1780,6 +1791,9 @@ const SegmentationPage = () => {
           </div>
         </div>
       </div>
+      
+      {/* User Guide Button - Fixed at bottom right */}
+      <UserGuide />
      </div>
   );
 };
