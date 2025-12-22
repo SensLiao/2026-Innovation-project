@@ -65,6 +65,8 @@ const SegmentationPage = () => {
     // Initialize from localStorage
     return localStorage.getItem('medicalReportSessionId') || null;
   });
+  const [diagnosisId, setDiagnosisId] = useState(null);
+  const [reportStatus, setReportStatus] = useState('draft'); // 'draft' | 'approved'
 
   const inputRef = useRef(null);
   const currentFileRef = useRef(null); // Track current file to prevent memory leaks
@@ -670,6 +672,23 @@ const SegmentationPage = () => {
     }, 2000);
   }
 
+  // Approve report
+  async function handleApprove() {
+    if (!diagnosisId) {
+      alert('No diagnosis to approve');
+      return;
+    }
+    try {
+      const res = await api.post(`/diagnosis/${diagnosisId}/approve`);
+      if (res.data.success) {
+        setReportStatus('approved');
+      }
+    } catch (err) {
+      console.error('Approve failed:', err);
+      alert('Failed to approve report');
+    }
+  }
+
   // 生成报告 (支持 SSE 流式进度)
   async function handleAnalysis(useStreaming = true) {
     // Validation: Check if patient is selected (show friendly animation instead of alert)
@@ -779,6 +798,10 @@ const SegmentationPage = () => {
             if (data.sessionId) {
               setSessionId(data.sessionId);
             }
+            if (data.diagnosisId) {
+              setDiagnosisId(data.diagnosisId);
+              setReportStatus('draft');
+            }
           },
           onLog: (data) => {
             console.log('[SSE Log]', data);
@@ -793,6 +816,12 @@ const SegmentationPage = () => {
             console.log('[SSE Complete]', data);
             const reportContent = typeof data.report === 'object' ? data.report?.content : data.report;
             setReportText(reportContent || sampleGeneratedReport);
+
+            // Save diagnosisId from complete event
+            if (data.diagnosisId) {
+              setDiagnosisId(data.diagnosisId);
+              setReportStatus('draft');
+            }
 
             // Show completion animation
             setAnalysisProgress({ step: 'complete', label: 'Report Generated', progress: 100, agent: null });
@@ -1677,6 +1706,8 @@ const SegmentationPage = () => {
                     uploadedImage={uploadedImage}
                     masks={masks}
                     origImSize={origImSize}
+                    status={reportStatus}
+                    onApprove={handleApprove}
                   />
                 )}
               </div>
