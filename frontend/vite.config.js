@@ -6,10 +6,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true,
-    allowedHosts: [
-      "karen.geniuscai.com",
-      "localhost",
-      "127.0.0.1"
-    ]
+    allowedHosts: ["localhost", "127.0.0.1"]
   }
 })
