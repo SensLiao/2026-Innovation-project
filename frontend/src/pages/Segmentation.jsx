@@ -46,6 +46,11 @@ const SegmentationPage = () => {
   const [pointLabels, setPointLabels] = useState([]);
   const [lastRunIndex, setLastRunIndex] = useState(0);
 
+  // Box 提示 (新增 - 点击两次画框)
+  const [boxCoords, setBoxCoords] = useState([]); // [[x0, y0, x1, y1], ...]
+  const [boxStart, setBoxStart] = useState(null); // {x, y} 第一次点击的起点
+  const [tempBox, setTempBox] = useState(null); // 鼠标移动时的临时预览 box
+
   // 多掩码
   // { mask, maskDims, maskInput, hasMaskInput, lowResStack, visible, name, color }
   const [masks, setMasks] = useState([]);
@@ -84,6 +89,17 @@ const SegmentationPage = () => {
 
   // 色板
   const maskColors = ["#1E90FF","#00BFFF","#7FFF00","#FFD700","#FF7F50","#FF1493","#8A2BE2"];
+
+  // 工具切换时清理之前的标记
+  useEffect(() => {
+    // 切换工具时清除对应的标记
+    if (tool === "point") {
+      setBoxCoords([]);
+      setTempBox(null);
+    } else if (tool === "box") {
+      // Box 工具不清除 points,允许混合使用
+    }
+  }, [tool]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // iter4: Patient & Clinical Context - 病人信息与临床上下文
@@ -313,14 +329,10 @@ const SegmentationPage = () => {
     inputRef.current?.click();
   }
 
-  // 画面内点击 -> 记录点
+  // 画面内点击 -> 记录点或处理 box
   function handleContainerClick(e) {
     if (!uploadedImage || !fileName) {
       handleBrowse();
-      return;
-    }
-    if (tool !== "point") {
-      alert("当前仅支持 Point 工具。");
       return;
     }
     if (!dropZoneRef.current) return;
@@ -336,26 +348,81 @@ const SegmentationPage = () => {
     const x = localX / imgRect.drawW;
     const y = localY / imgRect.drawH;
 
-    setClickPoints((prev) => [...prev, { x, y }]);
-    setPointLabels((prev) => [...prev, mode === "foreground" ? 1 : 0]);
+    // Point 工具: 添加点
+    if (tool === "point") {
+      setClickPoints((prev) => [...prev, { x, y }]);
+      setPointLabels((prev) => [...prev, mode === "foreground" ? 1 : 0]);
+    }
+    // Box 工具: 点击两次确定 box
+    else if (tool === "box") {
+      if (!boxStart) {
+        // 第一次点击: 设置起点
+        setBoxStart({ x, y });
+        setTempBox(null);
+      } else {
+        // 第二次点击: 确定终点，创建 box
+        const x0 = Math.min(boxStart.x, x);
+        const y0 = Math.min(boxStart.y, y);
+        const x1 = Math.max(boxStart.x, x);
+        const y1 = Math.max(boxStart.y, y);
+
+        // 确保 box 有最小尺寸
+        const minSize = 0.01;
+        if (x1 - x0 > minSize && y1 - y0 > minSize) {
+          setBoxCoords([{ x0, y0, x1, y1 }]);
+        }
+        setBoxStart(null);
+        setTempBox(null);
+      }
+    }
   }
 
-  // 运行模型（仅新增点）
+  // Box 工具的 mouse move 事件处理 (实时预览)
+  function handleMouseMove(e) {
+    // 只有在 box 工具且已设置起点时才显示预览
+    if (tool !== "box" || !boxStart || !dropZoneRef.current) return;
+
+    const hostRect = dropZoneRef.current.getBoundingClientRect();
+    const imgRect = getImageRect();
+    if (!imgRect) return;
+
+    const localX = e.clientX - hostRect.left - imgRect.offsetX;
+    const localY = e.clientY - hostRect.top - imgRect.offsetY;
+
+    // 限制在图像范围内
+    const clampedX = Math.max(0, Math.min(localX, imgRect.drawW));
+    const clampedY = Math.max(0, Math.min(localY, imgRect.drawH));
+
+    const x = clampedX / imgRect.drawW;
+    const y = clampedY / imgRect.drawH;
+
+    // 计算矩形 (左上角到右下角)
+    const x0 = Math.min(boxStart.x, x);
+    const y0 = Math.min(boxStart.y, y);
+    const x1 = Math.max(boxStart.x, x);
+    const y1 = Math.max(boxStart.y, y);
+
+    setTempBox({ x0, y0, x1, y1 });
+  }
+
+  // 运行模型（支持点和框）
   async function runModel() {
     if (!uploadedImage || !imageEmbeddings?.length) {
       alert("请先上传图片并等待后端返回 embeddings");
       return;
     }
-    if (tool !== "point") {
-      alert("当前 Demo 仅实现点提示");
+    
+    // 检查是否有任何 prompt (点或框)
+    const hasPoints = clickPoints.length > lastRunIndex;
+    const hasBoxes = boxCoords.length > 0;
+    
+    if (!hasPoints && !hasBoxes) {
+      alert("请先添加点或绘制框再运行模型");
       return;
     }
+
     const newPts = clickPoints.slice(lastRunIndex);
     const newLabs = pointLabels.slice(lastRunIndex);
-    if (newPts.length === 0) {
-      alert("请先添加新的点再运行模型");
-      return;
-    }
 
     // 原图尺寸确保
     let [H, W] = origImSize;
@@ -377,6 +444,12 @@ const SegmentationPage = () => {
 
     const toPlainArray = (v) => (v == null ? v : ArrayBuffer.isView(v) ? Array.from(v) : Array.isArray(v) ? v : v);
     const toPointPairs = (arr) => (Array.isArray(arr) ? arr.map((p) => [Math.round(p.x * W), Math.round(p.y * H)]) : []);
+    const toBoxes = (arr) => (Array.isArray(arr) ? arr.map((b) => [
+      Math.round(b.x0 * W), 
+      Math.round(b.y0 * H), 
+      Math.round(b.x1 * W), 
+      Math.round(b.y1 * H)
+    ]) : []);
 
     // 外扩判断
     const curMaskObj = masks[currentMaskIndex] || {};
@@ -401,6 +474,7 @@ const SegmentationPage = () => {
 
     const sendPointCoords = toPointPairs(newPts);
     const sendPointLabels = [...newLabs];
+    const sendBoxes = toBoxes(boxCoords);
 
     const validLowResMask = (arr) => {
       if (!Array.isArray(arr)) return false;
@@ -418,10 +492,11 @@ const SegmentationPage = () => {
         embedding_dims: toPlainArray(embeddingsDims),
         point_coords: toPlainArray(sendPointCoords),
         point_labels: toPlainArray(sendPointLabels),
+        boxes: toPlainArray(sendBoxes), // 新增 boxes 参数
         mask_input: refinedMask ? toPlainArray(refinedMask) : null,
         has_mask_input: refinedFlag,
         orig_im_size: [H, W],
-        hint_type: "point",
+        hint_type: hasBoxes ? (hasPoints ? "combined" : "box") : "point",
       };
 
       const res = await axios.post(`${API_BASE}/run_model`, body);
@@ -462,6 +537,7 @@ const SegmentationPage = () => {
   function startNextMask() {
     setClickPoints([]);
     setPointLabels([]);
+    setBoxCoords([]); // 清除 boxes
     setLastRunIndex(0);
     setMasks((prev) => {
       const next = [...prev];
@@ -553,7 +629,46 @@ const SegmentationPage = () => {
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(temp, rect.offsetX, rect.offsetY, rect.drawW, rect.drawH);
     });
-  }, [masks, uploadedImage, origImSize, redrawTick, activeTab]);
+
+    // 绘制 boxes (包括临时的拖拽框)
+    ctx.strokeStyle = "#00FF00";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+
+    // 绘制已确认的 box
+    boxCoords.forEach((box) => {
+      const x = rect.offsetX + box.x0 * rect.drawW;
+      const y = rect.offsetY + box.y0 * rect.drawH;
+      const w = (box.x1 - box.x0) * rect.drawW;
+      const h = (box.y1 - box.y0) * rect.drawH;
+      ctx.strokeRect(x, y, w, h);
+    });
+
+    // 绘制临时预览框
+    if (tempBox) {
+      ctx.strokeStyle = "#FFFF00";
+      const x = rect.offsetX + tempBox.x0 * rect.drawW;
+      const y = rect.offsetY + tempBox.y0 * rect.drawH;
+      const w = (tempBox.x1 - tempBox.x0) * rect.drawW;
+      const h = (tempBox.y1 - tempBox.y0) * rect.drawH;
+      ctx.strokeRect(x, y, w, h);
+    }
+
+    // 绘制 box 起点标记 (当已点击第一个点但还未点击第二个点时)
+    if (boxStart && !tempBox) {
+      ctx.fillStyle = "#FFFF00";
+      const cx = rect.offsetX + boxStart.x * rect.drawW;
+      const cy = rect.offsetY + boxStart.y * rect.drawH;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    ctx.setLineDash([]);
+  }, [masks, uploadedImage, origImSize, redrawTick, activeTab, boxCoords, tempBox, boxStart]);
 
   // 导出覆盖图
   async function handleExportOverlay() {
@@ -623,6 +738,14 @@ const SegmentationPage = () => {
 
   // 撤销 / 重置
   function undoPoints() {
+    // 如果有 box,优先清除 box
+    if (boxCoords.length > 0) {
+      setBoxCoords([]);
+      setRedrawTick((t) => t + 1);
+      return;
+    }
+    
+    // 否则撤销最后一个点
     setClickPoints((prev) => prev.slice(0, -1));
     setPointLabels((prev) => prev.slice(0, -1));
     setMasks((prev) => {
@@ -649,6 +772,7 @@ const SegmentationPage = () => {
 
     setClickPoints([]);
     setPointLabels([]);
+    setBoxCoords([]); // 清除 boxes
     setLastRunIndex(0);
 
     setMasks([]);
@@ -1056,8 +1180,8 @@ const SegmentationPage = () => {
   // 下拉选项
   const segOptions = useMemo(
     () => [
-      { id: "foreground", label: "Foreground segmentation" },
-      { id: "background", label: "Background segmentation" },
+      { id: "foreground", label: "Foreground pattern" },
+      { id: "background", label: "Background pattern" },
     ],
     []
   );
@@ -1406,8 +1530,10 @@ const SegmentationPage = () => {
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={handleDrop}
                       onClick={handleContainerClick}
+                      onMouseMove={handleMouseMove}
                       className="group relative flex h-[360px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-200 ease-out"
-                      title={uploadedImage ? "Click to add a point (Point tool)." : "Click to choose a file or drag an image here"}
+                      title={uploadedImage ? (tool === "point" ? "点击添加标注点" : (boxStart ? "点击确定框的终点" : "点击确定框的起点")) : "点击选择文件或拖拽图片到此处"}
+                      style={{ cursor: tool === "box" && uploadedImage ? "crosshair" : "pointer" }}
                     >
                       <input
                         ref={inputRef}
@@ -1440,27 +1566,70 @@ const SegmentationPage = () => {
 
                     {/* 选项 + 按钮 */}
                     <div data-tour="segmentation-tools" className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-                      <fieldset className="col-span-2 flex flex-wrap items-center gap-3">
-                        <legend className="mr-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Segmentation</legend>
-                        {segOptions.map((opt) => (
-                          <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-900 transition-colors duration-150">
-                            <input type="radio" name="mode" value={opt.id} checked={mode === opt.id} onChange={() => setMode(opt.id)} className="h-4 w-4 accent-blue-600 cursor-pointer transition-transform duration-150 hover:scale-110" />
-                            <span className="select-none">{opt.label}</span>
-                          </label>
-                        ))}
-                      </fieldset>
+                      {/* Tool & Mode 选择器放在一行 */}
+                      <div className="col-span-2 md:col-span-4 flex items-center gap-4 border-b border-gray-200 pb-3">
+                        {/* Tool 选择 (Point/Box) */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">TOOL</span>
+                          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+                            <button
+                              type="button"
+                              onClick={() => setTool("point")}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-sm font-medium transition-all duration-200 ${
+                                tool === "point"
+                                  ? "bg-white text-blue-600 shadow-sm"
+                                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                              }`}
+                              aria-label="Point tool"
+                              aria-pressed={tool === "point"}
+                            >
+                              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+                              </svg>
+                              <span>Point</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTool("box")}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-sm font-medium transition-all duration-200 ${
+                                tool === "box"
+                                  ? "bg-white text-blue-600 shadow-sm"
+                                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                              }`}
+                              aria-label="Box tool"
+                              aria-pressed={tool === "box"}
+                            >
+                              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                              </svg>
+                              <span>Box</span>
+                            </button>
+                          </div>
+                        </div>
 
-                      <fieldset className="col-span-2 flex flex-wrap items-center gap-3">
-                        <legend className="mr-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Tool</legend>
-                        {toolOptions.map((opt) => (
-                          <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-900 transition-colors duration-150">
-                            <input type="radio" name="tool" value={opt.id} checked={tool === opt.id} onChange={() => setTool(opt.id)} className="h-4 w-4 accent-blue-600 cursor-pointer transition-transform duration-150 hover:scale-110" />
-                            <span className="select-none">{opt.label}</span>
-                          </label>
-                        ))}
-                      </fieldset>
+                        {/* 分隔线 */}
+                        <div className="h-6 w-px bg-gray-300"></div>
 
-                      {/* 行内按钮（重构为工具栏组件） */}
+                        {/* Mode 选择 (Foreground/Background) - Box 工具时禁用 */}
+                        <div className={`flex items-center gap-2 transition-opacity duration-200 ${tool === "box" ? "opacity-40 pointer-events-none" : ""}`}>
+                          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">MODE</span>
+                          {segOptions.map((opt) => (
+                            <label key={opt.id} className={`inline-flex items-center gap-1 text-sm transition-colors duration-150 ${tool === "box" ? "text-gray-400 cursor-not-allowed" : "text-gray-700 cursor-pointer hover:text-gray-900"}`}>
+                              <input 
+                                type="radio" 
+                                name="mode" 
+                                value={opt.id} 
+                                checked={mode === opt.id} 
+                                onChange={() => setMode(opt.id)} 
+                                disabled={tool === "box"}
+                                className="h-4 w-4 accent-blue-600 disabled:cursor-not-allowed" 
+                              />
+                              <span className="select-none">{opt.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      
                       <div className="col-span-2 md:col-span-4">
                         <SegmentationActionsBar
                           onRunModel={runModel}
@@ -1469,8 +1638,8 @@ const SegmentationPage = () => {
                           onResetImage={resetImage}
                           onExportOverlay={handleExportOverlay}
                           isRunning={isRunning}
-                          disableRunModel={!fileName || clickPoints.length === 0}
-                          disableUndoPoints={clickPoints.length === 0}
+                          disableRunModel={!fileName || (clickPoints.length === 0 && boxCoords.length === 0)}
+                          disableUndoPoints={clickPoints.length === 0 && boxCoords.length === 0}
                           showExport={uploadedImage && masks && masks.length > 0}
                         />
                       </div>
