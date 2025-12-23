@@ -18,7 +18,7 @@ import segRoute from './routes/segRoute.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // parse incoming data
 // send image/price/etc., extract json data
@@ -26,8 +26,8 @@ app.use(express.json({ limit: '50mb' })); // 增加请求体大小限制
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", "https://karen.geniuscai.com"], // 允许的前端地址
-    credentials: true, // 允许携带cookie
+    origin: ["http://localhost:5173", "http://localhost:5174"],
+    credentials: true,
   })
 ); // enable CORS for all routes
 app.use(morgan('dev')); // log requests to the console
