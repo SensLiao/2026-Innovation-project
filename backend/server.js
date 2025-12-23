@@ -180,7 +180,7 @@ async function loadModels() {
     console.log('Loading ONNX models...');
     const [encoder, decoder] = await Promise.all([
       ort.InferenceSession.create('./models/sam-med2d_b.encoder.onnx'),
-      ort.InferenceSession.create('./models/sam-med2d_b.decoder.onnx')
+      ort.InferenceSession.create('./models/sam-med2d_b.decoder_with_box.onnx')
     ]);
 
     globals.onnxModels = {

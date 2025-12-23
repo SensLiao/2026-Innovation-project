@@ -35,7 +35,7 @@ yarn-error.log*
 report.json
 
 # ONNX models (large files - download separately)
-# backend/models/*.onnx
+backend/models/*.onnx
 
 # Coverage
 coverage/
