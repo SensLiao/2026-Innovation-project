@@ -1018,6 +1018,38 @@ router.get('/diagnosis/:id', async (req, res) => {
   }
 });
 
+/**
+ * POST /diagnosis/:id/approve
+ * Approve a diagnosis report - changes status to 'approved'
+ */
+router.post('/diagnosis/:id/approve', async (req, res) => {
+  const { id } = req.params;
+
+  const diagnosisId = parseInt(id, 10);
+  if (isNaN(diagnosisId) || diagnosisId <= 0) {
+    return res.status(400).json({ error: 'Invalid diagnosis ID' });
+  }
+
+  try {
+    const diagnosis = await diagnosisService.getDiagnosis(diagnosisId);
+    if (!diagnosis) {
+      return res.status(404).json({ error: 'Diagnosis not found' });
+    }
+
+    await diagnosisService.updateDiagnosis(diagnosisId, { status: 'approved' });
+    console.log(`[AgentRoute] Diagnosis ${diagnosisId} approved`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Report approved',
+      status: 'approved'
+    });
+  } catch (error) {
+    console.error('[AgentRoute] Approve error:', error);
+    return res.status(500).json({ error: 'Failed to approve diagnosis' });
+  }
+});
+
 // Get latest diagnosis for a patient (for auto-fill clinical context)
 router.get('/diagnosis/patient/:patientId/latest', async (req, res) => {
   const { patientId } = req.params;
