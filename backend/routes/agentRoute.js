@@ -63,6 +63,74 @@ router.get('/diagnosis/:id', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Version History API
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /diagnosis/:id/versions - 获取版本历史
+ */
+router.get('/diagnosis/:id/versions', async (req, res) => {
+  try {
+    const diagnosisId = parseInt(req.params.id, 10);
+    const versions = await diagnosisService.getVersionHistory(diagnosisId);
+    res.json({ success: true, versions });
+  } catch (error) {
+    console.error('[AgentRoute] Get versions error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch versions' });
+  }
+});
+
+/**
+ * POST /diagnosis/:id/versions - 保存新版本
+ */
+router.post('/diagnosis/:id/versions', async (req, res) => {
+  try {
+    const diagnosisId = parseInt(req.params.id, 10);
+    const { content, changeType, changeSource, agentName, feedbackMessage } = req.body;
+
+    if (!content) {
+      return res.status(400).json({ success: false, error: 'Content is required' });
+    }
+
+    const version = await diagnosisService.saveVersion(diagnosisId, content, {
+      changeType,
+      changeSource,
+      agentName,
+      feedbackMessage
+    });
+
+    if (version) {
+      res.json({ success: true, version });
+    } else {
+      res.status(500).json({ success: false, error: 'Failed to save version' });
+    }
+  } catch (error) {
+    console.error('[AgentRoute] Save version error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to save version' });
+  }
+});
+
+/**
+ * GET /diagnosis/:id/versions/:versionNumber - 获取特定版本
+ */
+router.get('/diagnosis/:id/versions/:versionNumber', async (req, res) => {
+  try {
+    const diagnosisId = parseInt(req.params.id, 10);
+    const versionNumber = parseInt(req.params.versionNumber, 10);
+    const version = await diagnosisService.getVersion(diagnosisId, versionNumber);
+
+    if (version) {
+      res.json({ success: true, version });
+    } else {
+      res.status(404).json({ success: false, error: 'Version not found' });
+    }
+  } catch (error) {
+    console.error('[AgentRoute] Get version error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch version' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // iter4: Image Classification API (Claude Vision)
 // ═══════════════════════════════════════════════════════════════════════════
 

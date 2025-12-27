@@ -53,30 +53,35 @@ function ReportCard({ report, onClick }) {
       onClick={onClick}
       className="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-blue-300 p-3 cursor-pointer transition-all duration-200 group"
     >
-      {/* Markdown 预览区 - 类似文档预览 */}
-      <div className="relative h-64 overflow-hidden rounded-lg bg-white border border-gray-200 p-3 mb-2 shadow-inner">
+      {/* Markdown 预览区 - 类似 Google Docs 文档预览 */}
+      <div className="relative h-64 overflow-hidden rounded-lg bg-gray-50 border border-gray-200 mb-2 shadow-inner">
         {/* 状态标签 - 右上角 */}
         <div className="absolute top-2 right-2 z-10">
           <StatusChip status={report.status} />
         </div>
-        <div className="text-[8px] leading-[1.4] text-gray-700 font-mono prose prose-xs max-w-none pr-12
-          [&>h1]:text-[10px] [&>h1]:font-bold [&>h1]:mb-1 [&>h1]:text-gray-900
-          [&>h2]:text-[9px] [&>h2]:font-semibold [&>h2]:mb-1 [&>h2]:text-gray-800
-          [&>h3]:text-[8px] [&>h3]:font-medium [&>h3]:mb-0.5
-          [&>p]:mb-1 [&>p]:text-gray-600
-          [&>ul]:my-0.5 [&>ul]:pl-2 [&>li]:my-0
-          [&>hr]:my-1 [&>hr]:border-gray-200">
-          <ReactMarkdown>
-            {report.content?.slice(0, 800) || "No content"}
-          </ReactMarkdown>
+        {/* 模拟文档页面 - 居中白色区域 */}
+        <div className="h-full flex justify-center pt-2 px-2">
+          <div className="bg-white w-full max-w-[90%] h-full rounded shadow-sm p-3 overflow-hidden">
+            <div className="text-[8px] leading-[1.4] text-gray-700 prose prose-xs max-w-none
+              [&>h1]:text-[10px] [&>h1]:font-bold [&>h1]:mb-1 [&>h1]:text-gray-900 [&>h1]:text-center
+              [&>h2]:text-[9px] [&>h2]:font-semibold [&>h2]:mb-1 [&>h2]:text-gray-800
+              [&>h3]:text-[8px] [&>h3]:font-medium [&>h3]:mb-0.5
+              [&>p]:mb-1 [&>p]:text-gray-600
+              [&>ul]:my-0.5 [&>ul]:pl-2 [&>li]:my-0
+              [&>hr]:my-1 [&>hr]:border-gray-200">
+              <ReactMarkdown>
+                {report.content?.slice(0, 800) || "No content"}
+              </ReactMarkdown>
+            </div>
+          </div>
         </div>
         {/* 底部渐变遮罩 */}
-        <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-gray-50 to-transparent" />
       </div>
 
       {/* 卡片信息 */}
-      <div className="space-y-1">
-        {/* 标题行 */}
+      <div className="space-y-0.5">
+        {/* 标题行: ID + 姓名 */}
         <div className="flex items-center gap-1.5">
           <FileText className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
           <span className="text-xs font-medium text-gray-900 truncate">
@@ -84,21 +89,16 @@ function ReportCard({ report, onClick }) {
           </span>
         </div>
 
-        {/* 详情行 */}
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>{report.patientMrn || "No MRN"}</span>
-          <div className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            <span>{formatDate(report.updatedAt)}</span>
-          </div>
+        {/* MRN 行 */}
+        <div className="text-xs text-gray-500 pl-5">
+          {report.patientMrn || "No MRN"}
         </div>
 
-        {/* 检查类型 */}
-        {report.examType && (
-          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs bg-blue-50 text-blue-700">
-            {report.examType}
-          </span>
-        )}
+        {/* 日期行 */}
+        <div className="flex items-center gap-1 text-xs text-gray-400 pl-5">
+          <Clock className="w-3 h-3" />
+          <span>{formatDate(report.updatedAt)}</span>
+        </div>
       </div>
     </div>
   );
