@@ -180,7 +180,7 @@ async function loadModels() {
     console.log('Loading ONNX models...');
     const [encoder, decoder] = await Promise.all([
       ort.InferenceSession.create('./models/sam-med2d_b.encoder.onnx'),
-      ort.InferenceSession.create('./models/sam-med2d_b.decoder.onnx')
+      ort.InferenceSession.create('./models/sam-med2d_b.decoder_with_box.onnx')
     ]);
 
     globals.onnxModels = {
@@ -202,15 +202,19 @@ async function startServer() {
     await initDB();
     // await initDefaultData(); // 如果需要初始化默认数据
 
-    // 2. 加载ONNX模型
-    await loadModels();
+    // 2. 加载ONNX模型 (可通过 SKIP_MODELS=true 跳过)
+    if (process.env.SKIP_MODELS !== 'true') {
+      await loadModels();
 
-    // 3. 测试图像加载
-    const buffer = fs.readFileSync('./image/image1.png');
-    await modelModule.test(buffer);
+      // 3. 测试图像加载
+      const buffer = fs.readFileSync('./image/image1.png');
+      await modelModule.test(buffer);
 
-    // 4. 添加模型路由
-    app.use('/api/models', modelModule.router);
+      // 4. 添加模型路由
+      app.use('/api/models', modelModule.router);
+    } else {
+      console.log('⚠️  SKIP_MODELS=true: Skipping ONNX model loading');
+    }
 
     // 5. 启动服务器
     app.listen(PORT, () => {
