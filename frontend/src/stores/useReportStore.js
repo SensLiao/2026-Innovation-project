@@ -135,8 +135,9 @@ export const useReportStore = create((set, get) => ({
         if (diagnosis.reportContent && typeof diagnosis.reportContent === 'string') {
           try {
             const parsed = JSON.parse(diagnosis.reportContent);
-            if (parsed.content) {
-              diagnosis.reportContent = parsed.content;
+            // Handle both valid content and null content cases
+            if (parsed && typeof parsed === 'object' && 'content' in parsed) {
+              diagnosis.reportContent = parsed.content || ''; // Handle null content
             }
           } catch (e) {
             // Not JSON, keep as-is

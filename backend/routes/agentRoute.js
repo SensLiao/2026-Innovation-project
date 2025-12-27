@@ -358,7 +358,7 @@ router.post('/medical_report_init', async (req, res) => {
     console.log(`[AgentRoute] Report generated in ${elapsed}ms`);
 
     // === DATABASE PERSISTENCE ===
-    // Update diagnosis with report content
+    // Update diagnosis with report content AND save initial version
     if (diagnosisId) {
       try {
         await diagnosisService.updateDiagnosis(diagnosisId, {
@@ -366,7 +366,16 @@ router.post('/medical_report_init', async (req, res) => {
           status: 'DRAFT_READY',
           icdCodes: result.qcResult?.icdCodes || []
         });
-        console.log(`[AgentRoute] Updated diagnosis ${diagnosisId} with report`);
+
+        // Save initial version for history tracking
+        await diagnosisService.saveVersion(diagnosisId, result.report, {
+          changeType: 'initial_generation',
+          changeSource: 'agent',
+          agentName: 'ReportWriterAgent',
+          feedbackMessage: null
+        });
+
+        console.log(`[AgentRoute] Updated diagnosis ${diagnosisId} with report (v1)`);
       } catch (dbError) {
         console.warn('[AgentRoute] DB update failed (non-critical):', dbError.message);
       }
@@ -723,13 +732,23 @@ router.post('/chat_stream', async (req, res) => {
             changes: result.changes || []
           })}\n\n`);
 
-          // Update diagnosis record with revised report
+          // Update diagnosis record with revised report AND save version
           if (orchestrator.diagnosisId) {
             try {
+              // Update the main report content
               await diagnosisService.updateDiagnosis(orchestrator.diagnosisId, {
                 reportContent: result.report,
                 status: 'REVISING'
               });
+
+              // Save version for history tracking
+              await diagnosisService.saveVersion(orchestrator.diagnosisId, result.report, {
+                changeType: 'ai_revision',
+                changeSource: 'agent',
+                agentName: 'AlignmentAgent',
+                feedbackMessage: message.substring(0, 200) // Save user feedback as context
+              });
+              console.log(`[ChatStream] Saved version for diagnosis ${orchestrator.diagnosisId}`);
             } catch (dbError) {
               console.warn('[ChatStream] Failed to update diagnosis:', dbError.message);
             }
@@ -931,7 +950,16 @@ router.post('/medical_report_stream', async (req, res) => {
             status: 'DRAFT_READY',
             icdCodes: result.qcResult?.icdCodes || []
           });
-          console.log(`[ReportStream] Updated diagnosis ${diagnosisId} with report`);
+
+          // Save initial version for history tracking
+          await diagnosisService.saveVersion(diagnosisId, result.report, {
+            changeType: 'initial_generation',
+            changeSource: 'agent',
+            agentName: 'ReportWriterAgent',
+            feedbackMessage: null
+          });
+
+          console.log(`[ReportStream] Updated diagnosis ${diagnosisId} with report (v1)`);
         } catch (dbError) {
           console.warn('[ReportStream] DB update failed (non-critical):', dbError.message);
         }
