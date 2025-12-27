@@ -480,6 +480,60 @@ class DiagnosisService {
       return null;
     }
   }
+
+  /**
+   * 获取所有报告列表 (带患者信息)
+   * @returns {Array} - 报告列表
+   */
+  async getAllReports() {
+    try {
+      const result = await sql`
+        SELECT
+          d.id,
+          d.patient_id,
+          d.status,
+          d.report_content,
+          d.created_at,
+          d.updated_at,
+          p.name as patient_name,
+          p.pid as patient_pid,
+          p.mrn as patient_mrn
+        FROM diagnosis_records d
+        LEFT JOIN patients p ON d.patient_id = p.pid
+        WHERE d.report_content IS NOT NULL
+        ORDER BY d.updated_at DESC NULLS LAST, d.created_at DESC
+      `;
+      // 转换为 camelCase 格式，解析 JSON content
+      return result.map(row => {
+        let content = row.report_content;
+        // Parse JSON content if it has {version, content} structure
+        if (content && typeof content === 'string') {
+          try {
+            const parsed = JSON.parse(content);
+            if (parsed.content) {
+              content = parsed.content;
+            }
+          } catch (e) {
+            // Not JSON, keep as-is
+          }
+        }
+        return {
+          id: row.id,
+          patientId: row.patient_id,
+          status: row.status,
+          content,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          patientName: row.patient_name,
+          patientPid: row.patient_pid,
+          patientMrn: row.patient_mrn
+        };
+      });
+    } catch (error) {
+      console.error('[DiagnosisService] Get all reports error:', error.message);
+      return [];
+    }
+  }
 }
 
 // 导出单例

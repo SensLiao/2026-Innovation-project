@@ -28,6 +28,41 @@ const router = express.Router();
 const anthropic = new Anthropic();
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Report List API
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /reports - 获取所有报告列表
+ * @returns {Array} reports - 报告列表 (带患者信息)
+ */
+router.get('/reports', async (req, res) => {
+  try {
+    const reports = await diagnosisService.getAllReports();
+    res.json({ success: true, reports });
+  } catch (error) {
+    console.error('[AgentRoute] Get reports error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch reports' });
+  }
+});
+
+/**
+ * GET /diagnosis/:id - 获取单个报告详情
+ */
+router.get('/diagnosis/:id', async (req, res) => {
+  try {
+    const diagnosisId = parseInt(req.params.id, 10);
+    const diagnosis = await diagnosisService.getDiagnosisWithPatient(diagnosisId);
+    if (!diagnosis) {
+      return res.status(404).json({ success: false, error: 'Report not found' });
+    }
+    res.json({ success: true, diagnosis });
+  } catch (error) {
+    console.error('[AgentRoute] Get diagnosis error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch report' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // iter4: Image Classification API (Claude Vision)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -370,7 +405,7 @@ router.post('/medical_report_rein', async (req, res) => {
  *   - { type: 'done' }
  */
 router.post('/chat_stream', async (req, res) => {
-  const { message, sessionId, mode = 'auto', targetAgent } = req.body;
+  const { message, sessionId, mode = 'auto', targetAgent, diagnosisId: reqDiagnosisId } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'No message provided' });
@@ -391,20 +426,50 @@ router.post('/chat_stream', async (req, res) => {
     orchestrator = new Orchestrator();
     sessionManager.set(orchestrator.sessionId, orchestrator);
     console.log(`[ChatStream] Created new session: ${orchestrator.sessionId}`);
+
+    // If diagnosisId provided, load existing report and set state to DRAFT_READY
+    if (reqDiagnosisId) {
+      try {
+        const diagnosis = await diagnosisService.getDiagnosisWithPatient(reqDiagnosisId);
+        if (diagnosis && diagnosis.reportContent) {
+          // Parse JSON content if needed
+          let reportContent = diagnosis.reportContent;
+          if (typeof reportContent === 'string') {
+            try {
+              const parsed = JSON.parse(reportContent);
+              if (parsed.content) reportContent = parsed.content;
+            } catch (e) { /* keep as-is */ }
+          }
+          // Set report in history and transition to DRAFT_READY
+          orchestrator.history.push({
+            version: 1,
+            content: reportContent,
+            status: 'loaded',
+            createdAt: new Date()
+          });
+          orchestrator.state = 'draft_ready';
+          orchestrator.diagnosisId = reqDiagnosisId;
+          console.log(`[ChatStream] Loaded existing report for diagnosis ${reqDiagnosisId}, state: draft_ready`);
+        }
+      } catch (err) {
+        console.warn(`[ChatStream] Failed to load diagnosis ${reqDiagnosisId}:`, err.message);
+      }
+    }
   }
 
   // Send session info
   res.write(`data: ${JSON.stringify({ type: 'session', sessionId: orchestrator.sessionId })}\n\n`);
 
-  // === DATABASE PERSISTENCE ===
-  // Get diagnosisId from orchestrator or create one
-  const diagnosisId = orchestrator.diagnosisId;
+  // Ensure diagnosisId is set on orchestrator (from existing session or request)
+  if (!orchestrator.diagnosisId && reqDiagnosisId) {
+    orchestrator.diagnosisId = reqDiagnosisId;
+  }
 
   // Save user message to chat history
-  if (diagnosisId) {
+  if (orchestrator.diagnosisId) {
     try {
       await diagnosisService.saveChatMessage({
-        diagnosisId,
+        diagnosisId: orchestrator.diagnosisId,
         role: 'user',
         agentName: null,
         content: message,
@@ -498,7 +563,7 @@ router.post('/chat_stream', async (req, res) => {
 
         res.write(`data: ${JSON.stringify({ type: 'chunk', text: response })}\n\n`);
         // Save assistant response to DB
-        await saveAssistantMessage(diagnosisId, response, targetAgent);
+        await saveAssistantMessage(orchestrator.diagnosisId, response, targetAgent);
       }
     } else {
       // Normal flow: AlignmentAgent handles routing
@@ -540,18 +605,18 @@ router.post('/chat_stream', async (req, res) => {
           res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunk })}\n\n`);
         });
         // Save streamed response to DB
-        await saveAssistantMessage(diagnosisId, fullResponse, 'AlignmentAgent');
+        await saveAssistantMessage(orchestrator.diagnosisId, fullResponse, 'AlignmentAgent');
       } else if (!currentReport) {
         // No report available yet
         const noReportMsg = 'Please generate a report first by clicking "Analyse" before asking questions.';
         res.write(`data: ${JSON.stringify({ type: 'chunk', text: noReportMsg })}\n\n`);
-        await saveAssistantMessage(diagnosisId, noReportMsg);
+        await saveAssistantMessage(orchestrator.diagnosisId, noReportMsg);
       } else {
         // Fallback: use handleFeedback
         const result = await orchestrator.handleFeedback(message);
         const fallbackResponse = result.responseToDoctor || 'I understand your question.';
         res.write(`data: ${JSON.stringify({ type: 'chunk', text: fallbackResponse })}\n\n`);
-        await saveAssistantMessage(diagnosisId, fallbackResponse);
+        await saveAssistantMessage(orchestrator.diagnosisId, fallbackResponse);
       }
 
       // Add to conversation history
@@ -580,21 +645,21 @@ router.post('/chat_stream', async (req, res) => {
         res.write(`data: ${JSON.stringify({ type: 'chunk', text: response })}\n\n`);
 
         // Save assistant response to DB with feedback type
-        await saveAssistantMessage(diagnosisId, response, 'AlignmentAgent', 'REVISION');
+        await saveAssistantMessage(orchestrator.diagnosisId, response, 'AlignmentAgent', 'REVISION');
 
         // Also send revision_complete for report update
-        if (result.updatedReport) {
+        if (result.report) {
           res.write(`data: ${JSON.stringify({
             type: 'revision_complete',
-            updatedReport: result.updatedReport,
+            updatedReport: result.report,
             changes: result.changes || []
           })}\n\n`);
 
           // Update diagnosis record with revised report
-          if (diagnosisId) {
+          if (orchestrator.diagnosisId) {
             try {
-              await diagnosisService.updateDiagnosis(diagnosisId, {
-                reportContent: result.updatedReport,
+              await diagnosisService.updateDiagnosis(orchestrator.diagnosisId, {
+                reportContent: result.report,
                 status: 'REVISING'
               });
             } catch (dbError) {
@@ -612,12 +677,12 @@ router.post('/chat_stream', async (req, res) => {
     } else if (intent.mode === 'APPROVAL') {
       const approvalMsg = 'Thank you for approving the report. The report is now finalized.';
       res.write(`data: ${JSON.stringify({ type: 'chunk', text: approvalMsg })}\n\n`);
-      await saveAssistantMessage(diagnosisId, approvalMsg, null, 'APPROVAL');
+      await saveAssistantMessage(orchestrator.diagnosisId, approvalMsg, null, 'APPROVAL');
 
       // Update diagnosis status to APPROVED
-      if (diagnosisId) {
+      if (orchestrator.diagnosisId) {
         try {
-          await diagnosisService.updateDiagnosis(diagnosisId, { status: 'APPROVED' });
+          await diagnosisService.updateDiagnosis(orchestrator.diagnosisId, { status: 'APPROVED' });
         } catch (dbError) {
           console.warn('[ChatStream] Failed to update approval status:', dbError.message);
         }
@@ -629,7 +694,7 @@ router.post('/chat_stream', async (req, res) => {
         type: 'chunk',
         text: unclearMsg
       })}\n\n`);
-      await saveAssistantMessage(diagnosisId, unclearMsg, 'AlignmentAgent', 'UNCLEAR');
+      await saveAssistantMessage(orchestrator.diagnosisId, unclearMsg, 'AlignmentAgent', 'UNCLEAR');
     }
     } // Close the else block for normal flow (non-targetAgent)
 
