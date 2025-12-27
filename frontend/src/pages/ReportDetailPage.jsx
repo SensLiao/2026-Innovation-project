@@ -79,29 +79,28 @@ const ReportDetailPage = () => {
   const handleSelectVersion = async (versionNumber) => {
     setCurrentVersion(versionNumber);
 
+    // 加载对应版本内容
     if (versionNumber === null) {
-      // 回到最新版本 - 重新获取报告，清除 diff
+      // 回到最新版本
       await fetchReport(parseInt(id, 10));
+    } else {
+      await loadVersion(parseInt(id, 10), versionNumber);
+    }
+
+    // 显示与 v1 的 diff (v1 本身不显示 diff)
+    if (versionNumber === 1) {
+      // v1 是基准，不需要 diff
       useReportStore.setState({
         previousContent: null,
         showDiff: false
       });
-    } else {
-      await loadVersion(parseInt(id, 10), versionNumber);
-      // 获取 v1 作为基准，显示 diff (仅对非 v1 版本)
-      if (versions.length > 0 && versionNumber !== 1) {
-        const v1 = versions.find(v => v.versionNumber === 1);
-        if (v1 && v1.content) {
-          useReportStore.setState({
-            previousContent: v1.content,
-            showDiff: true
-          });
-        }
-      } else {
-        // v1 本身不需要 diff
+    } else if (versions.length > 0) {
+      // Latest 或 v2+ 都显示与 v1 的 diff
+      const v1 = versions.find(v => v.versionNumber === 1);
+      if (v1 && v1.content) {
         useReportStore.setState({
-          previousContent: null,
-          showDiff: false
+          previousContent: v1.content,
+          showDiff: true
         });
       }
     }
