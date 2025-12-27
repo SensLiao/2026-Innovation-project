@@ -75,14 +75,35 @@ const ReportDetailPage = () => {
     return () => resetCurrentReport();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 选择版本
+  // 选择版本 (显示与 v1 的 diff)
   const handleSelectVersion = async (versionNumber) => {
     setCurrentVersion(versionNumber);
+
     if (versionNumber === null) {
-      // 回到最新版本 - 重新获取报告
-      fetchReport(parseInt(id, 10));
+      // 回到最新版本 - 重新获取报告，清除 diff
+      await fetchReport(parseInt(id, 10));
+      useReportStore.setState({
+        previousContent: null,
+        showDiff: false
+      });
     } else {
       await loadVersion(parseInt(id, 10), versionNumber);
+      // 获取 v1 作为基准，显示 diff (仅对非 v1 版本)
+      if (versions.length > 0 && versionNumber !== 1) {
+        const v1 = versions.find(v => v.versionNumber === 1);
+        if (v1 && v1.content) {
+          useReportStore.setState({
+            previousContent: v1.content,
+            showDiff: true
+          });
+        }
+      } else {
+        // v1 本身不需要 diff
+        useReportStore.setState({
+          previousContent: null,
+          showDiff: false
+        });
+      }
     }
   };
 
