@@ -388,14 +388,30 @@ class DiagnosisService {
           examDate: row.exam_date
         },
 
-        // 报告内容
-        reportContent: row.report_content,
+        // 报告内容 (解析 JSON wrapper)
+        reportContent: this._parseReportContent(row.report_content),
         reportPatient: row.report_patient,
         icdCodes: row.icd_codes
       };
     } catch (error) {
       console.error('[DiagnosisService] Get diagnosis with patient error:', error.message);
       return null;
+    }
+  }
+
+  /**
+   * Helper: 解析报告内容 (处理 JSON wrapper)
+   */
+  _parseReportContent(content) {
+    if (!content || typeof content !== 'string') return content;
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed && typeof parsed === 'object' && 'content' in parsed) {
+        return parsed.content || ''; // Handle null content
+      }
+      return content;
+    } catch (e) {
+      return content; // Not JSON, keep as-is
     }
   }
 
@@ -510,8 +526,9 @@ class DiagnosisService {
         if (content && typeof content === 'string') {
           try {
             const parsed = JSON.parse(content);
-            if (parsed.content) {
-              content = parsed.content;
+            // Extract content from version wrapper, handle null case
+            if (parsed && typeof parsed === 'object' && 'content' in parsed) {
+              content = parsed.content || ''; // Handle null content
             }
           } catch (e) {
             // Not JSON, keep as-is
