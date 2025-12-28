@@ -19,7 +19,7 @@
  */
 
 import { create } from 'zustand';
-import axios from 'axios';
+import { api } from '../lib/api';
 
 const BASE_URL = import.meta.env.VITE_API_BASE?.replace('/api', '') || 'http://localhost:3000';
 
@@ -64,7 +64,7 @@ export const useReportStore = create((set, get) => ({
   fetchReports: async () => {
     set({ reportsLoading: true, reportsError: null });
     try {
-      const response = await axios.get(`${BASE_URL}/api/reports`);
+      const response = await api.get(`/reports`);
       if (response.data.success) {
         set({ reports: response.data.reports, reportsError: null });
       } else {
@@ -127,7 +127,7 @@ export const useReportStore = create((set, get) => ({
     console.log('[useReportStore] fetchReport called with:', diagnosisId);
     set({ reportLoading: true, reportError: null });
     try {
-      const response = await axios.get(`${BASE_URL}/api/diagnosis/${diagnosisId}`);
+      const response = await api.get(`/diagnosis/${diagnosisId}`);
       console.log('[useReportStore] API response:', response.data.success, response.data.diagnosis?.id);
       if (response.data.success) {
         const diagnosis = response.data.diagnosis;
@@ -181,7 +181,7 @@ export const useReportStore = create((set, get) => ({
    */
   approveReport: async (diagnosisId) => {
     try {
-      const response = await axios.post(`${BASE_URL}/api/diagnosis/${diagnosisId}/approve`);
+      const response = await api.post(`/diagnosis/${diagnosisId}/approve`);
       if (response.data.success) {
         // 更新本地状态
         const { currentReport, reports } = get();
@@ -218,7 +218,7 @@ export const useReportStore = create((set, get) => ({
   fetchVersions: async (diagnosisId) => {
     set({ versionsLoading: true });
     try {
-      const response = await axios.get(`${BASE_URL}/api/diagnosis/${diagnosisId}/versions`);
+      const response = await api.get(`/diagnosis/${diagnosisId}/versions`);
       if (response.data.success) {
         set({ versions: response.data.versions });
       }
@@ -242,7 +242,7 @@ export const useReportStore = create((set, get) => ({
     } = options;
 
     try {
-      const response = await axios.post(`${BASE_URL}/api/diagnosis/${diagnosisId}/versions`, {
+      const response = await api.post(`/diagnosis/${diagnosisId}/versions`, {
         content,
         changeType,
         changeSource,
@@ -267,8 +267,8 @@ export const useReportStore = create((set, get) => ({
    */
   loadVersion: async (diagnosisId, versionNumber) => {
     try {
-      const response = await axios.get(
-        `${BASE_URL}/api/diagnosis/${diagnosisId}/versions/${versionNumber}`
+      const response = await api.get(
+        `/diagnosis/${diagnosisId}/versions/${versionNumber}`
       );
       if (response.data.success) {
         const { currentReport } = get();

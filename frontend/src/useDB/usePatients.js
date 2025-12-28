@@ -1,5 +1,5 @@
 import {create} from 'zustand';
-import axios from 'axios';
+import { api } from '../lib/api';
 
 
 const BASE_URL = import.meta.env.VITE_API_BASE?.replace('/api', '') || 'http://localhost:3000';
@@ -52,7 +52,7 @@ export const usePatientDB = create((set, get) => ({
     fetchPatients: async () => {
         set({ loading: true });
         try {
-            const response = await axios.get(`${BASE_URL}/api/patients`);
+            const response = await api.get(`/patients`);
             set({ patients: response.data.data, error:null });
         } catch (error) {
             set({ error: error.message, patients: [] });
@@ -64,7 +64,7 @@ export const usePatientDB = create((set, get) => ({
     fetchPatientByID: async(pid) =>{
         set({ loading: true });
         try {
-            const response = await axios.get(`${BASE_URL}/api/patients/${pid}`);
+            const response = await api.get(`/patients/${pid}`);
             set({ 
                 currentPatient: response.data.data,
                 patientData: response.data.data, //pre-fill form with current patient data
@@ -81,7 +81,7 @@ export const usePatientDB = create((set, get) => ({
     deletePatient: async(pid)=>{
         set({loading:true});
         try{
-            await axios.delete(`${BASE_URL}/api/patients/${pid}`);
+            await api.delete(`/patients/${pid}`);
             set((state) => ({
                 patients: state.patients.filter(patient => patient.pid !== pid),
                 error: null
@@ -100,7 +100,7 @@ export const usePatientDB = create((set, get) => ({
         try {
             const { patientData } = get();
             // Send POST request to add user
-            await axios.post(`${BASE_URL}/api/patients`, patientData);
+            await api.post(`/patients`, patientData);
             
             //Refetch data
             await get().fetchPatients();
@@ -119,7 +119,7 @@ export const usePatientDB = create((set, get) => ({
         set({ loading: true });
         try {
             const { patientData } = get();
-            const response = await axios.put(`${BASE_URL}/api/patients/${pid}`, patientData);
+            const response = await api.put(`/patients/${pid}`, patientData);
             set({ currentPatient: response.data.data });
             console.log("Patient updated successfully");
         } catch (error) {
