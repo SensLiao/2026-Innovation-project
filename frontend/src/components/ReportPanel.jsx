@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Edit3, Save as SaveIcon, Download, Copy, Printer, Code2, CheckCircle } from "lucide-react";
+import { Edit3, Save as SaveIcon, Download, Copy, Printer, Code2, CheckCircle, ExternalLink } from "lucide-react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 

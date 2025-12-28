@@ -415,7 +415,26 @@ export class Orchestrator {
         newReport = qcResult.reviewedReport || reportResult.report;
       } else {
         // 小修改由 Alignment Agent 直接处理
-        newReport = routingResult.modifiedReport;
+        if (routingResult.modifiedReport) {
+          newReport = routingResult.modifiedReport;
+        } else {
+          // LLM didn't include modifiedReport - always call applyMinorEdit for non-regeneration cases
+          const currentReport = this.getLatestReport();
+          if (currentReport) {
+            this.log('Calling applyMinorEdit for minor revision...');
+            const editResult = await agents.alignment.applyMinorEdit(currentReport, feedback);
+            newReport = editResult.modifiedReport || currentReport;
+          } else {
+            this.log('No report available to modify', 'warn');
+            newReport = null;
+          }
+        }
+      }
+
+      // Validate we have content to save
+      if (!newReport) {
+        this.log('No report content after revision', 'error');
+        throw new Error('Unable to make changes - no report available to modify');
       }
 
       // 保存新版本
@@ -534,9 +553,21 @@ export class Orchestrator {
   }
 
   /**
-   * 获取最新报告
+   * 获取最新报告内容 (字符串)
    */
   getLatestReport() {
+    if (this.history.length === 0) {
+      return null;
+    }
+    const entry = this.history[this.history.length - 1];
+    // 返回 content 字符串，不是整个 entry 对象
+    return typeof entry === 'string' ? entry : (entry.content || null);
+  }
+
+  /**
+   * 获取最新报告条目 (含 version/status/createdAt)
+   */
+  getLatestReportEntry() {
     if (this.history.length === 0) {
       return null;
     }

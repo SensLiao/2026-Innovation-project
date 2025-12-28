@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import Header from "../components/Header";
 import main from "../assets/images/Main.png";
@@ -8,7 +9,7 @@ import axios from "axios";
 import ReportPanel from "../components/ReportPanel";
 import SegmentationActionsBar from "../components/SegmentationActionsBar";
 import UserGuide from "../components/UserGuide";
-import { Eye, EyeOff, Trash2, ChevronDown, User, FileText } from "lucide-react";
+import { Eye, EyeOff, Trash2, ChevronDown, User, FileText, ExternalLink } from "lucide-react";
 import { streamRequest, streamChat, ANALYSIS_PHASES, api } from "../lib/api";
 import { useSegDB } from "../useDB/useSeg";
 import { useAuth } from "../useDB/useAuth";
@@ -26,6 +27,7 @@ const SegmentationPage = () => {
   const [model, setModel] = useState("SOMA-CT-v1");
   const { addSeg  } = useSegDB();
   const {user, fetchMe } = useAuth();
+  const navigate = useNavigate();
 
   // === 同原实现 ===
   const [mode, setMode] = useState("foreground");
@@ -1486,6 +1488,22 @@ const SegmentationPage = () => {
                   >
                     Report
                   </button>
+                  {/* Open in Editor button - show on Report tab */}
+                  {activeTab === "report" && (
+                    <button
+                      onClick={() => diagnosisId && navigate(`/report/${diagnosisId}`)}
+                      disabled={!diagnosisId}
+                      className={`rounded-md px-3 py-1 text-xs font-semibold shadow-sm transition-all duration-200 ease-out active:scale-95 flex items-center gap-1 ${
+                        diagnosisId
+                          ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:shadow"
+                          : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+                      }`}
+                      title={diagnosisId ? "Open report in full editor" : "Generate a report first"}
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      Open in Editor
+                    </button>
+                  )}
                 </div>
 
                 {activeTab === "segmentation" ? (
