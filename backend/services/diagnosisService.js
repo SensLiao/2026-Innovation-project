@@ -388,14 +388,30 @@ class DiagnosisService {
           examDate: row.exam_date
         },
 
-        // 报告内容
-        reportContent: row.report_content,
+        // 报告内容 (解析 JSON wrapper)
+        reportContent: this._parseReportContent(row.report_content),
         reportPatient: row.report_patient,
         icdCodes: row.icd_codes
       };
     } catch (error) {
       console.error('[DiagnosisService] Get diagnosis with patient error:', error.message);
       return null;
+    }
+  }
+
+  /**
+   * Helper: 解析报告内容 (处理 JSON wrapper)
+   */
+  _parseReportContent(content) {
+    if (!content || typeof content !== 'string') return content;
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed && typeof parsed === 'object' && 'content' in parsed) {
+        return parsed.content || ''; // Handle null content
+      }
+      return content;
+    } catch (e) {
+      return content; // Not JSON, keep as-is
     }
   }
 
@@ -477,6 +493,206 @@ class DiagnosisService {
       };
     } catch (error) {
       console.error('[DiagnosisService] Get latest diagnosis error:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * 获取所有报告列表 (带患者信息)
+   * @returns {Array} - 报告列表
+   */
+  async getAllReports() {
+    try {
+      const result = await sql`
+        SELECT
+          d.id,
+          d.patient_id,
+          d.status,
+          d.report_content,
+          d.created_at,
+          d.updated_at,
+          p.name as patient_name,
+          p.pid as patient_pid,
+          p.mrn as patient_mrn
+        FROM diagnosis_records d
+        LEFT JOIN patients p ON d.patient_id = p.pid
+        WHERE d.report_content IS NOT NULL
+        ORDER BY d.updated_at DESC NULLS LAST, d.created_at DESC
+      `;
+      // 转换为 camelCase 格式，解析 JSON content
+      return result.map(row => {
+        let content = row.report_content;
+        // Parse JSON content if it has {version, content} structure
+        if (content && typeof content === 'string') {
+          try {
+            const parsed = JSON.parse(content);
+            // Extract content from version wrapper, handle null case
+            if (parsed && typeof parsed === 'object' && 'content' in parsed) {
+              content = parsed.content || ''; // Handle null content
+            }
+          } catch (e) {
+            // Not JSON, keep as-is
+          }
+        }
+        return {
+          id: row.id,
+          patientId: row.patient_id,
+          status: row.status,
+          content,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          patientName: row.patient_name,
+          patientPid: row.patient_pid,
+          patientMrn: row.patient_mrn
+        };
+      });
+    } catch (error) {
+      console.error('[DiagnosisService] Get all reports error:', error.message);
+      return [];
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Version History Methods
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * 获取版本历史
+   * @param {number} diagnosisId - 诊断 ID
+   * @returns {Array} - 版本列表
+   */
+  async getVersionHistory(diagnosisId) {
+    try {
+      const result = await sql`
+        SELECT
+          id,
+          diagnosis_id,
+          version_number,
+          content,
+          change_type,
+          change_source,
+          agent_name,
+          feedback_message,
+          created_at
+        FROM report_versions
+        WHERE diagnosis_id = ${diagnosisId}
+        ORDER BY version_number DESC
+      `;
+      return result.map(row => ({
+        id: row.id,
+        diagnosisId: row.diagnosis_id,
+        versionNumber: row.version_number,
+        content: row.content,
+        changeType: row.change_type,
+        changeSource: row.change_source,
+        agentName: row.agent_name,
+        feedbackMessage: row.feedback_message,
+        createdAt: row.created_at
+      }));
+    } catch (error) {
+      console.error('[DiagnosisService] Get version history error:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * 保存新版本
+   * @param {number} diagnosisId - 诊断 ID
+   * @param {string} content - 报告内容
+   * @param {Object} options - 选项
+   * @returns {Object|null} - 新版本信息
+   */
+  async saveVersion(diagnosisId, content, options = {}) {
+    const {
+      changeType = 'user_save',
+      changeSource = 'user',
+      agentName = null,
+      feedbackMessage = null
+    } = options;
+
+    try {
+      // 获取下一个版本号
+      const maxResult = await sql`
+        SELECT COALESCE(MAX(version_number), 0) as max_version
+        FROM report_versions
+        WHERE diagnosis_id = ${diagnosisId}
+      `;
+      const nextVersion = (maxResult[0]?.max_version || 0) + 1;
+
+      // 插入新版本
+      const result = await sql`
+        INSERT INTO report_versions (
+          diagnosis_id,
+          version_number,
+          content,
+          change_type,
+          change_source,
+          agent_name,
+          feedback_message
+        )
+        VALUES (
+          ${diagnosisId},
+          ${nextVersion},
+          ${content},
+          ${changeType},
+          ${changeSource},
+          ${agentName},
+          ${feedbackMessage}
+        )
+        RETURNING *
+      `;
+
+      const row = result[0];
+      console.log(`[DiagnosisService] Saved version ${nextVersion} for diagnosis ${diagnosisId}`);
+
+      return {
+        id: row.id,
+        diagnosisId: row.diagnosis_id,
+        versionNumber: row.version_number,
+        content: row.content,
+        changeType: row.change_type,
+        changeSource: row.change_source,
+        agentName: row.agent_name,
+        feedbackMessage: row.feedback_message,
+        createdAt: row.created_at
+      };
+    } catch (error) {
+      console.error('[DiagnosisService] Save version error:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * 获取特定版本
+   * @param {number} diagnosisId - 诊断 ID
+   * @param {number} versionNumber - 版本号
+   * @returns {Object|null} - 版本信息
+   */
+  async getVersion(diagnosisId, versionNumber) {
+    try {
+      const result = await sql`
+        SELECT *
+        FROM report_versions
+        WHERE diagnosis_id = ${diagnosisId}
+          AND version_number = ${versionNumber}
+      `;
+
+      if (result.length === 0) return null;
+
+      const row = result[0];
+      return {
+        id: row.id,
+        diagnosisId: row.diagnosis_id,
+        versionNumber: row.version_number,
+        content: row.content,
+        changeType: row.change_type,
+        changeSource: row.change_source,
+        agentName: row.agent_name,
+        feedbackMessage: row.feedback_message,
+        createdAt: row.created_at
+      };
+    } catch (error) {
+      console.error('[DiagnosisService] Get version error:', error.message);
       return null;
     }
   }

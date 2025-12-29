@@ -28,18 +28,6 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Local test/debug files
-report.json
-
-# ONNX models (large files - download separately)
-# backend/models/*.onnx
-
-# Coverage
-coverage/
-.nyc_output/
 
 # Python
 __pycache__/
@@ -47,14 +35,3 @@ __pycache__/
 venv/
 .venv/
 *.egg-info/
-
-# Python
-__pycache__/
-*.py[cod]
-venv/
-.venv/
-*.egg-info/
-
-# Embedding server
-backend/embedding_server/__pycache__
-backend/embedding_server/venv

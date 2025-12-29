@@ -18,7 +18,7 @@ import segRoute from './routes/segRoute.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // parse incoming data
 // send image/price/etc., extract json data
@@ -26,8 +26,8 @@ app.use(express.json({ limit: '50mb' })); // 增加请求体大小限制
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", "https://karen.geniuscai.com"], // 允许的前端地址
-    credentials: true, // 允许携带cookie
+    origin: ["http://localhost:5173", "http://localhost:5174", "https://soma-ai.org"],
+    credentials: true,
   })
 ); // enable CORS for all routes
 app.use(morgan('dev')); // log requests to the console
@@ -180,7 +180,7 @@ async function loadModels() {
     console.log('Loading ONNX models...');
     const [encoder, decoder] = await Promise.all([
       ort.InferenceSession.create('./models/sam-med2d_b.encoder.onnx'),
-      ort.InferenceSession.create('./models/sam-med2d_b.decoder.onnx')
+      ort.InferenceSession.create('./models/sam-med2d_b.decoder_with_box.onnx')
     ]);
 
     globals.onnxModels = {
@@ -202,15 +202,19 @@ async function startServer() {
     await initDB();
     // await initDefaultData(); // 如果需要初始化默认数据
 
-    // 2. 加载ONNX模型
-    await loadModels();
+    // 2. 加载ONNX模型 (可通过 SKIP_MODELS=true 跳过)
+    if (process.env.SKIP_MODELS !== 'true') {
+      await loadModels();
 
-    // 3. 测试图像加载
-    const buffer = fs.readFileSync('./image/image1.png');
-    await modelModule.test(buffer);
+      // 3. 测试图像加载
+      const buffer = fs.readFileSync('./image/image1.png');
+      await modelModule.test(buffer);
 
-    // 4. 添加模型路由
-    app.use('/api/models', modelModule.router);
+      // 4. 添加模型路由
+      app.use('/api/models', modelModule.router);
+    } else {
+      console.log('⚠️  SKIP_MODELS=true: Skipping ONNX model loading');
+    }
 
     // 5. 启动服务器
     app.listen(PORT, () => {

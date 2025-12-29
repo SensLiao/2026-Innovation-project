@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Edit3, Save as SaveIcon, Download, Copy, Printer, Code2 } from "lucide-react";
+import { Edit3, Save as SaveIcon, Download, Copy, Printer, Code2, CheckCircle, ExternalLink } from "lucide-react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -19,7 +19,7 @@ function Chip({ children, tone = "gray" }) {
 }
 
 /** Toolbar above the report */
-function ReportToolbar({ onEdit, onSave, onDownload, onDuplicate, onPrint, onViewJSON }) {
+function ReportToolbar({ onEdit, onSave, onDownload, onDuplicate, onPrint, onViewJSON, onApprove, status }) {
   const items = [
     { Icon: Edit3, label: "Edit", onClick: onEdit },
     { Icon: SaveIcon, label: "Save", onClick: onSave },
@@ -28,6 +28,7 @@ function ReportToolbar({ onEdit, onSave, onDownload, onDuplicate, onPrint, onVie
     { Icon: Printer, label: "Export PDF", onClick: onPrint },
     { Icon: Code2, label: "View JSON", onClick: onViewJSON },
   ];
+  const isApproved = status === 'approved';
   return (
     <div className="flex items-center gap-2 overflow-x-auto">
       {items.map(({ Icon, label, onClick }, i) => (
@@ -41,6 +42,20 @@ function ReportToolbar({ onEdit, onSave, onDownload, onDuplicate, onPrint, onVie
           {label}
         </button>
       ))}
+      {/* Approve button */}
+      <button
+        onClick={onApprove}
+        disabled={isApproved}
+        className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium shadow-sm whitespace-nowrap ${
+          isApproved
+            ? 'bg-green-100 text-green-700 border border-green-300 cursor-default'
+            : 'bg-green-600 text-white hover:bg-green-700'
+        }`}
+        type="button"
+      >
+        <CheckCircle className="h-4 w-4" />
+        {isApproved ? 'Approved' : 'Approve'}
+      </button>
     </div>
   );
 }
@@ -67,6 +82,8 @@ export default function ReportPanel({
   uploadedImage,
   masks,
   origImSize,
+  status = 'draft',
+  onApprove,
 }) {
   const now = new Date();
   const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
@@ -341,6 +358,8 @@ export default function ReportPanel({
         onDuplicate={handleDuplicate}
         onPrint={handlePrint}
         onViewJSON={handleViewJSON}
+        onApprove={onApprove}
+        status={status}
       />
 
       {/* 轻量 JSON 折叠视图（不改变既有布局层级，仅在工具栏下方加一块） */}
