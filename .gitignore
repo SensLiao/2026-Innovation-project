@@ -40,3 +40,7 @@ report.json
 # Coverage
 coverage/
 .nyc_output/
+
+# Embedding server
+backend/embedding_server/__pycache__
+backend/embedding_server/venv
