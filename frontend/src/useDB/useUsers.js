@@ -1,5 +1,5 @@
 import {create} from 'zustand';
-import axios from 'axios';
+import { api } from '../lib/api';
 
 const BASE_URL = import.meta.env.VITE_API_BASE?.replace('/api', '') || 'http://localhost:3000';
 
@@ -49,7 +49,7 @@ export const useUserDB = create((set, get) => ({
     fetchUsers: async () => {
         set({ loading: true });
         try {
-            const response = await axios.get(`${BASE_URL}/api/users`);
+            const response = await api.get(`/users`);
             set({ users: response.data.data, error:null });
         } catch (error) {
             set({ error: error.message, users: [] });
@@ -61,7 +61,7 @@ export const useUserDB = create((set, get) => ({
     fetchUserByID: async (uid) => {
         set({ loading: true });
         try {
-            const response = await axios.get(`${BASE_URL}/api/users/${uid}`);
+            const response = await api.get(`/users/${uid}`);
             set({ 
                 currentUser: response.data.data,
                 userData: response.data.data,  //pre-fill form with current user data
@@ -78,7 +78,7 @@ export const useUserDB = create((set, get) => ({
         set({ loading: true });
         try {
             const { userData } = get();
-            const response = await axios.put(`${BASE_URL}/api/users/${uid}`, userData);
+            const response = await api.put(`/users/${uid}`, userData);
             set({ currentUser: response.data.data });
             console.log("User updated successfully");
         } catch (error) {
@@ -92,7 +92,7 @@ export const useUserDB = create((set, get) => ({
     deleteUser: async (uid) => {
         set({ loading: true });
         try {
-            await axios.delete(`${BASE_URL}/api/users/${uid}`);
+            await api.delete(`/users/${uid}`);
             set((state) => ({
                 users: state.users.filter(user => user.uid !== uid),
                 error: null
@@ -118,7 +118,7 @@ export const useUserDB = create((set, get) => ({
                 passwordhash: passwordhash,
             };
             // Send POST request to add user
-            await axios.post(`${BASE_URL}/api/users`, newUser);
+            await api.post(`/users`, newUser);
             
             //Refetch data
             await get().fetchUsers();

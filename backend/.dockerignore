@@ -1,0 +1,6 @@
+node_modules/
+embedding_server/
+.env
+*.log
+.git/
+tests/
