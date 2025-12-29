@@ -1,5 +1,8 @@
-FROM node:20-alpine
+FROM node:20-slim
 WORKDIR /app
+
+# Install wget for health check
+RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 COPY package*.json ./
