@@ -12,6 +12,8 @@ import { streamRequest, streamChat, ANALYSIS_PHASES, api } from "../lib/api";
 import { useSegDB } from "../useDB/useSeg";
 import { useAuth } from "../useDB/useAuth";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000/api";
+
 const SegmentationPage = () => {
   const [activeTab, setActiveTab] = useState("segmentation");
   const [fileName, setFileName] = useState(null);
@@ -245,7 +247,7 @@ const SegmentationPage = () => {
 
       const form = new FormData();
       form.append("image", f);
-      const resp = await axios.post("http://localhost:3000/api/load_model", form);
+      const resp = await axios.post(`${API_BASE}/load_model`, form);
       if (currentFileRef.current !== f) return;
       setImageEmbeddings(resp.data.image_embeddings || []);
       setEmbeddingsDims(resp.data.embedding_dims || []);
@@ -413,7 +415,7 @@ const SegmentationPage = () => {
         hint_type: "point",
       };
 
-      const res = await axios.post("http://localhost:3000/api/run_model", body);
+      const res = await axios.post(`${API_BASE}/run_model`, body);
       const data = res.data || {};
 
       const visMask = ArrayBuffer.isView(data.masks) ? Array.from(data.masks) : data.masks;
@@ -818,7 +820,7 @@ const SegmentationPage = () => {
         });
       } else {
         // Fallback: 普通 POST 请求 (iter4: include patientInfo and clinicalContext)
-        const res = await axios.post("http://localhost:3000/api/medical_report_init", {
+        const res = await axios.post(`${API_BASE}/medical_report_init`, {
           final_image: image_base64,
           patientInfo: selectedPatient ? {
             id: selectedPatient.pid,
