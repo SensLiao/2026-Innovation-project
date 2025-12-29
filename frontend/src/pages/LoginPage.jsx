@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../useDB/useAuth';
 import { useUserDB } from '../useDB/useUsers';
 import { useNavigate } from 'react-router-dom';
-import LoginImage from '../assets/images/login.png';
+import LoginImage from '../assets/images/Login.png';
 import Decoration from '../assets/images/main2.png';
 import Logo from "../assets/images/Logo.png";
 
@@ -187,7 +187,7 @@ const LoginPage = () => {
                   type="password"
                   className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-400"
                   placeholder="Password"
-                  valule={signupData.password}
+                  value={signupData.password}
                   onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
                   minLength={6} // Minimum length of 6 characters
                   required

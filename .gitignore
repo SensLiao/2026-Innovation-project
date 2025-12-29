@@ -41,6 +41,20 @@ report.json
 coverage/
 .nyc_output/
 
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+
 # Embedding server
 backend/embedding_server/__pycache__
 backend/embedding_server/venv
