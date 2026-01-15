@@ -1,0 +1,200 @@
+{
+  "source": "ACR Lung-RADS v2022",
+  "version": "2022",
+  "url": "https://www.acr.org/Clinical-Resources/Reporting-and-Data-Systems/Lung-Rads",
+  "description": "Lung CT Screening Reporting and Data System",
+  "entries": [
+    {
+      "category": "classification",
+      "title": "Lung-RADS 0 - Incomplete",
+      "content": "Prior chest CT examination(s) being located for comparison. Part or all of lungs cannot be evaluated due to motion artifact, poor inspiration, or other technical reasons.",
+      "metadata": {
+        "lung_rads_category": "0",
+        "management": "Additional lung cancer screening CT images and/or comparison to prior chest CT examinations is needed. Recommend repeat LDCT when images/comparison available.",
+        "probability_of_malignancy": "N/A",
+        "follow_up": "Varies based on reason for incomplete"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS 1 - Negative",
+      "content": "No pulmonary nodules. Nodule(s) with specific benign calcification patterns: complete, central, popcorn, concentric rings (ite). Fat-containing nodules (hamartoma). Perifissural nodules <10mm (benign intrapulmonary lymph nodes).",
+      "metadata": {
+        "lung_rads_category": "1",
+        "management": "Continue annual screening with LDCT in 12 months.",
+        "probability_of_malignancy": "<1%",
+        "follow_up": "12 months"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS 2 - Benign Appearance or Behavior",
+      "content": "Solid nodule(s): <6mm total. Part solid nodule(s): <6mm total diameter. Non-solid (ground glass) nodule(s) (GGN): <30mm. Category 3 or 4 nodules unchanged for 3 or more months. Solid nodule >=6mm that has resolved. Cysts.",
+      "metadata": {
+        "lung_rads_category": "2",
+        "management": "Continue annual screening with LDCT in 12 months.",
+        "probability_of_malignancy": "<1%",
+        "follow_up": "12 months"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS 3 - Probably Benign",
+      "content": "Solid nodule(s): >=6mm to <8mm at baseline, or new 4mm to <6mm. Part solid nodule(s): >=6mm total diameter with solid component <6mm, or new <6mm total diameter. Non-solid nodule(s) (GGN): >=30mm, or new >=20mm to <30mm.",
+      "metadata": {
+        "lung_rads_category": "3",
+        "management": "6 month LDCT.",
+        "probability_of_malignancy": "1-2%",
+        "follow_up": "6 months"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS 4A - Suspicious",
+      "content": "Solid nodule(s): >=8mm to <15mm at baseline, or new 6mm to <8mm, or growing <8mm. Part solid nodule(s): >=6mm total diameter with solid component >=6mm to <8mm, or new or growing <4mm solid component.",
+      "metadata": {
+        "lung_rads_category": "4A",
+        "management": "3 month LDCT. PET/CT may be used when there is a >=8mm solid component.",
+        "probability_of_malignancy": "5-15%",
+        "follow_up": "3 months"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS 4B - Very Suspicious",
+      "content": "Solid nodule(s): >=15mm at baseline, or new or growing >=8mm. Part solid nodule(s): Solid component >=8mm, or new or growing >=4mm solid component. Endobronchial nodule.",
+      "metadata": {
+        "lung_rads_category": "4B",
+        "management": "Chest CT with or without contrast, PET/CT and/or tissue sampling depending on the probability of malignancy, comorbidities, and patient preferences. PET/CT may be used when there is a >=8mm solid component.",
+        "probability_of_malignancy": ">15%",
+        "follow_up": "Additional workup"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS 4X - Category 3 or 4 with Additional Features",
+      "content": "Category 3 or 4 nodules with additional features or imaging findings that increase the suspicion of malignancy including: spiculation, lymphadenopathy, satellite nodules, metastatic disease, or pleural effusion.",
+      "metadata": {
+        "lung_rads_category": "4X",
+        "management": "As per Category 4A or 4B depending on underlying finding, with additional workup as indicated by clinical judgment. More aggressive follow-up may be warranted.",
+        "probability_of_malignancy": "Varies based on underlying category and features",
+        "follow_up": "Per underlying category"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS S - Other Significant Findings",
+      "content": "Clinically significant or potentially significant findings unrelated to lung cancer. May include: coronary artery calcification, aortic aneurysm, emphysema, pulmonary fibrosis, infectious disease, pleural effusion (non-malignant), thyroid nodules, breast masses, adrenal nodules, renal masses, hepatic lesions, lymphadenopathy (non-malignant), skeletal findings.",
+      "metadata": {
+        "lung_rads_category": "S",
+        "management": "As indicated by specific finding. May require additional imaging, clinical correlation, or referral.",
+        "probability_of_malignancy": "N/A",
+        "follow_up": "Per finding"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Solid Nodule Size Criteria - Baseline",
+      "content": "Solid nodule measurement: Use average of long and short axis diameters on the same axial image. Round to nearest whole number. <6mm: Category 2. 6mm to <8mm: Category 3. 8mm to <15mm: Category 4A. >=15mm: Category 4B. For multiple nodules, use the largest nodule for categorization.",
+      "metadata": {
+        "lung_rads_category": "sizing_baseline",
+        "nodule_type": "solid",
+        "measurement_method": "Average of long and short axis on axial image"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Solid Nodule Size Criteria - New",
+      "content": "New solid nodule measurement and categorization: <4mm: Category 2. 4mm to <6mm: Category 3. 6mm to <8mm: Category 4A. >=8mm: Category 4B. New nodules require comparison to prior CT to confirm they are truly new.",
+      "metadata": {
+        "lung_rads_category": "sizing_new",
+        "nodule_type": "solid",
+        "measurement_method": "Average of long and short axis on axial image"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Part-Solid Nodule Size Criteria",
+      "content": "Part-solid (subsolid) nodule measurement: Total size measured on lung window, solid component measured on mediastinal window. Category determined by solid component size: Solid <6mm: Category 3. Solid 6mm to <8mm: Category 4A. Solid >=8mm: Category 4B. For part-solid nodules, the solid component size is the primary determinant of malignancy risk.",
+      "metadata": {
+        "lung_rads_category": "sizing_partsolid",
+        "nodule_type": "part-solid",
+        "measurement_method": "Total size on lung window, solid component on mediastinal window"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Ground Glass Nodule (GGN) Size Criteria",
+      "content": "Non-solid (ground-glass) nodule measurement: Average of long and short axis on lung window. <30mm at baseline: Category 2. >=30mm at baseline or new >=20mm: Category 3. Persistent pure GGNs have low malignancy rate; those >=20mm may represent pre-invasive lesions (AIS/MIA).",
+      "metadata": {
+        "lung_rads_category": "sizing_ggn",
+        "nodule_type": "ground-glass",
+        "measurement_method": "Average of long and short axis on lung window"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Nodule Growth Definition",
+      "content": "Growing nodule: Increase of >=1.5mm in average diameter from prior CT. Growth should be assessed using same technique and window settings. Volume doubling time (VDT) <400 days suggests malignancy. Growth upgrades category: Growing <8mm solid → 4A. Growing >=8mm solid → 4B. New or growing solid component in part-solid nodule is particularly concerning.",
+      "metadata": {
+        "lung_rads_category": "growth",
+        "growth_threshold": ">=1.5mm increase in average diameter",
+        "vdt_cutoff": "<400 days suggests malignancy"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Suspicious Nodule Features",
+      "content": "Features that increase suspicion of malignancy and may warrant 4X modifier: Spiculated margins (corona radiata sign). Upper lobe location (especially right upper lobe). Adjacent pleural retraction or thickening. Vessel convergence sign (vessels drawn toward nodule). Air bronchogram within solid nodule. Bubble-like lucencies (early cavitation). Solid component growth in part-solid nodule.",
+      "metadata": {
+        "lung_rads_category": "features_suspicious",
+        "clinical_significance": "Consider 4X modifier"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Benign Nodule Features",
+      "content": "Features suggesting benign etiology: Complete/central/popcorn/laminated calcification. Fat attenuation (-40 to -120 HU, suggests hamartoma). Perifissural location with triangular/lentiform shape (intrapulmonary lymph node). Stability over >=2 years. Smooth margins and round shape (less specific).",
+      "metadata": {
+        "lung_rads_category": "features_benign",
+        "clinical_significance": "May downgrade category"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Measurement Technique",
+      "content": "Nodule measurement best practices: Use same technique for baseline and follow-up. Measure on axial images with <1.5mm slice thickness. Use lung window for total size and GGN. Use mediastinal window for solid component of part-solid nodules. Measure longest axis and perpendicular short axis on same image. Report average of two measurements rounded to nearest mm.",
+      "metadata": {
+        "lung_rads_category": "technique",
+        "clinical_significance": "Ensures consistent categorization"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Multiple Nodules Management",
+      "content": "When multiple nodules are present: Categorize based on the nodule with highest suspicion (most concerning size/features). May report up to 4 dominant nodules. Note pattern: random (metastatic), perilymphatic (sarcoidosis), or centrilobular (infection/inflammation). If all nodules are miliary pattern, consider infectious or metastatic etiology.",
+      "metadata": {
+        "lung_rads_category": "multiple_nodules",
+        "clinical_significance": "Use most suspicious nodule for category"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Prior CT Comparison",
+      "content": "Comparison with prior imaging is essential for: Determining if nodule is new. Assessing growth (>=1.5mm increase). Confirming stability (no growth over >=3 months for Cat 3/4, >=2 years for benign). Category 0 may be assigned when prior CT is needed but unavailable.",
+      "metadata": {
+        "lung_rads_category": "comparison",
+        "clinical_significance": "Required for accurate categorization"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS Version History",
+      "content": "Lung-RADS version history: v1.0 (2014): Initial release. v1.1 (2019): Added 4X modifier, clarified part-solid criteria. v2022: Current version with refined size thresholds, clearer growth definitions, and S modifier for incidental findings.",
+      "metadata": {
+        "lung_rads_category": "version_history",
+        "current_version": "2022"
+      }
+    }
+  ]
+}

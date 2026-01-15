@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 import patientRoute from './routes/patientRoute.js';
 import userRoute from './routes/userRoute.js';
 import pubRoute from './routes/pubRoute.js';
+import agentRoute from './routes/agentRoute.js';
 import { sql } from './config/db.js';
 import globals from './globals.js';
 import * as modelModule from './routes/models.js';
@@ -24,7 +25,7 @@ app.use(express.json({ limit: '50mb' })); // 增加请求体大小限制
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(
   cors({
-    origin: "http://localhost:5173", // 允许的前端地址
+    origin: ["http://localhost:5173", "http://localhost:5174"], // 允许的前端地址
     credentials: true, // 允许携带cookie
   })
 ); // enable CORS for all routes
@@ -49,6 +50,7 @@ app.use('/api/patients', patientRoute);
 app.use('/api/users', userRoute);
 app.use('/api/publications', pubRoute);
 app.use('/api', modelModule.router);
+app.use('/api', agentRoute);  // Multi-agent medical report routes
 app.use('/api/auth', buildAuthRouter());
 
 async function initDB() {

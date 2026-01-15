@@ -1,0 +1,18 @@
+# PubMedBERT Embedding Server Dependencies
+# ==========================================
+# 安装: pip install -r requirements.txt
+
+# Web 框架
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+
+# ML 框架
+sentence-transformers>=2.2.2
+torch>=2.0.0
+
+# 可选: 如果需要 GPU 支持
+# pip install torch --index-url https://download.pytorch.org/whl/cu118
+
+# 开发依赖 (可选)
+# httpx  # 用于测试

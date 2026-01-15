@@ -38,21 +38,25 @@ export function verifyAccessToken(token) {
 // 登录成功后调用，设置 HTTP-only cookie，前端 JS 不能访问，防止 XSS 攻击
 // secure 选项在生产环境下应为 true，确保 cookie 仅通过 HTTPS 传输
 export function setLoginCookie(res, token, { secure = false } = {}) {
+    // 开发环境: sameSite=none 需要 secure，但 localhost 例外
+    const isDev = !secure;
     res.cookie(TOKEN_COOKIE_NAME, token, {
         httpOnly: true,      // JS 不能访问 cookie(防止 XSS)
         secure,              // HTTP 环境 production 下要 true,仅在 HTTPS 上传输
-        sameSite: "lax",     // CSRF 防护，允许部分跨站请求携带 cookie
+        sameSite: isDev ? "lax" : "strict",  // 开发用 lax，生产用 strict
         path: "/",
         maxAge: ACCESS_TTL_SECONDS * 1000,
+        domain: isDev ? "localhost" : undefined,  // 开发环境明确设置 domain
     });
 
     // 可选：给前端 UI 用的可读 cookie（非必须）
     res.cookie("logged_in", "true", {
         httpOnly: false,
         secure,
-        sameSite: "lax",
+        sameSite: isDev ? "lax" : "strict",
         path: "/",
         maxAge: ACCESS_TTL_SECONDS * 1000,
+        domain: isDev ? "localhost" : undefined,
     });
 }
 

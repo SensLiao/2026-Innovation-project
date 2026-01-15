@@ -1,0 +1,376 @@
+{
+  "source": "Clinical Guidelines - ACR & Fleischner Society",
+  "version": "2024",
+  "description": "Evidence-based clinical guidelines for lung nodule management and imaging appropriateness",
+  "entries": [
+    {
+      "category": "classification",
+      "title": "Fleischner Society Guidelines - Solid Nodules in Low-Risk Patients",
+      "content": "Management of incidental solid pulmonary nodules in LOW-RISK patients (minimal/no smoking history, no other risk factors):\n\n<6mm: No routine follow-up recommended\n6-8mm: CT at 6-12 months, then consider CT at 18-24 months\n>8mm: Consider CT at 3 months, PET/CT, or tissue sampling\n\nRisk factors include: smoking history, family history of lung cancer, upper lobe location, spiculated margins, emphysema, pulmonary fibrosis.",
+      "metadata": {
+        "guideline": "Fleischner Society 2017",
+        "patient_type": "Low-risk",
+        "nodule_type": "Solid",
+        "evidence_level": "Expert consensus"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Fleischner Society Guidelines - Solid Nodules in High-Risk Patients",
+      "content": "Management of incidental solid pulmonary nodules in HIGH-RISK patients (heavy smoking history, other risk factors present):\n\n<6mm: Optional CT at 12 months\n6-8mm: CT at 6-12 months, then CT at 18-24 months\n>8mm: Consider CT at 3 months, PET/CT, or tissue sampling\n\nHigh-risk criteria: >30 pack-year smoking history, asbestos/radon exposure, family history (first-degree relative), upper lobe predominant emphysema.",
+      "metadata": {
+        "guideline": "Fleischner Society 2017",
+        "patient_type": "High-risk",
+        "nodule_type": "Solid",
+        "evidence_level": "Expert consensus"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Fleischner Society Guidelines - Subsolid Nodules (GGN)",
+      "content": "Management of incidental PURE GROUND-GLASS NODULES (pGGN):\n\n<6mm: No routine follow-up\n>=6mm: CT at 6-12 months to confirm persistence, then CT every 2 years until 5 years\n\nPersistent pGGN >=6mm with solid component: Increased risk of adenocarcinoma. Consider PET/CT or biopsy if solid component develops or grows.",
+      "metadata": {
+        "guideline": "Fleischner Society 2017",
+        "nodule_type": "Pure ground-glass",
+        "clinical_significance": "Pre-invasive/minimally invasive adenocarcinoma spectrum"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Fleischner Society Guidelines - Part-Solid Nodules",
+      "content": "Management of incidental PART-SOLID NODULES (mixed GGO + solid):\n\n<6mm overall: No routine follow-up (rare, usually benign)\n>=6mm overall: CT at 3-6 months to confirm persistence\n\nPersistent part-solid nodules with solid component <6mm: Annual CT for 5 years\nPersistent part-solid nodules with solid component >=6mm: PET/CT, biopsy, or surgical resection recommended\n\nPart-solid nodules have HIGHEST malignancy risk of all nodule types. Solid component size is key prognostic factor.",
+      "metadata": {
+        "guideline": "Fleischner Society 2017",
+        "nodule_type": "Part-solid",
+        "clinical_significance": "Highest malignancy risk"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Fleischner Society - Multiple Nodules Management",
+      "content": "Management of MULTIPLE pulmonary nodules:\n\nPrimary approach: Manage based on the MOST SUSPICIOUS nodule\n\n<6mm dominant nodule: CT at 3-6 months (shorter interval than solitary)\n>=6mm dominant nodule: CT at 3-6 months, then based on stability\n\nConsiderations:\n- Multiple nodules suggest infection or metastases more than primary lung cancer\n- Unilateral distribution more concerning than bilateral\n- History of extrathoracic malignancy raises suspicion for metastases\n- Miliary pattern (<3mm, countless) suggests hematogenous spread",
+      "metadata": {
+        "guideline": "Fleischner Society 2017",
+        "nodule_type": "Multiple",
+        "differential_considerations": ["Infection", "Metastases", "Granulomatous disease"]
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS Category 1 - Negative",
+      "content": "Lung-RADS Category 1 - NEGATIVE:\n\nDefinition: No lung nodules OR nodules with specific benite features\n\nBenign features include:\n- Complete calcification (diffuse, central, popcorn, laminated)\n- Fat attenuation (<-40 HU) - diagnostic of hamartoma\n- Perifissural nodules (PFN) meeting strict criteria\n\nManagement: Continue annual screening (if screening population)\nMalignancy probability: <1%",
+      "metadata": {
+        "guideline": "Lung-RADS v2022",
+        "category": "1",
+        "malignancy_risk": "<1%",
+        "management": "Annual screening"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS Category 2 - Benign Appearance",
+      "content": "Lung-RADS Category 2 - BENIGN APPEARANCE:\n\nCriteria:\n- Solid nodule: <6mm (new or stable)\n- Part-solid nodule: <6mm total diameter (new or stable)\n- Pure GGN: <30mm (new or stable at any size)\n- Category 3-4 nodules stable >=3 months\n\nManagement: Continue annual screening\nMalignancy probability: <1%\n\nNote: Size threshold 6mm applies to average diameter [(length + width)/2]",
+      "metadata": {
+        "guideline": "Lung-RADS v2022",
+        "category": "2",
+        "malignancy_risk": "<1%",
+        "management": "Annual screening"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS Category 3 - Probably Benign",
+      "content": "Lung-RADS Category 3 - PROBABLY BENIGN:\n\nCriteria:\n- Solid nodule: >=6mm to <8mm (new) OR >=6mm to <15mm (stable/growing slowly)\n- Part-solid: >=6mm total with solid <6mm (new or stable)\n- Pure GGN: >=30mm (new) OR any size with new solid component\n\nManagement: 6-month LDCT\nMalignancy probability: 1-2%\n\nKey: Short-term follow-up to assess growth/stability",
+      "metadata": {
+        "guideline": "Lung-RADS v2022",
+        "category": "3",
+        "malignancy_risk": "1-2%",
+        "management": "6-month LDCT"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS Category 4A - Suspicious",
+      "content": "Lung-RADS Category 4A - SUSPICIOUS:\n\nCriteria:\n- Solid nodule: >=8mm to <15mm (new or growing)\n- Part-solid: >=6mm total with solid >=6mm to <8mm (new or growing solid)\n- Endobronchial nodule\n\nManagement: 3-month LDCT; PET/CT may be used if >=8mm solid\nMalignancy probability: 5-15%\n\nConsiderations: Growth = increase >=1.5mm in any dimension",
+      "metadata": {
+        "guideline": "Lung-RADS v2022",
+        "category": "4A",
+        "malignancy_risk": "5-15%",
+        "management": "3-month LDCT or PET/CT"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS Category 4B - Very Suspicious",
+      "content": "Lung-RADS Category 4B - VERY SUSPICIOUS:\n\nCriteria:\n- Solid nodule: >=15mm (new or growing)\n- Part-solid: solid component >=8mm (new or growing)\n- Category 3/4 nodule with significant growth (<15mm increasing >=1.5mm)\n\nManagement: Chest CT with/without contrast, PET/CT, tissue sampling, or multidisciplinary consultation\nMalignancy probability: >15%\n\nImmediate action recommended due to high malignancy risk",
+      "metadata": {
+        "guideline": "Lung-RADS v2022",
+        "category": "4B",
+        "malignancy_risk": ">15%",
+        "management": "Diagnostic workup/tissue sampling"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS Category 4X - Additional Features",
+      "content": "Lung-RADS Category 4X - SUSPICIOUS WITH ADDITIONAL FEATURES:\n\nThis modifier indicates Category 3-4 nodules with additional suspicious features warranting upgrade:\n\nSuspicious features:\n- Spiculated margins\n- Upper lobe location\n- Rapid doubling time (<400 days)\n- Lymphadenopathy\n- Known primary malignancy (potential metastasis)\n- Pleural effusion\n- Chest wall invasion\n\nManagement: Escalate to more aggressive workup than baseline category\nClinical judgment essential",
+      "metadata": {
+        "guideline": "Lung-RADS v2022",
+        "category": "4X",
+        "modifier": true,
+        "management": "Escalated workup based on clinical context"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Lung-RADS Category S - Other/Incidental Findings",
+      "content": "Lung-RADS Category S - OTHER CLINICALLY SIGNIFICANT FINDINGS:\n\nIncidental findings requiring attention:\n- Coronary artery calcification (CAC score correlation)\n- Aortic aneurysm (>4cm ascending, >5cm descending)\n- Pulmonary embolism\n- Emphysema (quantification)\n- Interstitial lung disease\n- Significant lymphadenopathy\n- Adrenal nodules\n- Vertebral compression fractures\n- Breast abnormalities\n- Thyroid nodules\n\nManagement: Additional workup/referral as clinically indicated\nNot a replacement for routine clinical care",
+      "metadata": {
+        "guideline": "Lung-RADS v2022",
+        "category": "S",
+        "significance": "Incidental findings",
+        "management": "Additional workup as indicated"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "ACR Appropriateness - Solitary Pulmonary Nodule Workup",
+      "content": "ACR Appropriateness Criteria for Solitary Pulmonary Nodule:\n\nLow probability of malignancy (<5%):\n- CT follow-up: Usually Appropriate\n- PET/CT: May Be Appropriate\n- Biopsy: Usually Not Appropriate\n\nIntermediate probability (5-65%):\n- PET/CT: Usually Appropriate\n- CT-guided biopsy: Usually Appropriate\n- CT follow-up: May Be Appropriate\n\nHigh probability (>65%):\n- PET/CT staging: Usually Appropriate\n- Surgical resection: Usually Appropriate (if operable)\n- CT-guided biopsy: May Be Appropriate (if diagnosis needed)\n\nProbability calculators: Mayo Clinic model, Brock model, VA model",
+      "metadata": {
+        "guideline": "ACR Appropriateness Criteria 2022",
+        "indication": "SPN workup",
+        "evidence_level": "Evidence-based"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "ACR Appropriateness - Chest Pain Evaluation",
+      "content": "ACR Appropriateness Criteria for Acute Chest Pain - Suspected Pulmonary Embolism:\n\nHigh clinical probability (Wells >4 or positive D-dimer):\n- CT Pulmonary Angiography: Usually Appropriate (first-line)\n- V/Q Scan: Usually Appropriate (if CT contraindicated)\n- MR Angiography: May Be Appropriate (limited evidence)\n\nLow clinical probability (Wells <=4):\n- D-dimer first: Usually Appropriate\n- CT PA without D-dimer: Usually Not Appropriate\n\nPregnancy considerations:\n- CXR first, then V/Q if normal CXR\n- CT PA acceptable if V/Q unavailable\n- MRA emerging option\n\nContrast allergy: V/Q scan or MRA preferred",
+      "metadata": {
+        "guideline": "ACR Appropriateness Criteria",
+        "indication": "Suspected PE",
+        "first_line": "CT Pulmonary Angiography"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "ACR Appropriateness - ILD Evaluation",
+      "content": "ACR Appropriateness Criteria for Chronic Dyspnea - Suspected ILD:\n\nInitial evaluation:\n- Chest radiograph: Usually Appropriate (first-line screening)\n- HRCT chest without contrast: Usually Appropriate (diagnostic)\n- Chest CT with contrast: May Be Appropriate (if vascular concern)\n\nHRCT technique requirements:\n- Thin sections (<=1.25mm)\n- Prone imaging (to exclude dependent atelectasis)\n- Expiratory images (air trapping assessment)\n- No IV contrast needed for parenchymal assessment\n\nFollow-up:\n- Serial HRCT for disease progression monitoring\n- Interval based on clinical course (3-12 months)\n- Quantitative CT emerging for objective assessment",
+      "metadata": {
+        "guideline": "ACR Appropriateness Criteria",
+        "indication": "ILD evaluation",
+        "first_line": "HRCT chest"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "ACR Appropriateness - Lung Cancer Staging",
+      "content": "ACR Appropriateness Criteria for Non-small Cell Lung Cancer Staging:\n\nInitial staging:\n- PET/CT whole body: Usually Appropriate (most accurate for M staging)\n- Contrast-enhanced CT chest/abdomen: Usually Appropriate\n- Brain MRI with contrast: Usually Appropriate (especially for stage III-IV)\n\nMediastinal staging:\n- PET/CT positive nodes: Tissue confirmation recommended\n- EBUS/EUS: Usually Appropriate for accessible nodes\n- Mediastinoscopy: Gold standard if minimally invasive fails\n\nAdrenal characterization:\n- Chemical shift MRI: Usually Appropriate for indeterminate adrenal\n- PET/CT: Usually Appropriate\n- Adrenal biopsy: May Be Appropriate if needed for staging\n\nBone metastases:\n- PET/CT: Usually Appropriate\n- Bone scan: May Be Appropriate if PET unavailable",
+      "metadata": {
+        "guideline": "ACR Appropriateness Criteria",
+        "indication": "NSCLC staging",
+        "recommended": "PET/CT + Brain MRI"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "British Thoracic Society - Pleural Effusion Guidelines",
+      "content": "BTS Guidelines for Investigation of Unilateral Pleural Effusion:\n\nInitial assessment:\n- Clinical history + CXR\n- Ultrasound-guided thoracentesis (not blind)\n- Light's criteria to differentiate exudate vs transudate\n\nLight's Criteria (exudate if ANY ONE met):\n- Pleural protein/serum protein >0.5\n- Pleural LDH/serum LDH >0.6\n- Pleural LDH >2/3 upper limit of normal serum LDH\n\nFluid analysis:\n- Cell count and differential (lymphocyte-predominant = TB, malignancy)\n- Cytology (minimum 20mL, repeat if negative)\n- pH (<7.2 suggests complicated parapneumonic/empyema)\n- Glucose (<60mg/dL = rheumatoid, empyema, malignancy)\n- Adenosine deaminase (>40 U/L suggests TB)\n\nImaging:\n- CT with contrast: Pleural thickening, enhancement, nodularity suggest malignancy\n- PET/CT: May help identify occult primary",
+      "metadata": {
+        "guideline": "BTS Guidelines",
+        "indication": "Pleural effusion workup",
+        "key_test": "Light's criteria"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "GOLD Guidelines - COPD Classification",
+      "content": "GOLD 2023 COPD Classification:\n\nSpirometric classification (post-bronchodilator FEV1/FVC <0.70):\n- GOLD 1 (Mild): FEV1 >=80% predicted\n- GOLD 2 (Moderate): 50% <= FEV1 <80% predicted\n- GOLD 3 (Severe): 30% <= FEV1 <50% predicted\n- GOLD 4 (Very Severe): FEV1 <30% predicted\n\nABE Assessment (replaces ABCD):\n- Group A: Low symptoms (mMRC 0-1, CAT <10), 0-1 exacerbations\n- Group B: High symptoms (mMRC >=2, CAT >=10), 0-1 exacerbations\n- Group E: >=2 moderate exacerbations OR >=1 hospitalization (regardless of symptoms)\n\nCT findings in COPD:\n- Emphysema quantification (%LAA-950)\n- Airway wall thickening (Pi10)\n- Pulmonary artery enlargement (PA:Ao ratio >1)\n- Bronchiectasis",
+      "metadata": {
+        "guideline": "GOLD 2023",
+        "indication": "COPD classification",
+        "key_criteria": "FEV1/FVC and exacerbation history"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "ATS/ERS - IPF Diagnostic Criteria",
+      "content": "ATS/ERS/JRS/ALAT Guidelines for IPF Diagnosis:\n\nUIP pattern on HRCT (all 4 required):\n1. Basal and subpleural predominance\n2. Honeycombing with/without traction bronchiectasis\n3. Absence of features inconsistent with UIP\n\nProbable UIP on HRCT (lacks honeycombing):\n- Basal, subpleural reticulation\n- Traction bronchiectasis\n- No features inconsistent with UIP\n\nFeatures inconsistent with UIP:\n- Upper/mid-lung predominance\n- Peribronchovascular predominance\n- Extensive ground-glass (more than reticulation)\n- Micronodules, cysts, mosaic attenuation\n- Consolidation (excluding acute exacerbation)\n\nDiagnosis:\n- Definite UIP on HRCT: IPF diagnosis likely without biopsy\n- Probable/Indeterminate: Consider surgical lung biopsy\n- MDD (multidisciplinary discussion): Essential for diagnosis",
+      "metadata": {
+        "guideline": "ATS/ERS/JRS/ALAT 2018",
+        "indication": "IPF diagnosis",
+        "hrct_pattern": "UIP"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Nodule Volume Doubling Time Assessment",
+      "content": "Volume Doubling Time (VDT) in Lung Nodule Assessment:\n\nVDT calculation:\nVDT = (t2 - t1) × ln(2) / ln(V2/V1)\nWhere t = time, V = volume\n\nMalignancy probability by VDT:\n- <20 days: Usually benign (likely inflammatory)\n- 20-400 days: Suspicious for malignancy\n- 400-600 days: Intermediate (includes slow-growing adenocarcinoma)\n- >600 days: Usually benign (granuloma, hamartoma)\n\nVolumetry advantages over 2D:\n- More sensitive to small changes\n- Detects 25% volume change (= 9% diameter change)\n- Computer-assisted reduces measurement variability\n\nLung-RADS 2022 VDT considerations:\n- <6mm nodules: Consider volumetry for accurate surveillance\n- Software requirements: Standardized protocols needed\n- Inter-scan variability: ~25% for same-day scans",
+      "metadata": {
+        "guideline": "Clinical practice",
+        "indication": "Nodule growth assessment",
+        "method": "Volumetric analysis"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Perifissural Nodule Criteria",
+      "content": "Criteria for Perifissural Nodules (PFN) - Likely Intrapulmonary Lymph Nodes:\n\nClassic PFN features:\n1. Attached to fissure OR within 15mm of fissure\n2. Solid, homogeneous\n3. Smooth margins\n4. Oval/lentiform/triangular shape\n5. <10mm in longest diameter\n\nTypical vs Atypical PFN:\n- Typical: All classic features, VDT not applicable\n- Atypical: >=1 atypical feature (round, >10mm)\n\nManagement (per Lung-RADS 2022):\n- Typical PFN: Category 2 (benign), no follow-up needed\n- Atypical PFN: Manage per size criteria\n\nCaveats:\n- Not ALL fissural nodules are benign\n- Spiculated margins warrant standard nodule management\n- Prior malignancy: Consider metastasis regardless of location",
+      "metadata": {
+        "guideline": "Lung-RADS 2022 + de Hoop criteria",
+        "indication": "PFN identification",
+        "clinical_significance": "Reduces false positives in screening"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "TNM Staging - Lung Cancer 8th Edition",
+      "content": "TNM Staging for Lung Cancer (8th Edition, AJCC/UICC):\n\nT (Primary Tumor):\n- T1a: <=1cm\n- T1b: >1-2cm\n- T1c: >2-3cm\n- T2a: >3-4cm OR involvement of main bronchus (not carina), visceral pleura, atelectasis\n- T2b: >4-5cm\n- T3: >5-7cm OR chest wall/pericardium/phrenic nerve invasion, separate nodule same lobe\n- T4: >7cm OR diaphragm/mediastinum/heart/great vessels/trachea/carina/esophagus/vertebra, separate nodule different ipsilateral lobe\n\nN (Regional Nodes):\n- N0: No nodal metastasis\n- N1: Ipsilateral peribronchial/hilar\n- N2: Ipsilateral mediastinal/subcarinal\n- N3: Contralateral or supraclavicular\n\nM (Distant Metastasis):\n- M0: No distant metastasis\n- M1a: Contralateral lung nodule, pleural/pericardial effusion\n- M1b: Single extrathoracic metastasis\n- M1c: Multiple extrathoracic metastases",
+      "metadata": {
+        "guideline": "AJCC/UICC 8th Edition",
+        "indication": "Lung cancer staging",
+        "year": "2017"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Mediastinal Lymph Node Stations",
+      "content": "IASLC Mediastinal Lymph Node Map (8th Edition):\n\nSupraclavicular zone:\n- 1: Low cervical, supraclavicular, sternal notch\n\nSuperior mediastinal:\n- 2R/2L: Upper paratracheal (above aortic arch)\n- 3a: Prevascular\n- 3p: Retrotracheal\n- 4R/4L: Lower paratracheal\n\nAortic:\n- 5: Subaortic (AP window)\n- 6: Para-aortic (ascending aorta)\n\nInferior mediastinal:\n- 7: Subcarinal\n- 8: Paraesophageal\n- 9: Pulmonary ligament\n\nHilar/Interlobar:\n- 10: Hilar\n- 11: Interlobar\n\nPeripheral:\n- 12: Lobar\n- 13: Segmental\n- 14: Subsegmental\n\nSize criteria: Short axis >1cm suggests abnormal (sensitivity ~60%)\nPET/CT: SUVmax >2.5 suggests malignancy (specificity ~80%)",
+      "metadata": {
+        "guideline": "IASLC 8th Edition",
+        "indication": "Nodal staging",
+        "clinical_use": "Surgical planning, radiation field"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "COVID-19 CT Classification (CO-RADS)",
+      "content": "CO-RADS Classification for COVID-19 Pneumonia:\n\nCO-RADS 1: Very low suspicion\n- Normal CT OR non-infectious findings\n\nCO-RADS 2: Low suspicion\n- Findings consistent with other infection (bronchiolitis, lobar pneumonia, abscess)\n\nCO-RADS 3: Indeterminate\n- Features compatible with COVID-19 but also other diseases\n- Perihilar ground-glass, homogeneous patterns\n\nCO-RADS 4: High suspicion\n- Typical features but not pathognomonic\n- Unilateral GGO, multifocal but not peripheral\n\nCO-RADS 5: Very high suspicion\n- Typical COVID-19 features:\n  * Bilateral, peripheral, basal predominant GGO\n  * Crazy-paving pattern\n  * Consolidation in later stages\n  * Subpleural bands\n  * Vascular thickening within GGO\n\nCO-RADS 6: PCR-confirmed COVID-19",
+      "metadata": {
+        "guideline": "Dutch Radiological Society",
+        "indication": "COVID-19 CT assessment",
+        "note": "Historical reference - pandemic era"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Pneumonia Severity Assessment (CURB-65 + CT)",
+      "content": "Pneumonia Severity Assessment:\n\nCURB-65 Score:\n- Confusion: 1 point\n- Urea >7 mmol/L: 1 point\n- Respiratory rate >=30: 1 point\n- Blood pressure <90 systolic or <=60 diastolic: 1 point\n- Age >=65: 1 point\n\nManagement by score:\n- 0-1: Outpatient management\n- 2: Hospital admission consider\n- 3-5: ICU admission consider\n\nCT Severity Indicators:\n- Extent of consolidation (>50% = severe)\n- Bilateral involvement\n- Pleural effusion (parapneumonic)\n- Cavitation (suggests necrotizing pneumonia)\n- Pulmonary artery enlargement (suggests strain)\n\nCT vs CXR:\n- CT more sensitive for early pneumonia\n- CT better for complication detection\n- CXR sufficient for uncomplicated CAP",
+      "metadata": {
+        "guideline": "BTS + clinical practice",
+        "indication": "Pneumonia severity",
+        "scoring": "CURB-65"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Pulmonary Embolism CT Severity (RV/LV Ratio)",
+      "content": "CT Pulmonary Angiography Severity Assessment:\n\nRV/LV Ratio:\n- Measured at widest transverse diameter\n- Four-chamber view on axial images\n- RV/LV >1.0: Suggests right heart strain\n- RV/LV >1.5: Severe dysfunction\n\nCT signs of RV dysfunction:\n- RV dilatation (>1:1 RV:LV ratio)\n- Interventricular septal bowing toward LV\n- Contrast reflux into IVC/hepatic veins\n- PA enlargement (>29mm main PA)\n\nClot Burden Assessment:\n- Central (saddle, main PA): Most severe\n- Lobar: Moderate-severe\n- Segmental: Moderate\n- Subsegmental: Often incidental, clinical significance varies\n\nQuantitative Obstruction Index:\n- Qanadli score: Percentage obstruction\n- >40% obstruction correlates with RV dysfunction\n\nManagement implications:\n- RV dysfunction + hemodynamic instability: Thrombolysis/thrombectomy\n- RV dysfunction + stable: Close monitoring, anticoagulation",
+      "metadata": {
+        "guideline": "ESC/ERS PE Guidelines",
+        "indication": "PE severity assessment",
+        "key_metric": "RV/LV ratio"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Thoracic Aortic Measurements",
+      "content": "Normal Thoracic Aortic Dimensions and Thresholds:\n\nNormal diameter (varies by age, gender, BSA):\n- Aortic root: 2.1-3.5cm\n- Ascending aorta: 2.1-3.4cm\n- Aortic arch: 2.0-3.0cm\n- Descending thoracic: 1.6-2.6cm\n\nAneurysm thresholds:\n- Ascending: >4.0cm (surgical consideration at 5.5cm)\n- Descending: >4.0cm (surgical consideration at 6.0cm)\n- Bicuspid aortic valve: Lower surgical threshold (5.0cm ascending)\n\nMeasurement technique:\n- Perpendicular to long axis (double-oblique MPR)\n- Outer wall to outer wall\n- Gated CT preferred for aortic root\n\nGrowth monitoring:\n- >3mm/year: Concerning growth rate\n- Annual CT for 4-5cm aneurysms\n- Semi-annual for approaching surgical threshold",
+      "metadata": {
+        "guideline": "AHA/ACC Guidelines",
+        "indication": "Thoracic aortic surveillance",
+        "measurement_standard": "Perpendicular outer wall"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Cardiac CT - CAC Scoring",
+      "content": "Coronary Artery Calcium (CAC) Scoring:\n\nAgatston Score calculation:\n- CT without contrast, ECG-gated\n- Score = Area (mm2) × Density factor (1-4 based on HU)\n- Sum all coronary territories\n\nScore interpretation:\n- 0: No identifiable plaque (very low risk)\n- 1-10: Minimal plaque\n- 11-100: Mild plaque\n- 101-400: Moderate plaque\n- >400: Severe plaque (high risk)\n\nPercentile ranking:\n- Important to compare to age/sex matched cohort\n- >75th percentile: Increased risk regardless of absolute score\n\nClinical utility:\n- Risk reclassification for intermediate-risk patients\n- NOT useful if already known CAD or very high-risk\n- Zero CAC associated with very low 10-year event rate (<1%)\n\nIncidental on lung CT:\n- Qualitative assessment valuable\n- Visual estimate: None, mild, moderate, severe\n- Consider formal CAC if significant",
+      "metadata": {
+        "guideline": "SCCT/AHA Guidelines",
+        "indication": "Cardiovascular risk",
+        "incidental_finding": "Common on lung CT"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "RECIST 1.1 - Tumor Response Criteria",
+      "content": "RECIST 1.1 Criteria for Tumor Response Assessment:\n\nTarget lesions:\n- Maximum 5 total (2 per organ)\n- Measurable: >=10mm (long axis) or >=15mm (short axis for nodes)\n- Measure longest diameter (short axis for nodes)\n\nResponse categories:\n- Complete Response (CR): Disappearance of all target lesions, nodes <10mm\n- Partial Response (PR): >=30% decrease in sum of diameters\n- Progressive Disease (PD): >=20% increase in sum + >=5mm absolute increase, OR new lesions\n- Stable Disease (SD): Neither PR nor PD criteria met\n\nNon-target lesions:\n- Qualitative assessment (present, absent, unequivocal progression)\n\nNew lesion considerations:\n- Must be unequivocal malignant\n- <10mm new nodules: Repeat imaging before calling PD\n- FDG-avid new lesion on PET confirms progression\n\nBest overall response:\n- Must be confirmed by repeat imaging (minimum 4 weeks)",
+      "metadata": {
+        "guideline": "RECIST 1.1",
+        "indication": "Oncology response assessment",
+        "usage": "Clinical trials, clinical practice"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "iRECIST - Immunotherapy Response",
+      "content": "iRECIST Criteria for Immunotherapy Response:\n\nPrinciple: Accounts for pseudoprogression (tumor flare before response)\n\nUnconfirmed progression (iUPD):\n- First progression per RECIST 1.1 criteria\n- Continue treatment at investigator discretion\n- Repeat imaging at 4-8 weeks\n\nConfirmed progression (iCPD):\n- Further increase in tumor burden from iUPD\n- Or new lesions after iUPD\n- Or worsening non-target disease\n\nResponse after iUPD:\n- If tumor subsequently decreases: Back to SD/PR/CR\n- Pseudoprogression rate: 5-10% depending on tumor type\n\niCR, iPR, iSD:\n- Same as RECIST 1.1 CR, PR, SD\n- iCR/iPR require confirmation at >=4 weeks\n\nClinical considerations:\n- Maintain treatment through iUPD if clinically stable\n- Clinical deterioration = true progression regardless of imaging",
+      "metadata": {
+        "guideline": "iRECIST",
+        "indication": "Immunotherapy response",
+        "key_concept": "Pseudoprogression"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Thymic Epithelial Tumor Classification (WHO)",
+      "content": "WHO Classification of Thymic Epithelial Tumors:\n\nThymomas:\n- Type A: Spindle/oval cells, rare lymphocytes\n- Type AB: Mixed type A areas with lymphocyte-rich areas\n- Type B1: Lymphocyte-rich, resembles normal thymus\n- Type B2: Scattered epithelial cells among lymphocytes\n- Type B3: Predominantly epithelial, few lymphocytes\n\nThymic carcinoma:\n- Squamous cell carcinoma (most common)\n- Lymphoepithelioma-like\n- Clear cell carcinoma\n- Mucoepidermoid carcinoma\n\nCT features suggesting malignancy:\n- Irregular/lobulated contours\n- Heterogeneous enhancement\n- Necrosis, calcification (variable)\n- Invasion of adjacent structures\n- Pleural/pericardial nodules (drop metastases)\n\nMasaoka staging:\n- Stage I: Encapsulated\n- Stage II: Microscopic (IIA) or gross (IIB) capsular invasion\n- Stage III: Invasion of adjacent organs\n- Stage IV: Pleural/pericardial dissemination (IVA) or distant metastases (IVB)",
+      "metadata": {
+        "guideline": "WHO Classification + Masaoka",
+        "indication": "Thymic tumor classification",
+        "location": "Anterior mediastinum"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Mediastinal Mass - Anterior Compartment DDx",
+      "content": "Anterior Mediastinal Mass Differential Diagnosis (4 T's):\n\nThymic lesions:\n- Thymoma (most common anterior mediastinal tumor in adults)\n- Thymic carcinoma\n- Thymic cyst\n- Thymic hyperplasia (rebound after chemotherapy)\n\nTeratoma/Germ cell tumors:\n- Mature teratoma (fat, fluid, calcium = diagnostic)\n- Seminoma (homogeneous, young males)\n- Non-seminomatous GCT (heterogeneous, AFP/beta-hCG elevated)\n\nTerrible lymphoma:\n- Hodgkin lymphoma (most common, young adults)\n- Non-Hodgkin lymphoma (older adults)\n- Prevascular distribution, may encase vessels without invading\n\nThyroid (substernal goiter):\n- Continuous with cervical thyroid\n- Displaces trachea, may narrow\n- Calcification, cystic areas, avid iodine uptake\n\nOther:\n- Parathyroid adenoma (rare in mediastinum)\n- Lipoma (fat attenuation diagnostic)\n- Morgagni hernia (contains bowel/omentum)",
+      "metadata": {
+        "guideline": "Clinical practice",
+        "indication": "Anterior mediastinal mass workup",
+        "mnemonic": "4 T's"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Bronchiectasis Severity Assessment",
+      "content": "Bronchiectasis Severity Assessment on CT:\n\nReiff Score (modified):\n- 0: No bronchiectasis\n- 1: Tubular bronchiectasis (broncho-arterial ratio 1-1.5)\n- 2: Varicose bronchiectasis (beaded appearance)\n- 3: Cystic/saccular bronchiectasis (>3x artery diameter)\n\nBhalla Score (comprehensive):\n- Severity of bronchiectasis (0-3)\n- Peribronchial thickening (0-3)\n- Extent of bronchiectasis by lobes\n- Mucus plugging extent\n- Sacculations/abscesses\n- Bullae\n- Emphysema\n- Collapse/consolidation\n\nBSI (Bronchiectasis Severity Index):\n- Incorporates clinical (BMI, FEV1, exacerbations) and radiological variables\n- Predicts mortality and exacerbation risk\n\nCT indications for treatment escalation:\n- New lobar involvement\n- Progression from tubular to cystic\n- Increased mucus plugging\n- New tree-in-bud (suggests active infection)",
+      "metadata": {
+        "guideline": "ERS Guidelines + scoring systems",
+        "indication": "Bronchiectasis monitoring",
+        "severity_scales": ["Reiff", "Bhalla", "BSI"]
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Emphysema Quantification on CT",
+      "content": "Emphysema Quantification on CT:\n\nVisual scoring:\n- Grade 0: No emphysema\n- Grade 1: <5% parenchymal destruction\n- Grade 2: 5-25% destruction\n- Grade 3: 25-50% destruction\n- Grade 4: 50-75% destruction\n- Grade 5: >75% destruction\n\nQuantitative CT (densitometry):\n- %LAA-950: Percentage of lung <-950 HU (inspiratory)\n- %LAA-856: Percentage <-856 HU (expiratory, gas trapping)\n- Percentile method: 15th percentile density (PD15)\n\nEmphysema subtypes:\n- Centrilobular: Upper lobe predominant, smoking-related\n- Panlobular: Lower lobe predominant, alpha-1 antitrypsin deficiency\n- Paraseptal: Subpleural, associated with bullae\n\nClinical correlations:\n- %LAA-950 >15%: Significant emphysema\n- Strong correlation with DLCO impairment\n- Predicts surgical outcomes (LVRS candidate selection)\n- ECLIPSE study cutoffs widely used",
+      "metadata": {
+        "guideline": "Research standards + GOLD",
+        "indication": "COPD phenotyping",
+        "quantitative_metric": "%LAA-950"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "Sarcoidosis Staging (Chest CT)",
+      "content": "Sarcoidosis Staging (Scadding Classification + CT refinement):\n\nStage 0:\n- Normal chest imaging\n- Extrathoracic sarcoidosis only\n\nStage I:\n- Bilateral hilar lymphadenopathy (BHL) only\n- Symmetric, non-necrotic nodes\n- CT: Calcification in chronic disease\n\nStage II:\n- BHL + parenchymal infiltrates\n- CT: Perilymphatic nodules (fissures, bronchovascular bundles)\n- Upper/mid lung predominance\n\nStage III:\n- Parenchymal infiltrates WITHOUT BHL\n- Nodes may have resolved\n- CT: Consolidation, ground-glass, fibrotic changes\n\nStage IV:\n- Pulmonary fibrosis\n- Upper lobe volume loss\n- Hilar retraction (\"shifted hilum\" sign)\n- Honeycombing, traction bronchiectasis\n\nPrognostic implications:\n- Stage I: 60-80% spontaneous resolution\n- Stage II: 50-60% resolution\n- Stage III: 30% resolution\n- Stage IV: Irreversible",
+      "metadata": {
+        "guideline": "Scadding Classification",
+        "indication": "Sarcoidosis staging",
+        "ct_pattern": "Perilymphatic nodules"
+      }
+    },
+    {
+      "category": "classification",
+      "title": "CT Reporting Standards (ACR)",
+      "content": "ACR Guidelines for Structured Chest CT Reporting:\n\nEssential elements:\n1. Clinical indication/question\n2. Technique (contrast, phases, comparison studies)\n3. Findings organized by organ system\n4. Impression/Summary (addressing clinical question)\n\nLung findings structure:\n- Airways (trachea, bronchi)\n- Parenchyma (nodules, opacities, ILD patterns)\n- Pleura (effusions, thickening, pneumothorax)\n\nMediastinal findings:\n- Lymph nodes (size, location, character)\n- Vascular (aorta, PA, cardiac chambers)\n- Other structures (thymus, esophagus)\n\nIncidental findings:\n- Clinically significant findings requiring action\n- Modifiers for recommendations (urgent, routine)\n- Reference to appropriate guidelines (Fleischner, ACR)\n\nReporting style:\n- Clear, concise language\n- Avoid ambiguous terms (\"cannot exclude\")\n- Provide specific measurements\n- Likelihood language when appropriate (likely, suspicious for)",
+      "metadata": {
+        "guideline": "ACR Practice Parameters",
+        "indication": "Report quality standards",
+        "format": "Structured reporting"
+      }
+    }
+  ]
+}
