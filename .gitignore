@@ -37,3 +37,5 @@ venv/
 .venv/
 env/
 *.egg-info/
+
+backend/models
