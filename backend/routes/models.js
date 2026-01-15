@@ -108,6 +108,7 @@ router.post('/run_model', async (req, res) => {
       embedding_dims,     // e.g. [1, 256, 64, 64]
       point_coords,       // e.g. [[x,y], ...] (像素坐标)
       point_labels,       // e.g. [1, 0, ...]
+      boxes,              // e.g. [[x0,y0,x1,y1], ...] ⭐ 新增
       mask_input,         // optional: float[] (1*1*lowRes*lowRes)
       has_mask_input,     // optional: [0] or [1]
       orig_im_size        // [H, W]
@@ -189,13 +190,36 @@ router.post('/run_model', async (req, res) => {
       hasMaskTensor = new ort.Tensor('float32', Float32Array.from([0]), [1]);
     }
 
-    // 5) orig_im_size
+    // 5) boxes: 处理框提示
+    const boxesArray = Array.isArray(boxes) ? boxes : [];
+    let boxesTensor;
+    if (boxesArray.length > 0) {
+      // 映射 box 坐标到 target length
+      const mappedBoxes = boxesArray.map(([x0, y0, x1, y1]) => {
+        const scale = targetLength / Math.max(origH, origW);
+        const newH = Math.round(origH * scale);
+        const newW = Math.round(origW * scale);
+        return [
+          x0 * (newW / origW),
+          y0 * (newH / origH),
+          x1 * (newW / origW),
+          y1 * (newH / origH)
+        ];
+      });
+      boxesTensor = new ort.Tensor('float32', Float32Array.from(mappedBoxes.flat()), [1, mappedBoxes.length, 4]);
+    } else {
+      // 空 boxes tensor: [1, 0, 4]
+      boxesTensor = new ort.Tensor('float32', new Float32Array(0), [1, 0, 4]);
+    }
+
+    // 6) orig_im_size
     const sizeTensor = new ort.Tensor('float32', Float32Array.from([origH, origW]), [2]);
 
     const feeds = {
       image_embeddings: embTensor,
       point_coords: coordsTensor,
       point_labels: labelsTensor,
+      boxes: boxesTensor,
       mask_input: maskTensor,
       has_mask_input: hasMaskTensor,
       orig_im_size: sizeTensor
@@ -206,7 +230,7 @@ router.post('/run_model', async (req, res) => {
     console.log('Low-res masks shape:', low_res_masks.dims); // 典型 [1,1,lowRes,lowRes]
     console.log('IOU predictions:', Array.from(iou_predictions.data));
 
-    // 6) 直接 logits > 0
+    // 7) 直接 logits > 0
     const final_mask = Array.from(logitsTo01Flat(Array.from(masks.data)));
 
     return res.status(200).json({
@@ -249,11 +273,10 @@ router.post('/run_model', async (req, res) => {
 // });
 // ============================================================
 
-// 11.Testing functions
+// 11.Testing functions - 测试 Point, Box, Mixed 三种模式
 async function test(fileBuffer) {
   // --- tiny helpers (only for this test) ---
   const getTargetLength = (embeddingDims) => {
-    // embeddingDims 形如 [1, 256, G, G]，G*16 就是长边 target_length
     const grid = embeddingDims[2];
     return grid * 16;
   };
@@ -263,6 +286,18 @@ async function test(fileBuffer) {
     const newH = Math.round(origH * scale);
     const newW = Math.round(origW * scale);
     return points.map(([x, y]) => [x * (newW / origW), y * (newH / origH)]);
+  };
+
+  const applyBoxToTarget = (box, origH, origW, targetLength) => {
+    const scale = targetLength / Math.max(origH, origW);
+    const newH = Math.round(origH * scale);
+    const newW = Math.round(origW * scale);
+    return [
+      box[0] * (newW / origW),
+      box[1] * (newH / origH),
+      box[2] * (newW / origW),
+      box[3] * (newH / origH)
+    ];
   };
 
   const logitsTo01Flat = (flat) => {
@@ -279,69 +314,140 @@ async function test(fileBuffer) {
     return rows;
   };
 
-  // 1) 原图尺寸
-  const { width: origW, height: origH } = await sharp(fileBuffer).metadata();
+  const decoder = globals.onnxModels.decoder;
 
-  // 2) 编码器：注意你已用 --use-preprocess，所以直接喂 HWC/0-255 即可
+  // ========== 1) 获取原图尺寸 & 编码 (只做一次) ==========
+  const { width: origW, height: origH } = await sharp(fileBuffer).metadata();
+  console.log('📐 Original image size:', origW, 'x', origH);
+
   const imageTensor = await loadImageAsTensor(fileBuffer);
   const embedding = await runImageEncoder(imageTensor, globals.onnxModels.encoder);
 
-  // 3) 由 embedding 维度推回 target_length & low-res 尺寸
-  const targetLength = (function getTL(dims) {
-    // dims e.g. [1, 256, 64, 64] => targetLength = 64 * 16 = 1024
-    const grid = dims[2];
-    return grid * 16;
-  })(embedding.dims);
+  const targetLength = getTargetLength(embedding.dims);
   const lowRes = targetLength / 4;
-
   console.log('🔎 embedding.dims =', embedding.dims, '=> targetLength =', targetLength, 'lowRes =', lowRes);
 
-  // 4) 构造提示：单点 + padding 点
-  const rawPoints = [[336, 275]];
-  const rawLabels = [1]; // 1=正点
-  const mapped = applyCoordsToTarget(rawPoints, origH, origW, targetLength);
-
-  // 追加 padding 点 (0,0), label=-1 以符合解码器约定
-  mapped.push([0.0, 0.0]);
-  rawLabels.push(-1);
-
-  const numPts = mapped.length;
-  const coordsTensor = new ort.Tensor('float32', Float32Array.from(mapped.flat()), [1, numPts, 2]);
-  const labelsTensor = new ort.Tensor('float32', Float32Array.from(rawLabels), [1, numPts]);
-
-  // 5) 准备 mask_input（全零）、has_mask_input（0）
+  // 公共参数
+  const orig_im_size = new ort.Tensor('float32', Float32Array.from([origH, origW]), [2]);
   const mask_input = new ort.Tensor('float32', new Float32Array(1 * 1 * lowRes * lowRes), [1, 1, lowRes, lowRes]);
   const has_mask_input = new ort.Tensor('float32', Float32Array.from([0]), [1]);
 
-  // 6) orig_im_size
-  const orig_im_size = new ort.Tensor('float32', Float32Array.from([origH, origW]), [2]);
+  // ========== TEST 1: Point-only ==========
+  console.log('\n' + '='.repeat(50));
+  console.log('🧪 TEST 1: Point-only Segmentation');
+  console.log('='.repeat(50));
+  {
+    const rawPoints = [[336, 275]];
+    const rawLabels = [1]; // 前景点
+    const mapped = applyCoordsToTarget(rawPoints, origH, origW, targetLength);
+    
+    // 追加 padding 点
+    mapped.push([0.0, 0.0]);
+    rawLabels.push(-1);
 
-  // 7) 解码器
-  const decoder = globals.onnxModels.decoder;
-  const feeds = {
-    image_embeddings: embedding,
-    point_coords: coordsTensor,
-    point_labels: labelsTensor,
-    mask_input: mask_input,
-    has_mask_input: has_mask_input,
-    orig_im_size: orig_im_size
-  };
+    const coordsTensor = new ort.Tensor('float32', Float32Array.from(mapped.flat()), [1, mapped.length, 2]);
+    const labelsTensor = new ort.Tensor('float32', Float32Array.from(rawLabels), [1, rawLabels.length]);
+    const boxesTensor = new ort.Tensor('float32', new Float32Array(0), [1, 0, 4]); // 空 boxes
 
-  const { masks, iou_predictions, low_res_masks } = await runImageDecoder(feeds, decoder);
+    const feeds = {
+      image_embeddings: embedding,
+      point_coords: coordsTensor,
+      point_labels: labelsTensor,
+      boxes: boxesTensor,
+      mask_input: mask_input,
+      has_mask_input: has_mask_input,
+      orig_im_size: orig_im_size
+    };
 
-  console.log('✅ decoder done. masks shape:', masks.dims, 'low_res_masks shape:', low_res_masks.dims);
-  console.log('IOU predictions:', Array.from(iou_predictions.data));
+    const { masks, iou_predictions } = await runImageDecoder(feeds, decoder);
+    console.log('✅ Point-only done. Mask shape:', masks.dims, 'IoU:', iou_predictions.data[0].toFixed(4));
 
-  // 8) logits 直接 > 0 得到 0/1
-  const masksFlat01 = logitsTo01Flat(Array.from(masks.data));
+    const masksFlat01 = logitsTo01Flat(Array.from(masks.data));
+    const H = masks.dims[2], W = masks.dims[3];
+    const masks2D = to2D(masksFlat01, H, W);
+    fs.writeFileSync('mask_point.txt', masks2D.map((row) => row.join(' ')).join('\n'));
+    console.log('📝 Saved to mask_point.txt');
+  }
 
-  // 9) 用真实维度写入调试文件（不要硬编码 512x512）
-  const H = masks.dims[2],
-    W = masks.dims[3];
-  const masks2D = to2D(masksFlat01, H, W);
-  fs.writeFileSync('mask.txt', masks2D.map((row) => row.join(' ')).join('\n'));
+  // ========== TEST 2: Box-only ==========
+  console.log('\n' + '='.repeat(50));
+  console.log('🧪 TEST 2: Box-only Segmentation');
+  console.log('='.repeat(50));
+  {
+    // Box: [x0, y0, x1, y1] - 假设框住目标区域
+    const rawBox = [250, 180, 420, 370]; // 根据图像调整
+    const mappedBox = applyBoxToTarget(rawBox, origH, origW, targetLength);
 
-  console.log('📝 mask written to mask.txt with shape', H, 'x', W);
+    // 空 points (需要正确的形状)
+    const coordsTensor = new ort.Tensor('float32', new Float32Array(0), [1, 0, 2]);
+    const labelsTensor = new ort.Tensor('float32', new Float32Array(0), [1, 0]);
+    const boxesTensor = new ort.Tensor('float32', Float32Array.from(mappedBox), [1, 1, 4]);
+
+    const feeds = {
+      image_embeddings: embedding,
+      point_coords: coordsTensor,
+      point_labels: labelsTensor,
+      boxes: boxesTensor,
+      mask_input: mask_input,
+      has_mask_input: has_mask_input,
+      orig_im_size: orig_im_size
+    };
+
+    const { masks, iou_predictions } = await runImageDecoder(feeds, decoder);
+    console.log('✅ Box-only done. Mask shape:', masks.dims, 'IoU:', iou_predictions.data[0].toFixed(4));
+
+    const masksFlat01 = logitsTo01Flat(Array.from(masks.data));
+    const H = masks.dims[2], W = masks.dims[3];
+    const masks2D = to2D(masksFlat01, H, W);
+    fs.writeFileSync('mask_box.txt', masks2D.map((row) => row.join(' ')).join('\n'));
+    console.log('📝 Saved to mask_box.txt');
+  }
+
+  // ========== TEST 3: Mixed (Point + Box) ==========
+  console.log('\n' + '='.repeat(50));
+  console.log('🧪 TEST 3: Mixed (Point + Box) Segmentation');
+  console.log('='.repeat(50));
+  {
+    // Box
+    const rawBox = [250, 180, 420, 370];
+    const mappedBox = applyBoxToTarget(rawBox, origH, origW, targetLength);
+    
+    // Points: 一个前景点 + 一个背景点
+    const rawPoints = [[336, 275], [200, 100]];
+    const rawLabels = [1, 0]; // 1=前景, 0=背景
+    const mapped = applyCoordsToTarget(rawPoints, origH, origW, targetLength);
+    
+    // 追加 padding 点
+    mapped.push([0.0, 0.0]);
+    rawLabels.push(-1);
+
+    const coordsTensor = new ort.Tensor('float32', Float32Array.from(mapped.flat()), [1, mapped.length, 2]);
+    const labelsTensor = new ort.Tensor('float32', Float32Array.from(rawLabels), [1, rawLabels.length]);
+    const boxesTensor = new ort.Tensor('float32', Float32Array.from(mappedBox), [1, 1, 4]);
+
+    const feeds = {
+      image_embeddings: embedding,
+      point_coords: coordsTensor,
+      point_labels: labelsTensor,
+      boxes: boxesTensor,
+      mask_input: mask_input,
+      has_mask_input: has_mask_input,
+      orig_im_size: orig_im_size
+    };
+
+    const { masks, iou_predictions } = await runImageDecoder(feeds, decoder);
+    console.log('✅ Mixed done. Mask shape:', masks.dims, 'IoU:', iou_predictions.data[0].toFixed(4));
+
+    const masksFlat01 = logitsTo01Flat(Array.from(masks.data));
+    const H = masks.dims[2], W = masks.dims[3];
+    const masks2D = to2D(masksFlat01, H, W);
+    fs.writeFileSync('mask_mixed.txt', masks2D.map((row) => row.join(' ')).join('\n'));
+    console.log('📝 Saved to mask_mixed.txt');
+  }
+
+  console.log('\n' + '='.repeat(50));
+  console.log('✅ All 3 tests completed!');
+  console.log('='.repeat(50));
 }
 
 // ESM 导出（命名导出）

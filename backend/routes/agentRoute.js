@@ -28,6 +28,109 @@ const router = express.Router();
 const anthropic = new Anthropic();
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Report List API
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /reports - 获取所有报告列表
+ * @returns {Array} reports - 报告列表 (带患者信息)
+ */
+router.get('/reports', async (req, res) => {
+  try {
+    const reports = await diagnosisService.getAllReports();
+    res.json({ success: true, reports });
+  } catch (error) {
+    console.error('[AgentRoute] Get reports error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch reports' });
+  }
+});
+
+/**
+ * GET /diagnosis/:id - 获取单个报告详情
+ */
+router.get('/diagnosis/:id', async (req, res) => {
+  try {
+    const diagnosisId = parseInt(req.params.id, 10);
+    const diagnosis = await diagnosisService.getDiagnosisWithPatient(diagnosisId);
+    if (!diagnosis) {
+      return res.status(404).json({ success: false, error: 'Report not found' });
+    }
+    res.json({ success: true, diagnosis });
+  } catch (error) {
+    console.error('[AgentRoute] Get diagnosis error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch report' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Version History API
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /diagnosis/:id/versions - 获取版本历史
+ */
+router.get('/diagnosis/:id/versions', async (req, res) => {
+  try {
+    const diagnosisId = parseInt(req.params.id, 10);
+    const versions = await diagnosisService.getVersionHistory(diagnosisId);
+    res.json({ success: true, versions });
+  } catch (error) {
+    console.error('[AgentRoute] Get versions error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch versions' });
+  }
+});
+
+/**
+ * POST /diagnosis/:id/versions - 保存新版本
+ */
+router.post('/diagnosis/:id/versions', async (req, res) => {
+  try {
+    const diagnosisId = parseInt(req.params.id, 10);
+    const { content, changeType, changeSource, agentName, feedbackMessage } = req.body;
+
+    if (!content) {
+      return res.status(400).json({ success: false, error: 'Content is required' });
+    }
+
+    const version = await diagnosisService.saveVersion(diagnosisId, content, {
+      changeType,
+      changeSource,
+      agentName,
+      feedbackMessage
+    });
+
+    if (version) {
+      res.json({ success: true, version });
+    } else {
+      res.status(500).json({ success: false, error: 'Failed to save version' });
+    }
+  } catch (error) {
+    console.error('[AgentRoute] Save version error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to save version' });
+  }
+});
+
+/**
+ * GET /diagnosis/:id/versions/:versionNumber - 获取特定版本
+ */
+router.get('/diagnosis/:id/versions/:versionNumber', async (req, res) => {
+  try {
+    const diagnosisId = parseInt(req.params.id, 10);
+    const versionNumber = parseInt(req.params.versionNumber, 10);
+    const version = await diagnosisService.getVersion(diagnosisId, versionNumber);
+
+    if (version) {
+      res.json({ success: true, version });
+    } else {
+      res.status(404).json({ success: false, error: 'Version not found' });
+    }
+  } catch (error) {
+    console.error('[AgentRoute] Get version error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch version' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // iter4: Image Classification API (Claude Vision)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -255,7 +358,7 @@ router.post('/medical_report_init', async (req, res) => {
     console.log(`[AgentRoute] Report generated in ${elapsed}ms`);
 
     // === DATABASE PERSISTENCE ===
-    // Update diagnosis with report content
+    // Update diagnosis with report content AND save initial version
     if (diagnosisId) {
       try {
         await diagnosisService.updateDiagnosis(diagnosisId, {
@@ -263,7 +366,16 @@ router.post('/medical_report_init', async (req, res) => {
           status: 'DRAFT_READY',
           icdCodes: result.qcResult?.icdCodes || []
         });
-        console.log(`[AgentRoute] Updated diagnosis ${diagnosisId} with report`);
+
+        // Save initial version for history tracking
+        await diagnosisService.saveVersion(diagnosisId, result.report, {
+          changeType: 'initial_generation',
+          changeSource: 'agent',
+          agentName: 'ReportWriterAgent',
+          feedbackMessage: null
+        });
+
+        console.log(`[AgentRoute] Updated diagnosis ${diagnosisId} with report (v1)`);
       } catch (dbError) {
         console.warn('[AgentRoute] DB update failed (non-critical):', dbError.message);
       }
@@ -370,7 +482,7 @@ router.post('/medical_report_rein', async (req, res) => {
  *   - { type: 'done' }
  */
 router.post('/chat_stream', async (req, res) => {
-  const { message, sessionId, mode = 'auto', targetAgent } = req.body;
+  const { message, sessionId, mode = 'auto', targetAgent, diagnosisId: reqDiagnosisId } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'No message provided' });
@@ -391,20 +503,50 @@ router.post('/chat_stream', async (req, res) => {
     orchestrator = new Orchestrator();
     sessionManager.set(orchestrator.sessionId, orchestrator);
     console.log(`[ChatStream] Created new session: ${orchestrator.sessionId}`);
+
+    // If diagnosisId provided, load existing report and set state to DRAFT_READY
+    if (reqDiagnosisId) {
+      try {
+        const diagnosis = await diagnosisService.getDiagnosisWithPatient(reqDiagnosisId);
+        if (diagnosis && diagnosis.reportContent) {
+          // Parse JSON content if needed
+          let reportContent = diagnosis.reportContent;
+          if (typeof reportContent === 'string') {
+            try {
+              const parsed = JSON.parse(reportContent);
+              if (parsed.content) reportContent = parsed.content;
+            } catch (e) { /* keep as-is */ }
+          }
+          // Set report in history and transition to DRAFT_READY
+          orchestrator.history.push({
+            version: 1,
+            content: reportContent,
+            status: 'loaded',
+            createdAt: new Date()
+          });
+          orchestrator.state = 'draft_ready';
+          orchestrator.diagnosisId = reqDiagnosisId;
+          console.log(`[ChatStream] Loaded existing report for diagnosis ${reqDiagnosisId}, state: draft_ready`);
+        }
+      } catch (err) {
+        console.warn(`[ChatStream] Failed to load diagnosis ${reqDiagnosisId}:`, err.message);
+      }
+    }
   }
 
   // Send session info
   res.write(`data: ${JSON.stringify({ type: 'session', sessionId: orchestrator.sessionId })}\n\n`);
 
-  // === DATABASE PERSISTENCE ===
-  // Get diagnosisId from orchestrator or create one
-  const diagnosisId = orchestrator.diagnosisId;
+  // Ensure diagnosisId is set on orchestrator (from existing session or request)
+  if (!orchestrator.diagnosisId && reqDiagnosisId) {
+    orchestrator.diagnosisId = reqDiagnosisId;
+  }
 
   // Save user message to chat history
-  if (diagnosisId) {
+  if (orchestrator.diagnosisId) {
     try {
       await diagnosisService.saveChatMessage({
-        diagnosisId,
+        diagnosisId: orchestrator.diagnosisId,
         role: 'user',
         agentName: null,
         content: message,
@@ -498,7 +640,7 @@ router.post('/chat_stream', async (req, res) => {
 
         res.write(`data: ${JSON.stringify({ type: 'chunk', text: response })}\n\n`);
         // Save assistant response to DB
-        await saveAssistantMessage(diagnosisId, response, targetAgent);
+        await saveAssistantMessage(orchestrator.diagnosisId, response, targetAgent);
       }
     } else {
       // Normal flow: AlignmentAgent handles routing
@@ -540,18 +682,18 @@ router.post('/chat_stream', async (req, res) => {
           res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunk })}\n\n`);
         });
         // Save streamed response to DB
-        await saveAssistantMessage(diagnosisId, fullResponse, 'AlignmentAgent');
+        await saveAssistantMessage(orchestrator.diagnosisId, fullResponse, 'AlignmentAgent');
       } else if (!currentReport) {
         // No report available yet
         const noReportMsg = 'Please generate a report first by clicking "Analyse" before asking questions.';
         res.write(`data: ${JSON.stringify({ type: 'chunk', text: noReportMsg })}\n\n`);
-        await saveAssistantMessage(diagnosisId, noReportMsg);
+        await saveAssistantMessage(orchestrator.diagnosisId, noReportMsg);
       } else {
         // Fallback: use handleFeedback
         const result = await orchestrator.handleFeedback(message);
         const fallbackResponse = result.responseToDoctor || 'I understand your question.';
         res.write(`data: ${JSON.stringify({ type: 'chunk', text: fallbackResponse })}\n\n`);
-        await saveAssistantMessage(diagnosisId, fallbackResponse);
+        await saveAssistantMessage(orchestrator.diagnosisId, fallbackResponse);
       }
 
       // Add to conversation history
@@ -580,23 +722,33 @@ router.post('/chat_stream', async (req, res) => {
         res.write(`data: ${JSON.stringify({ type: 'chunk', text: response })}\n\n`);
 
         // Save assistant response to DB with feedback type
-        await saveAssistantMessage(diagnosisId, response, 'AlignmentAgent', 'REVISION');
+        await saveAssistantMessage(orchestrator.diagnosisId, response, 'AlignmentAgent', 'REVISION');
 
         // Also send revision_complete for report update
-        if (result.updatedReport) {
+        if (result.report) {
           res.write(`data: ${JSON.stringify({
             type: 'revision_complete',
-            updatedReport: result.updatedReport,
+            updatedReport: result.report,
             changes: result.changes || []
           })}\n\n`);
 
-          // Update diagnosis record with revised report
-          if (diagnosisId) {
+          // Update diagnosis record with revised report AND save version
+          if (orchestrator.diagnosisId) {
             try {
-              await diagnosisService.updateDiagnosis(diagnosisId, {
-                reportContent: result.updatedReport,
+              // Update the main report content
+              await diagnosisService.updateDiagnosis(orchestrator.diagnosisId, {
+                reportContent: result.report,
                 status: 'REVISING'
               });
+
+              // Save version for history tracking
+              await diagnosisService.saveVersion(orchestrator.diagnosisId, result.report, {
+                changeType: 'ai_revision',
+                changeSource: 'agent',
+                agentName: 'AlignmentAgent',
+                feedbackMessage: message.substring(0, 200) // Save user feedback as context
+              });
+              console.log(`[ChatStream] Saved version for diagnosis ${orchestrator.diagnosisId}`);
             } catch (dbError) {
               console.warn('[ChatStream] Failed to update diagnosis:', dbError.message);
             }
@@ -612,12 +764,12 @@ router.post('/chat_stream', async (req, res) => {
     } else if (intent.mode === 'APPROVAL') {
       const approvalMsg = 'Thank you for approving the report. The report is now finalized.';
       res.write(`data: ${JSON.stringify({ type: 'chunk', text: approvalMsg })}\n\n`);
-      await saveAssistantMessage(diagnosisId, approvalMsg, null, 'APPROVAL');
+      await saveAssistantMessage(orchestrator.diagnosisId, approvalMsg, null, 'APPROVAL');
 
       // Update diagnosis status to APPROVED
-      if (diagnosisId) {
+      if (orchestrator.diagnosisId) {
         try {
-          await diagnosisService.updateDiagnosis(diagnosisId, { status: 'APPROVED' });
+          await diagnosisService.updateDiagnosis(orchestrator.diagnosisId, { status: 'APPROVED' });
         } catch (dbError) {
           console.warn('[ChatStream] Failed to update approval status:', dbError.message);
         }
@@ -629,7 +781,7 @@ router.post('/chat_stream', async (req, res) => {
         type: 'chunk',
         text: unclearMsg
       })}\n\n`);
-      await saveAssistantMessage(diagnosisId, unclearMsg, 'AlignmentAgent', 'UNCLEAR');
+      await saveAssistantMessage(orchestrator.diagnosisId, unclearMsg, 'AlignmentAgent', 'UNCLEAR');
     }
     } // Close the else block for normal flow (non-targetAgent)
 
@@ -798,7 +950,16 @@ router.post('/medical_report_stream', async (req, res) => {
             status: 'DRAFT_READY',
             icdCodes: result.qcResult?.icdCodes || []
           });
-          console.log(`[ReportStream] Updated diagnosis ${diagnosisId} with report`);
+
+          // Save initial version for history tracking
+          await diagnosisService.saveVersion(diagnosisId, result.report, {
+            changeType: 'initial_generation',
+            changeSource: 'agent',
+            agentName: 'ReportWriterAgent',
+            feedbackMessage: null
+          });
+
+          console.log(`[ReportStream] Updated diagnosis ${diagnosisId} with report (v1)`);
         } catch (dbError) {
           console.warn('[ReportStream] DB update failed (non-critical):', dbError.message);
         }
@@ -1015,6 +1176,38 @@ router.get('/diagnosis/:id', async (req, res) => {
   } catch (error) {
     console.error('[AgentRoute] Get diagnosis error:', error);
     return res.status(500).json({ error: 'Failed to fetch diagnosis' });
+  }
+});
+
+/**
+ * POST /diagnosis/:id/approve
+ * Approve a diagnosis report - changes status to 'approved'
+ */
+router.post('/diagnosis/:id/approve', async (req, res) => {
+  const { id } = req.params;
+
+  const diagnosisId = parseInt(id, 10);
+  if (isNaN(diagnosisId) || diagnosisId <= 0) {
+    return res.status(400).json({ error: 'Invalid diagnosis ID' });
+  }
+
+  try {
+    const diagnosis = await diagnosisService.getDiagnosis(diagnosisId);
+    if (!diagnosis) {
+      return res.status(404).json({ error: 'Diagnosis not found' });
+    }
+
+    await diagnosisService.updateDiagnosis(diagnosisId, { status: 'approved' });
+    console.log(`[AgentRoute] Diagnosis ${diagnosisId} approved`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Report approved',
+      status: 'approved'
+    });
+  } catch (error) {
+    console.error('[AgentRoute] Approve error:', error);
+    return res.status(500).json({ error: 'Failed to approve diagnosis' });
   }
 });
 
