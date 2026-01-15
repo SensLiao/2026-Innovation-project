@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { usePubDB } from "../useDB/usePub";
 import { useUserDB } from "../useDB/useUsers";
@@ -25,6 +25,84 @@ const UserProfilePage = () => {
     profilephoto: user?.profilephoto || "",
   });
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Profile upload state and helpers
+  const [profileUploading, setProfileUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const fileToDataUrl = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const compressImageToDataUrl = (file, maxWidth = 1024, quality = 0.8) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const ratio = Math.min(1, maxWidth / Math.max(img.width, img.height));
+        const w = Math.round(img.width * ratio);
+        const h = Math.round(img.height * ratio);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      alert('Only JPG and PNG files are allowed');
+      e.target.value = '';
+      return;
+    }
+
+    const MAX_RAW_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_RAW_SIZE) {
+      alert('File too large (max 5MB)');
+      e.target.value = '';
+      return;
+    }
+
+    setProfileUploading(true);
+    try {
+      let dataUrl;
+      if (file.size > 500 * 1024) {
+        dataUrl = await compressImageToDataUrl(file, 1024, 0.8);
+      } else {
+        dataUrl = await fileToDataUrl(file);
+      }
+
+      // Immediate UI feedback
+      setuserData({ ...user, profilephoto: dataUrl });
+      setEditFields(prev => ({ ...prev, profilephoto: dataUrl }));
+
+      // Persist and refresh auth user
+      await updateUser(user.uid);
+      await fetchMe();
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 1200);
+    } catch (err) {
+      console.error('Error uploading avatar:', err);
+      alert('Failed to upload avatar: ' + (err.message || 'Unknown'));
+    } finally {
+      e.target.value = '';
+      setProfileUploading(false);
+    }
+  };
 
   // 首次进入没 user 时拉一次，会自动带上 cookie
   useEffect(() => {
@@ -164,19 +242,39 @@ const UserProfilePage = () => {
 
                       {/* Left column: avatar + buttons */}
                       <div className="flex flex-col items-start">
-                        <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-blue-100 mb-4">
-                          {user.profilephoto ? (
-                            <img src={user.profilephoto} alt="Profile" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400">No Photo</div>
+                        <div className="relative">
+                          <input
+                            id="avatar-input"
+                            type="file"
+                            accept="image/png, image/jpeg"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            className="hidden"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={userLoading || profileUploading}
+                            className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-blue-100 mb-4 p-0 bg-transparent flex items-center justify-center"
+                            title="Click to change avatar"
+                          >
+                            {user.profilephoto ? (
+                              <img src={user.profilephoto} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">No Photo</div>
+                            )}
+                          </button>
+
+                          {profileUploading && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="bg-white/80 px-2 py-1 rounded">Uploading...</div>
+                            </div>
                           )}
                         </div>
 
                       {!isEditing ? (
                         <div className="flex flex-col gap-3">
-                          <button className="h-10 w-32 bg-[#007AFF] text-white text-[11px] rounded-lg hover:bg-[#006CE0]">
-                            Change Avatar
-                          </button>
                           <button className="h-10 w-32 bg-[#007AFF] text-white text-[11px] rounded-lg hover:bg-[#006CE0]">
                             Change Password
                           </button>
