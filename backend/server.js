@@ -93,7 +93,7 @@ async function initDB() {
         Gender VARCHAR(10) NOT NULL,
         Phone VARCHAR(32),
         Email VARCHAR(50),
-        ProfilePhoto VARCHAR(255),
+        ProfilePhoto TEXT,
         CreatedAt TIMESTAMP DEFAULT NOW(),
         EmergencyContactName VARCHAR(50),
         EmergencyContactPhone VARCHAR(32),
@@ -103,10 +103,10 @@ async function initDB() {
         Postcode VARCHAR(10),
         Country VARCHAR(50),
 
-        CONSTRAINT patient_exists UNIQUE (Name, Age, DateOfBirth, Gender, Phone, Email, ProfilePhoto)
+        CONSTRAINT patient_exists UNIQUE (Name, Age, DateOfBirth, Gender, Phone, Email)
       );
     `;
-
+    
     await sql`
       CREATE TABLE IF NOT EXISTS segmentations (
         sid SERIAL PRIMARY KEY,

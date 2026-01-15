@@ -119,12 +119,15 @@ export const usePatientDB = create((set, get) => ({
         set({ loading: true });
         try {
             const { patientData } = get();
-            const response = await api.put(`/patients/${pid}`, patientData);
+            // Use a longer timeout for large payloads (e.g., base64 images)
+            const response = await api.put(`/patients/${pid}`, patientData, { timeout: 60000 });
             set({ currentPatient: response.data.data });
             console.log("Patient updated successfully");
+            return response.data.data;
         } catch (error) {
             console.log("Error updating patient:", error);
             set({ error: error.message });
+            throw error;
         } finally {
             set({ loading: false });
         }

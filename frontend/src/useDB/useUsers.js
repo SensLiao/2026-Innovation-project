@@ -78,12 +78,15 @@ export const useUserDB = create((set, get) => ({
         set({ loading: true });
         try {
             const { userData } = get();
-            const response = await api.put(`/users/${uid}`, userData);
+            // Use longer timeout for large payloads like base64 images
+            const response = await api.put(`/users/${uid}`, userData, { timeout: 60000 });
             set({ currentUser: response.data.data });
             console.log("User updated successfully");
+            return response.data.data;
         } catch (error) {
             console.log("Error updating user:", error);
             set({ error: error.message });
+            throw error;
         } finally {
             set({ loading: false });
         }
