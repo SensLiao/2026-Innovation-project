@@ -6,6 +6,6 @@ resources:
 
 images:
   - name: 192.168.50.174:5050/root/soma-ai/backend
-    newTag: "latest"
+    newTag:.4477560a
   - name: 192.168.50.174:5050/root/soma-ai/frontend
-    newTag: "latest"
+    newTag:.4477560a
