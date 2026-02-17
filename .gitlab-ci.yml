@@ -1,0 +1,93 @@
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  REGISTRY: "192.168.50.174:5050"
+  IMAGE_BACKEND: "${REGISTRY}/root/soma-ai/backend"
+  IMAGE_FRONTEND: "${REGISTRY}/root/soma-ai/frontend"
+  TAG: "${CI_COMMIT_SHORT_SHA}"
+
+# ---- Test Stage ----
+test-frontend:
+  stage: test
+  image: node:20-alpine
+  script:
+    - cd frontend
+    - npm ci
+    - npm run test:run
+  only:
+    changes:
+      - frontend/**/*
+
+test-backend:
+  stage: test
+  image: node:20-slim
+  variables:
+    MOCK_MODE: "true"
+  script:
+    - cd backend
+    - npm ci
+    - npm run test:mock
+  allow_failure: true
+  only:
+    changes:
+      - backend/**/*
+
+# ---- Build Stage ----
+build-backend:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - docker login -u root -p "${CI_REGISTRY_PASSWORD}" "${REGISTRY}"
+  script:
+    - docker build -t "${IMAGE_BACKEND}:${TAG}" -t "${IMAGE_BACKEND}:latest" backend/
+    - docker push "${IMAGE_BACKEND}:${TAG}"
+    - docker push "${IMAGE_BACKEND}:latest"
+  only:
+    changes:
+      - backend/**/*
+
+build-frontend:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - docker login -u root -p "${CI_REGISTRY_PASSWORD}" "${REGISTRY}"
+  script:
+    - docker build -t "${IMAGE_FRONTEND}:${TAG}" -t "${IMAGE_FRONTEND}:latest" frontend/
+    - docker push "${IMAGE_FRONTEND}:${TAG}"
+    - docker push "${IMAGE_FRONTEND}:latest"
+  only:
+    changes:
+      - frontend/**/*
+
+# ---- Deploy Stage ----
+deploy:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  script:
+    - cd k8s/overlays/homelab
+    - |
+      # Update image tags in kustomization
+      sed -i "s|newTag:.*|newTag: \"${TAG}\"|g" kustomization.yaml
+    - kubectl apply -k .
+    - kubectl rollout status deployment/backend -n soma-ai --timeout=120s
+    - kubectl rollout status deployment/frontend -n soma-ai --timeout=120s
+    - |
+      # Bark notification
+      curl -s "https://api.day.app/qw8Dy26UHnsfkDW7VjYX5n/Soma%20AI%20Deployed/${TAG}%20deployed%20successfully" || true
+  environment:
+    name: homelab
+    url: https://soma-ai.org
+  only:
+    - main
+  when: manual
