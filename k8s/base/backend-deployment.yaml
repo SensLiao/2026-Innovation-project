@@ -20,8 +20,8 @@ spec:
     spec:
       containers:
         - name: backend
-          image: 192.168.50.174:5050/root/soma-ai/backend:latest
-          imagePullPolicy: Always
+          image: docker.io/library/soma-ai-backend:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           env:
