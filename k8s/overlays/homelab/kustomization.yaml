@@ -5,7 +5,7 @@ resources:
   - ../../base
 
 images:
-  - name: docker.io/library/soma-ai-backend
+  - name: 192.168.50.174:5050/root/soma-ai/backend
     newTag: "latest"
-  - name: docker.io/library/soma-ai-frontend
+  - name: 192.168.50.174:5050/root/soma-ai/frontend
     newTag: "latest"

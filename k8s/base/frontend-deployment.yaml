@@ -20,8 +20,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: docker.io/library/soma-ai-frontend:latest
-          imagePullPolicy: IfNotPresent
+          image: 192.168.50.174:5050/root/soma-ai/frontend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           resources:
