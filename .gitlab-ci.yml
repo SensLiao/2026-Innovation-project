@@ -76,28 +76,23 @@ build-frontend:
       when: never
     - when: on_success
 
-# ---- Deploy Stage (GitOps: update manifests → ArgoCD syncs) ----
+# ---- Deploy Stage (GitOps: update manifests then ArgoCD syncs) ----
 deploy:
   stage: deploy
   image: alpine:latest
   before_script:
     - apk add --no-cache git curl
   script:
-    # Configure git
-    - git config user.email "ci@soma-ai.org"
-    - git config user.name "GitLab CI"
-    - git remote set-url origin "http://root:${GITLAB_DEPLOY_TOKEN}@192.168.50.174/root/soma-ai.git"
+    - git config user.email ci@soma-ai.org
+    - git config user.name GitLab-CI
+    - "git remote set-url origin http://root:${GITLAB_DEPLOY_TOKEN}@192.168.50.174/root/soma-ai.git"
     - git fetch origin main
     - git checkout main
-    # Update image tags in kustomization overlay
-    - sed -i "s|newTag:.*|newTag: \"${TAG}\"|g" k8s/overlays/homelab/kustomization.yaml
-    # Commit and push (ArgoCD will auto-sync)
+    - "sed -i s/newTag:.*/newTag:.$TAG/ k8s/overlays/homelab/kustomization.yaml"
     - git add k8s/overlays/homelab/kustomization.yaml
-    - git diff --cached --quiet || git commit -m "deploy: ${TAG} [skip ci]"
+    - "git diff --cached --quiet || git commit -m 'deploy: $TAG [skip ci]'"
     - git push origin main
-    # Bark notification
-    - |
-      curl -s "https://api.day.app/qw8Dy26UHnsfkDW7VjYX5n/Soma%20AI%20Deployed/${TAG}%20deployed%20successfully" || true
+    - "curl -s https://api.day.app/qw8Dy26UHnsfkDW7VjYX5n/Soma-AI-Deployed/$TAG || true"
   environment:
     name: homelab
     url: https://soma-ai.org
