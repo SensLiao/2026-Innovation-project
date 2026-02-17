@@ -14,12 +14,12 @@ test-frontend:
   stage: test
   image: node:20-alpine
   script:
-    - cd frontend
-    - npm ci
-    - npm run test:run
-  only:
-    changes:
-      - frontend/**/*
+    - cd frontend && npm ci && npm run test:run
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /\[skip ci\]/
+      when: never
+    - changes:
+        - frontend/**/*
 
 test-backend:
   stage: test
@@ -27,67 +27,81 @@ test-backend:
   variables:
     MOCK_MODE: "true"
   script:
-    - cd backend
-    - npm ci
-    - npm run test:mock
+    - cd backend && npm ci && npm run test:mock
   allow_failure: true
-  only:
-    changes:
-      - backend/**/*
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /\[skip ci\]/
+      when: never
+    - changes:
+        - backend/**/*
 
 # ---- Build Stage ----
 build-backend:
   stage: build
   image: docker:27
   services:
-    - docker:27-dind
+    - name: docker:27-dind
+      command: ["--insecure-registry=192.168.50.174:5050"]
   variables:
     DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: "tcp://docker:2375"
   before_script:
     - docker login -u root -p "${CI_REGISTRY_PASSWORD}" "${REGISTRY}"
   script:
     - docker build -t "${IMAGE_BACKEND}:${TAG}" -t "${IMAGE_BACKEND}:latest" backend/
     - docker push "${IMAGE_BACKEND}:${TAG}"
     - docker push "${IMAGE_BACKEND}:latest"
-  only:
-    changes:
-      - backend/**/*
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /\[skip ci\]/
+      when: never
+    - when: on_success
 
 build-frontend:
   stage: build
   image: docker:27
   services:
-    - docker:27-dind
+    - name: docker:27-dind
+      command: ["--insecure-registry=192.168.50.174:5050"]
   variables:
     DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: "tcp://docker:2375"
   before_script:
     - docker login -u root -p "${CI_REGISTRY_PASSWORD}" "${REGISTRY}"
   script:
     - docker build -t "${IMAGE_FRONTEND}:${TAG}" -t "${IMAGE_FRONTEND}:latest" frontend/
     - docker push "${IMAGE_FRONTEND}:${TAG}"
     - docker push "${IMAGE_FRONTEND}:latest"
-  only:
-    changes:
-      - frontend/**/*
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /\[skip ci\]/
+      when: never
+    - when: on_success
 
-# ---- Deploy Stage ----
+# ---- Deploy Stage (GitOps: update manifests → ArgoCD syncs) ----
 deploy:
   stage: deploy
-  image: bitnami/kubectl:latest
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache git curl
   script:
-    - cd k8s/overlays/homelab
+    # Configure git
+    - git config user.email "ci@soma-ai.org"
+    - git config user.name "GitLab CI"
+    - git remote set-url origin "http://root:${GITLAB_DEPLOY_TOKEN}@192.168.50.174/root/soma-ai.git"
+    - git fetch origin main
+    - git checkout main
+    # Update image tags in kustomization overlay
+    - sed -i "s|newTag:.*|newTag: \"${TAG}\"|g" k8s/overlays/homelab/kustomization.yaml
+    # Commit and push (ArgoCD will auto-sync)
+    - git add k8s/overlays/homelab/kustomization.yaml
+    - git diff --cached --quiet || git commit -m "deploy: ${TAG} [skip ci]"
+    - git push origin main
+    # Bark notification
     - |
-      # Update image tags in kustomization
-      sed -i "s|newTag:.*|newTag: \"${TAG}\"|g" kustomization.yaml
-    - kubectl apply -k .
-    - kubectl rollout status deployment/backend -n soma-ai --timeout=120s
-    - kubectl rollout status deployment/frontend -n soma-ai --timeout=120s
-    - |
-      # Bark notification
       curl -s "https://api.day.app/qw8Dy26UHnsfkDW7VjYX5n/Soma%20AI%20Deployed/${TAG}%20deployed%20successfully" || true
   environment:
     name: homelab
     url: https://soma-ai.org
-  only:
-    - main
-  when: manual
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /\[skip ci\]/
+      when: never
+    - if: $CI_COMMIT_BRANCH == "main"

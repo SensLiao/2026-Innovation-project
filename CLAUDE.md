@@ -104,16 +104,18 @@ Stages: `test` → `build` → `deploy`
 - **build**: Docker build + push to GitLab Container Registry
 - **deploy**: `kubectl apply -k` + Bark notification
 
-> Note: Registry (port 5050) needs to be enabled on GitLab container.
-> Currently using local images (`docker.io/library/soma-ai-*:latest`).
+> Registry enabled on port 5050. Images: `192.168.50.174:5050/root/soma-ai/{backend,frontend}`
+> K3s nodes configured with insecure registry in `/etc/rancher/k3s/registries.yaml`
 
 ## Deployment Workflow
 
 1. Developer pushes to `main` branch
-2. GitLab CI runs tests + builds Docker images (when registry ready)
-3. ArgoCD detects manifest changes → auto-syncs to K3s
-4. Rolling update: new pods start → health check → old pods terminate
-5. Bark notification on success
+2. GitLab CI runs tests (frontend vitest, backend mock)
+3. GitLab CI builds Docker images → pushes to registry (192.168.50.174:5050)
+4. GitLab CI deploy stage: `sed` updates kustomization.yaml with commit SHA tag → git push [skip ci]
+5. ArgoCD detects manifest change → auto-syncs to K3s
+6. Rolling update: new pods start → health check → old pods terminate
+7. Bark notification on success
 
 ## Troubleshooting
 
