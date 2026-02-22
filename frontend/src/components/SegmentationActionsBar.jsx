@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Settings2, Undo2, PlusSquare, RotateCcw, Download } from "lucide-react";
+import { Settings2, Undo2, PlusSquare, RotateCcw, Download, Save } from "lucide-react";
 
 /**
  * SegmentationActionsBar
@@ -12,10 +12,14 @@ import { Settings2, Undo2, PlusSquare, RotateCcw, Download } from "lucide-react"
  * @param {Function} props.onStartNextMask - Start Next Mask 回调
  * @param {Function} props.onResetImage - Reset Image 回调
  * @param {Function} props.onExportOverlay - Export PNG 回调（可选）
+ * @param {Function} props.onSaveMask - Save CT+Mask 回调（可选）
  * @param {boolean} props.isRunning - 是否正在运行（禁用主按钮）
  * @param {boolean} props.disableRunModel - 是否禁用 Run Model 按钮
  * @param {boolean} props.disableUndoPoints - 是否禁用 Undo Points
  * @param {boolean} props.showExport - 是否显示 Export 选项
+ * @param {boolean} props.showSave - 是否显示 Save 按钮
+ * @param {boolean} props.isSaving - 是否正在保存
+ * @param {boolean} props.requirePatientConfirm - 是否需要先确认 Patient Info
  */
 const SegmentationActionsBar = ({
   onRunModel,
@@ -23,10 +27,14 @@ const SegmentationActionsBar = ({
   onStartNextMask,
   onResetImage,
   onExportOverlay,
+  onSaveMask,
   isRunning = false,
   disableRunModel = false,
   disableUndoPoints = false,
   showExport = false,
+  showSave = false,
+  isSaving = false,
+  requirePatientConfirm = false,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [focusedMenuItemIndex, setFocusedMenuItemIndex] = useState(0);
@@ -174,31 +182,71 @@ const SegmentationActionsBar = ({
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-      {/* 左侧：主操作按钮 */}
-      <button
-        type="button"
-        className="group inline-flex items-center justify-center h-11 px-8 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 ease-out active:scale-95"
-        onClick={onRunModel}
-        disabled={isRunning || disableRunModel}
-        aria-busy={isRunning ? "true" : "false"}
-        aria-label="Run segmentation model"
-      >
-        <span className="relative">
-          {isRunning ? (
-            <>
+      {/* 左侧：主操作按钮组 */}
+      <div className="flex items-center gap-3">
+        <div className="relative group/run">
+          <button
+            type="button"
+            className="group inline-flex items-center justify-center h-11 px-8 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 ease-out active:scale-95"
+          onClick={onRunModel}
+          disabled={isRunning || disableRunModel}
+          aria-busy={isRunning ? "true" : "false"}
+          aria-label="Run segmentation model"
+        >
+          <span className="relative">
+            {isRunning ? (
+              <>
+                <span className="inline-flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Running...
+                </span>
+              </>
+            ) : (
+              <span className="group-hover:tracking-wide transition-all duration-200">Run Model</span>
+            )}
+          </span>
+          </button>
+          {/* Tooltip: 需要先确认 Patient Info */}
+          {requirePatientConfirm && (
+            <div className="absolute left-1/2 -translate-x-1/2 -bottom-10 opacity-0 group-hover/run:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+              <div className="bg-gray-800 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap shadow-lg">
+                Please confirm Patient & Clinical Context first
+                <div className="absolute left-1/2 -translate-x-1/2 -top-1 w-2 h-2 bg-gray-800 rotate-45"></div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Save CT+Mask 按钮 - 仅在有 mask 后显示 */}
+        {showSave && (
+          <button
+            type="button"
+            className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl bg-emerald-600 text-white text-sm font-semibold shadow-sm hover:bg-emerald-700 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 ease-out active:scale-95"
+            onClick={onSaveMask}
+            disabled={isSaving}
+            aria-busy={isSaving ? "true" : "false"}
+            aria-label="Save CT and mask to database"
+          >
+            {isSaving ? (
               <span className="inline-flex items-center gap-2">
                 <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Running...
+                Saving...
               </span>
-            </>
-          ) : (
-            <span className="group-hover:tracking-wide transition-all duration-200">Run Model</span>
-          )}
-        </span>
-      </button>
+            ) : (
+              <span className="inline-flex items-center gap-2">
+                <Save className="h-4 w-4" />
+                <span className="group-hover:tracking-wide transition-all duration-200">Save</span>
+              </span>
+            )}
+          </button>
+        )}
+      </div>
 
       {/* 右侧：工具栏（工具按钮） */}
       <div
