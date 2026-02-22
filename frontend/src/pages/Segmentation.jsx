@@ -74,6 +74,7 @@ const SegmentationPage = () => {
   });
   const [diagnosisId, setDiagnosisId] = useState(null);
   const [reportStatus, setReportStatus] = useState('draft'); // 'draft' | 'approved'
+  const [isSaving, setIsSaving] = useState(false); // 保存 CT+Mask 的加载状态
 
   const inputRef = useRef(null);
   const currentFileRef = useRef(null); // Track current file to prevent memory leaks
@@ -120,6 +121,7 @@ const SegmentationPage = () => {
    * - 使用 currentFileRef 防止内存泄漏
    */
   const [patientInfoOpen, setPatientInfoOpen] = useState(false);
+  const [patientInfoConfirmed, setPatientInfoConfirmed] = useState(false); // 是否已确认 Patient & Clinical Context
   const [patients, setPatients] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -599,9 +601,11 @@ const SegmentationPage = () => {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, rect.contW, rect.contH);
 
-    if (!uploadedImage || !masks || masks.length === 0) return;
+    if (!uploadedImage) return;
 
-    masks.forEach((mObj, idx) => {
+    // 绘制掩码 (仅当存在掩码时)
+    if (masks && masks.length > 0) {
+      masks.forEach((mObj, idx) => {
       if (!mObj || !mObj.visible || !mObj.mask || !mObj.maskDims) return;
       const maskArr = Array.isArray(mObj.mask) ? mObj.mask : Array.from(mObj.mask || []);
       const md = mObj.maskDims;
@@ -630,7 +634,8 @@ const SegmentationPage = () => {
       tctx.putImageData(imgData, 0, 0);
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(temp, rect.offsetX, rect.offsetY, rect.drawW, rect.drawH);
-    });
+      });
+    }
 
     // 绘制 boxes (包括临时的拖拽框)
     ctx.strokeStyle = "#00FF00";
@@ -730,6 +735,35 @@ const SegmentationPage = () => {
       alert("导出失败，请查看控制台日志");
     }
   }
+
+  // 保存 CT+Mask 到数据库
+  async function handleSaveMask() {
+    if (!uploadedImage || !masks || masks.length === 0) {
+      alert("No mask to save. Please run the model first.");
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      await addSeg({
+        uid: user?.uid,
+        pid: selectedPatientId || 1,
+        model: model,
+        uploadimage: uploadedImage,
+        origimsize: origImSize,
+        masks: masks,
+      });
+      // 显示成功提示
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 1500);
+    } catch (err) {
+      console.error("保存失败：", err);
+      alert("保存失败，请查看控制台日志");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   function downloadBlob(blob, filename = "overlay.png") {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -1655,10 +1689,14 @@ const SegmentationPage = () => {
                           onStartNextMask={startNextMask}
                           onResetImage={resetImage}
                           onExportOverlay={handleExportOverlay}
+                          onSaveMask={handleSaveMask}
                           isRunning={isRunning}
-                          disableRunModel={!fileName || (clickPoints.length === 0 && boxCoords.length === 0)}
+                          isSaving={isSaving}
+                          disableRunModel={!fileName || (clickPoints.length === 0 && boxCoords.length === 0) || !patientInfoConfirmed}
                           disableUndoPoints={clickPoints.length === 0 && boxCoords.length === 0}
                           showExport={uploadedImage && masks && masks.length > 0}
+                          showSave={uploadedImage && masks && masks.some(m => m && m.mask)}
+                          requirePatientConfirm={!patientInfoConfirmed && fileName}
                         />
                       </div>
 
@@ -1667,20 +1705,27 @@ const SegmentationPage = () => {
                         <div className="rounded-2xl border border-gray-300 bg-white overflow-hidden">
                           <button
                             type="button"
-                            onClick={() => setPatientInfoOpen((o) => !o)}
+                            onClick={() => {
+                              if (patientInfoOpen) {
+                                // 点击 Confirm 时设置为已确认
+                                setPatientInfoConfirmed(true);
+                              }
+                              setPatientInfoOpen((o) => !o);
+                            }}
                             className="w-full flex items-center justify-between px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 focus:outline-none transition-colors duration-150"
                           >
                             <span className="flex items-center gap-2">
                               <User className="h-4 w-4" />
                               Patient & Clinical Context
-                              {selectedPatient && <span className="text-xs text-green-600 font-normal">({selectedPatient.name})</span>}
+                              {patientInfoConfirmed && <span className="text-xs text-green-600 font-normal">(✓ Confirmed)</span>}
+                              {!patientInfoConfirmed && selectedPatient && <span className="text-xs text-amber-600 font-normal">({selectedPatient.name})</span>}
                             </span>
                             {patientInfoOpen ? (
                               <span className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-full transition-colors duration-150 shadow-sm">
                                 Confirm
                               </span>
                             ) : (
-                              <ChevronDown className="h-4 w-4 transition-transform duration-300" />
+                              <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${patientInfoConfirmed ? 'text-green-500' : ''}`} />
                             )}
                           </button>
 
