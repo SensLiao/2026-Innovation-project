@@ -1,7 +1,7 @@
 import {create } from 'zustand';
 import { api } from '../lib/api';
 
-export const useAuth = create((set, get) => ({
+export const useAuthStore = create((set, get) => ({
   user: null, // 当前登录用户
   loading: false,
   error: null,
@@ -40,5 +40,3 @@ export const useAuth = create((set, get) => ({
         set({ user: null });
     },
 }));
-
-

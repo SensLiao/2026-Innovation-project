@@ -11,8 +11,8 @@ import SegmentationActionsBar from "../components/SegmentationActionsBar";
 import UserGuide from "../components/UserGuide";
 import { Eye, EyeOff, Trash2, ChevronDown, User, FileText, ExternalLink } from "lucide-react";
 import { streamRequest, streamChat, ANALYSIS_PHASES, api } from "../lib/api";
-import { useSegDB } from "../useDB/useSeg";
-import { useAuth } from "../useDB/useAuth";
+import { useSegStore } from "../stores/useSegStore";
+import { useAuthStore } from "../stores/useAuthStore";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000/api";
 
@@ -25,8 +25,8 @@ const SegmentationPage = () => {
   const [question, setQuestion] = useState("");
   const [targetAgent, setTargetAgent] = useState("auto"); // auto, radiologist, pathologist, report_writer
   const [model, setModel] = useState("SOMA-CT-v1");
-  const { addSeg  } = useSegDB();
-  const {user, fetchMe } = useAuth();
+  const { addSeg  } = useSegStore();
+  const {user, fetchMe } = useAuthStore();
   const navigate = useNavigate();
 
   // === 同原实现 ===

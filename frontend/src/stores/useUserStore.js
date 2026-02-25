@@ -3,7 +3,7 @@ import { api } from '../lib/api';
 
 const BASE_URL = import.meta.env.VITE_API_BASE?.replace('/api', '') || 'http://localhost:3000';
 
-export const useUserDB = create((set, get) => ({
+export const useUserStore = create((set, get) => ({
     users: [],
     loading: false,
     error: null,

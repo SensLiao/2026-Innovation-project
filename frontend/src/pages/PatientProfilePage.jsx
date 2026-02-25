@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { usePatientDB } from "../useDB/usePatients";
+import { usePatientStore } from "../stores/usePatientStore";
 import Logo from "../assets/images/Logo.png";
 import { Edit, Trash2 } from "lucide-react";
-import { toDDMMYYYY } from "../components/Header";
+import { toDDMMYYYY, toDDMMYYYYHHMM } from "../components/Header";
 
 
 const PatientProfilePage = () => {
   const { pid } = useParams();
   const navigate = useNavigate();
-  const { currentPatient, fetchPatientByID, loading, error, setPatientData, updatePatient, deletePatient } = usePatientDB();
+  const { currentPatient, fetchPatientByID, loading, error, setPatientData, updatePatient, deletePatient } = usePatientStore();
   const [showSuccess, setShowSuccess] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editFields, setEditFields] = useState({
@@ -365,7 +365,7 @@ const PatientProfilePage = () => {
                   )}
 
                   <label className="text-sm text-gray-600 flex items-center">Register Date</label>
-                  <input value={toDDMMYYYY(createdat)} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+                  <input value={toDDMMYYYYHHMM(createdat)} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
                 </div>
               </div>
 

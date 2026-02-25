@@ -54,6 +54,247 @@ export const useReportStore = create((set, get) => ({
   filter: 'all', // 'all' | 'draft' | 'approved'
   searchQuery: '',
 
+  // 报告统计
+  stats: {
+    total: 0,
+    draft: 0,
+    revise: 0,
+    approved: 0
+  },
+  statsLoading: false,
+  statsError: null,
+
+  // 周统计
+  weeklyStats: {
+    draft: 0,
+    revise: 0,
+    approved: 0
+  },
+  weeklyStatsLoading: false,
+  weeklyStatsError: null,
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Actions: Report Statistics
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * 获取所有报告统计 (总数)
+   */
+  fetchTotalReports: async () => {
+    set({ statsLoading: true, statsError: null });
+    try {
+      const response = await api.get('/reports/stats/total');
+      if (response.data.success) {
+        set((state) => ({
+          stats: { ...state.stats, total: response.data.data },
+          statsError: null
+        }));
+      }
+    } catch (error) {
+      console.error('[useReportStore] Fetch total reports error:', error);
+      set({ statsError: error.message });
+    } finally {
+      set({ statsLoading: false });
+    }
+  },
+
+  /**
+   * 获取草稿报告数
+   */
+  fetchDraftReports: async () => {
+    set({ statsLoading: true, statsError: null });
+    try {
+      const response = await api.get('/reports/stats/draft');
+      if (response.data.success) {
+        set((state) => ({
+          stats: { ...state.stats, draft: response.data.data },
+          statsError: null
+        }));
+      }
+    } catch (error) {
+      console.error('[useReportStore] Fetch draft reports error:', error);
+      set({ statsError: error.message });
+    } finally {
+      set({ statsLoading: false });
+    }
+  },
+
+  /**
+   * 获取修订报告数
+   */
+  fetchReviseReports: async () => {
+    set({ statsLoading: true, statsError: null });
+    try {
+      const response = await api.get('/reports/stats/revise');
+      if (response.data.success) {
+        set((state) => ({
+          stats: { ...state.stats, revise: response.data.data },
+          statsError: null
+        }));
+      }
+    } catch (error) {
+      console.error('[useReportStore] Fetch revise reports error:', error);
+      set({ statsError: error.message });
+    } finally {
+      set({ statsLoading: false });
+    }
+  },
+
+  /**
+   * 获取已批准报告数
+   */
+  fetchApprovedReports: async () => {
+    set({ statsLoading: true, statsError: null });
+    try {
+      const response = await api.get('/reports/stats/approved');
+      if (response.data.success) {
+        set((state) => ({
+          stats: { ...state.stats, approved: response.data.data },
+          statsError: null
+        }));
+      }
+    } catch (error) {
+      console.error('[useReportStore] Fetch approved reports error:', error);
+      set({ statsError: error.message });
+    } finally {
+      set({ statsLoading: false });
+    }
+  },
+
+  /**
+   * 获取本周草稿报告数
+   */
+  fetchDraftThisWeek: async () => {
+    set({ weeklyStatsLoading: true, weeklyStatsError: null });
+    try {
+      const response = await api.get('/reports/stats/draft/weekly');
+      if (response.data.success) {
+        set((state) => ({
+          weeklyStats: { ...state.weeklyStats, draft: response.data.data },
+          weeklyStatsError: null
+        }));
+      }
+    } catch (error) {
+      console.error('[useReportStore] Fetch draft this week error:', error);
+      set({ weeklyStatsError: error.message });
+    } finally {
+      set({ weeklyStatsLoading: false });
+    }
+  },
+
+  /**
+   * 获取本周修订报告数
+   */
+  fetchReviseThisWeek: async () => {
+    set({ weeklyStatsLoading: true, weeklyStatsError: null });
+    try {
+      const response = await api.get('/reports/stats/revise/weekly');
+      if (response.data.success) {
+        set((state) => ({
+          weeklyStats: { ...state.weeklyStats, revise: response.data.data },
+          weeklyStatsError: null
+        }));
+      }
+    } catch (error) {
+      console.error('[useReportStore] Fetch revise this week error:', error);
+      set({ weeklyStatsError: error.message });
+    } finally {
+      set({ weeklyStatsLoading: false });
+    }
+  },
+
+  /**
+   * 获取本周已批准报告数
+   */
+  fetchApprovedThisWeek: async () => {
+    set({ weeklyStatsLoading: true, weeklyStatsError: null });
+    try {
+      const response = await api.get('/reports/stats/approved/weekly');
+      if (response.data.success) {
+        set((state) => ({
+          weeklyStats: { ...state.weeklyStats, approved: response.data.data },
+          weeklyStatsError: null
+        }));
+      }
+    } catch (error) {
+      console.error('[useReportStore] Fetch approved this week error:', error);
+      set({ weeklyStatsError: error.message });
+    } finally {
+      set({ weeklyStatsLoading: false });
+    }
+  },
+
+
+  /**
+   * 获取所有报告统计 (一次性加载)
+   * total: 累计所有种类报告数；
+   * draft: 累计的Draft报告数；
+   * revise: 累计的Revise报告数；
+   * approved: 累计的Approved报告数
+   */
+  fetchAllStats: async () => {
+    set({ statsLoading: true, statsError: null });
+    try {
+      const [total, draft, revise, approved] = await Promise.all([
+        api.get('/reports/stats/total'),
+        api.get('/reports/stats/draft'),
+        api.get('/reports/stats/revise'),
+        api.get('/reports/stats/approved')
+      ]);
+
+      if (total.data.success && draft.data.success && revise.data.success && approved.data.success) {
+        set({
+          stats: {
+            total: total.data.data,
+            draft: draft.data.data,
+            revise: revise.data.data,
+            approved: approved.data.data
+          },
+          statsError: null
+        });
+      }
+    } catch (error) {
+      console.error('[useReportStore] Fetch all stats error:', error);
+      set({ statsError: error.message });
+    } finally {
+      set({ statsLoading: false });
+    }
+  },
+
+
+  /**
+   * 获取本周所有报告统计 (一次性加载)
+   * draft: 本周Draft报告数；
+   * revise: 本周Revise报告数；
+   * approved: 本周Approved报告数
+   */
+  fetchAllWeeklyStats: async () => {
+    set({ weeklyStatsLoading: true, weeklyStatsError: null });
+    try {
+      const [draft, revise, approved] = await Promise.all([
+        api.get('/reports/stats/draft/weekly'),
+        api.get('/reports/stats/revise/weekly'),
+        api.get('/reports/stats/approved/weekly')
+      ]);
+
+      if (draft.data.success && revise.data.success && approved.data.success) {
+        set({
+          weeklyStats: {
+            draft: draft.data.data,
+            revise: revise.data.data,
+            approved: approved.data.data
+          },
+          weeklyStatsError: null
+        });
+      }
+    } catch (error) {
+      console.error('[useReportStore] Fetch all weekly stats error:', error);
+      set({ weeklyStatsError: error.message });
+    } finally {
+      set({ weeklyStatsLoading: false });
+    }
+  },
+
   // ═══════════════════════════════════════════════════════════════════════════
   // Actions: Reports List
   // ═══════════════════════════════════════════════════════════════════════════

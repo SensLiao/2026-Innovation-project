@@ -3,7 +3,7 @@ import { api } from '../lib/api';
 
 const BASE_URL = import.meta.env.VITE_API_BASE?.replace('/api', '') || 'http://localhost:3000';
 
-export const usePubDB = create((set, get) => ({
+export const usePubStore = create((set, get) => ({
     publications: [],
     loading: false,
     error: null,

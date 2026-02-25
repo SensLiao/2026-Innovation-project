@@ -1,8 +1,8 @@
-import { usePatientDB } from "../useDB/usePatients";
+import { usePatientStore } from "../stores/usePatientStore";
 import { useRef } from "react";
 
 function AddPatientModal() {
-    const { addPatient, patientData, setPatientData, resetPatientData, loading, error } = usePatientDB();
+    const { addPatient, patientData, setPatientData, resetPatientData, loading, error } = usePatientStore();
     const dialogRef = useRef();
 
     const closeModal = () => {
