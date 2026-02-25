@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 
 const BASE_URL = import.meta.env.VITE_API_BASE?.replace('/api', '') || 'http://localhost:3000';
 
-export const usePatientDB = create((set, get) => ({
+export const usePatientStore = create((set, get) => ({
     patients: [],
     loading: false,
     error: null,
@@ -28,6 +28,16 @@ export const usePatientDB = create((set, get) => ({
         postcode: '',
         country: '',
     },
+
+    // 患者统计
+    patientStats: {
+        total: 0
+    },
+    weeklyPatientStats: {
+        total: 0
+    },
+    statsLoading: false,
+    statsError: null,
 
     setPatientData: (patientData) => set({ patientData }),
     resetPatientData: () => set({ patientData: {
@@ -131,7 +141,71 @@ export const usePatientDB = create((set, get) => ({
         } finally {
             set({ loading: false });
         }
-    }
+    },
+
+    // 获取患者总数
+    fetchTotalPatients: async () => {
+        set({ statsLoading: true, statsError: null });
+        try {
+            const response = await api.get(`/patients/stats/total`);
+            if (response.data.success) {
+                set((state) => ({
+                    patientStats: { ...state.patientStats, total: response.data.data },
+                    statsError: null
+                }));
+            }
+        } catch (error) {
+            console.error("Error fetching total patients:", error);
+            set({ statsError: error.message });
+        } finally {
+            set({ statsLoading: false });
+        }
+    },
+
+    // 获取本周新增患者数
+    fetchPatientsThisWeek: async () => {
+        set({ statsLoading: true, statsError: null });
+        try {
+            const response = await api.get(`/patients/stats/weekly`);
+            if (response.data.success) {
+                set((state) => ({
+                    weeklyPatientStats: { ...state.weeklyPatientStats, total: response.data.data },
+                    statsError: null
+                }));
+            }
+        } catch (error) {
+            console.error("Error fetching weekly patients:", error);
+            set({ statsError: error.message });
+        } finally {
+            set({ statsLoading: false });
+        }
+    },
     
     
+    // 获取所有患者统计
+    // total: 累计总共患者数；
+    // weekly: 本周新增患者数
+    fetchAllPatientStats: async () => {
+        set({ statsLoading: true, statsError: null });
+        try {
+            const [total, weekly] = await Promise.all([
+                api.get(`/patients/stats/total`),
+                api.get(`/patients/stats/weekly`)
+            ]);
+
+            if (total.data.success && weekly.data.success) {
+                set({
+                    patientStats: { total: total.data.data },
+                    weeklyPatientStats: { total: weekly.data.data },
+                    statsError: null
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching all patient stats:", error);
+            set({ statsError: error.message });
+        } finally {
+            set({ statsLoading: false });
+        }
+    },
+
 }));
