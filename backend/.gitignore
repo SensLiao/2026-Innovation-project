@@ -3,3 +3,5 @@ node_modules/
 models/
 controllers/imageController.js
 routes/imageRoute.js
+embedding_server/__pycache__
+embedding_server/venv
