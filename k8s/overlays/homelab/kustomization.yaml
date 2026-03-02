@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+images:
+  - name: 192.168.50.174:5050/root/soma-ai/backend
+    newTag:.4477560a
+  - name: 192.168.50.174:5050/root/soma-ai/frontend
+    newTag:.4477560a
