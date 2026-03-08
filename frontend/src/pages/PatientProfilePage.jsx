@@ -2,83 +2,88 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePatientStore } from "../stores/usePatientStore";
 import Logo from "../assets/images/Logo.png";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Upload, UserRound, Phone, MapPin } from "lucide-react";
 import { toDDMMYYYY, toDDMMYYYYHHMM } from "../components/Header";
-
 
 const PatientProfilePage = () => {
   const { pid } = useParams();
   const navigate = useNavigate();
-  const { currentPatient, fetchPatientByID, loading, error, setPatientData, updatePatient, deletePatient } = usePatientStore();
+  const {
+    currentPatient,
+    fetchPatientByID,
+    loading,
+    error,
+    setPatientData,
+    updatePatient,
+    deletePatient,
+  } = usePatientStore();
+
   const [showSuccess, setShowSuccess] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editFields, setEditFields] = useState({
-    name: '',
-    age: '',
-    gender: '',
-    dateofbirth: '',
-    phone: '',
-    email: '',
-    emergencycontactname: '',
-    emergencycontactphone: '',
-    streetaddress: '',
-    suburb: '',
-    state: '',
-    postcode: '',
-    country: '',
+    name: "",
+    age: "",
+    gender: "",
+    dateofbirth: "",
+    phone: "",
+    email: "",
+    emergencycontactname: "",
+    emergencycontactphone: "",
+    streetaddress: "",
+    suburb: "",
+    state: "",
+    postcode: "",
+    country: "",
   });
 
-  // Profile upload state and helpers
   const [profileUploading, setProfileUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const fileToDataUrl = (file) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
-  // Resize/compress an image via canvas and return a dataURL (JPEG)
-  const compressImageToDataUrl = (file, maxWidth = 1024, quality = 0.8) => new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      try {
-        const ratio = Math.min(1, maxWidth / Math.max(img.width, img.height));
-        const w = Math.round(img.width * ratio);
-        const h = Math.round(img.height * ratio);
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', quality);
-        resolve(dataUrl);
-      } catch (err) {
-        reject(err);
-      }
-    };
-    img.onerror = reject;
-    // Create object URL for faster load
-    img.src = URL.createObjectURL(file);
-  });
+  const compressImageToDataUrl = (file, maxWidth = 1024, quality = 0.8) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const ratio = Math.min(1, maxWidth / Math.max(img.width, img.height));
+          const w = Math.round(img.width * ratio);
+          const h = Math.round(img.height * ratio);
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL("image/jpeg", quality);
+          resolve(dataUrl);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // basic validation
-    if (!['image/png', 'image/jpeg'].includes(file.type)) {
-      alert('Only JPG and PNG files are allowed');
-      e.target.value = '';
+    if (!["image/png", "image/jpeg"].includes(file.type)) {
+      alert("Only JPG and PNG files are allowed");
+      e.target.value = "";
       return;
     }
 
-    // hard limit: 5MB
     const MAX_RAW_SIZE = 5 * 1024 * 1024;
     if (file.size > MAX_RAW_SIZE) {
-      alert('File is too large (max 5MB). Please choose a smaller image.');
-      e.target.value = '';
+      alert("File is too large (max 5MB). Please choose a smaller image.");
+      e.target.value = "";
       return;
     }
 
@@ -86,31 +91,27 @@ const PatientProfilePage = () => {
     try {
       let dataUrl;
 
-      // If larger than ~500KB, compress/rescale to reduce payload
       if (file.size > 500 * 1024) {
         dataUrl = await compressImageToDataUrl(file, 1024, 0.8);
       } else {
         dataUrl = await fileToDataUrl(file);
       }
 
-      // Update local state immediately for responsive UI
       setPatientData({ ...currentPatient, profilephoto: dataUrl });
-
-      // Persist via store action so it also updates `currentPatient` and triggers re-render
       await updatePatient(currentPatient.pid);
 
-      // Show success and refresh patient data shortly so the saved image is fetched without a full reload
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
-        // Re-fetch current patient to ensure server-saved image is displayed without full reload
-        fetchPatientByID(currentPatient.pid).catch(err => console.error('Error refreshing patient after upload:', err));
+        fetchPatientByID(currentPatient.pid).catch((err) =>
+          console.error("Error refreshing patient after upload:", err)
+        );
       }, 1200);
     } catch (err) {
-      console.error('Error uploading profile photo:', err);
-      alert('Failed to upload profile photo: ' + (err.message || 'Unknown'));
+      console.error("Error uploading profile photo:", err);
+      alert("Failed to upload profile photo: " + (err.message || "Unknown"));
     } finally {
-      e.target.value = '';
+      e.target.value = "";
       setProfileUploading(false);
     }
   };
@@ -120,107 +121,105 @@ const PatientProfilePage = () => {
       fetchPatientByID(pid);
     } else if (!isEditing) {
       setEditFields({
-        name: currentPatient.name || '',
-        age: currentPatient.age ?? '',
-        gender: currentPatient.gender || '',
-        dateofbirth: currentPatient.dateofbirth || '',
-        phone: currentPatient.phone || '',
-        email: currentPatient.email || '',
-        emergencycontactname: currentPatient.emergencycontactname || '',
-        emergencycontactphone: currentPatient.emergencycontactphone || '',
-        streetaddress: currentPatient.streetaddress || '',
-        suburb: currentPatient.suburb || '',
-        state: currentPatient.state || '',
-        postcode: currentPatient.postcode || '',
-        country: currentPatient.country || '',
+        name: currentPatient.name || "",
+        age: currentPatient.age ?? "",
+        gender: currentPatient.gender || "",
+        dateofbirth: currentPatient.dateofbirth || "",
+        phone: currentPatient.phone || "",
+        email: currentPatient.email || "",
+        emergencycontactname: currentPatient.emergencycontactname || "",
+        emergencycontactphone: currentPatient.emergencycontactphone || "",
+        streetaddress: currentPatient.streetaddress || "",
+        suburb: currentPatient.suburb || "",
+        state: currentPatient.state || "",
+        postcode: currentPatient.postcode || "",
+        country: currentPatient.country || "",
       });
     }
   }, [pid, fetchPatientByID, currentPatient, isEditing]);
 
-  // Format date (YYYY-MM-DD) for <input type="date"> value
   const formatDateForInput = (d) => {
-    if (!d) return '';
-    try { return d.slice(0,10); } catch { return ''; }
+    if (!d) return "";
+    try {
+      return d.slice(0, 10);
+    } catch {
+      return "";
+    }
   };
 
   const handleEditClick = () => {
     setIsEditing(true);
     setEditFields({
-      name: currentPatient.name || '',
-      age: currentPatient.age ?? '',
-      gender: currentPatient.gender || '',
-      dateofbirth: formatDateForInput(currentPatient.dateofbirth) || '',
-      phone: currentPatient.phone || '',
-      email: currentPatient.email || '',
-      emergencycontactname: currentPatient.emergencycontactname || '',
-      emergencycontactphone: currentPatient.emergencycontactphone || '',
-      streetaddress: currentPatient.streetaddress || '',
-      suburb: currentPatient.suburb || '',
-      state: currentPatient.state || '',
-      postcode: currentPatient.postcode || '',
-      country: currentPatient.country || '',
+      name: currentPatient.name || "",
+      age: currentPatient.age ?? "",
+      gender: currentPatient.gender || "",
+      dateofbirth: formatDateForInput(currentPatient.dateofbirth) || "",
+      phone: currentPatient.phone || "",
+      email: currentPatient.email || "",
+      emergencycontactname: currentPatient.emergencycontactname || "",
+      emergencycontactphone: currentPatient.emergencycontactphone || "",
+      streetaddress: currentPatient.streetaddress || "",
+      suburb: currentPatient.suburb || "",
+      state: currentPatient.state || "",
+      postcode: currentPatient.postcode || "",
+      country: currentPatient.country || "",
     });
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    // reset edit fields to current values
     setEditFields({
-      name: currentPatient.name || '',
-      age: currentPatient.age ?? '',
-      gender: currentPatient.gender || '',
-      dateofbirth: formatDateForInput(currentPatient.dateofbirth) || '',
-      phone: currentPatient.phone || '',
-      email: currentPatient.email || '',
-      emergencycontactname: currentPatient.emergencycontactname || '',
-      emergencycontactphone: currentPatient.emergencycontactphone || '',
-      streetaddress: currentPatient.streetaddress || '',
-      suburb: currentPatient.suburb || '',
-      state: currentPatient.state || '',
-      postcode: currentPatient.postcode || '',
-      country: currentPatient.country || '',
+      name: currentPatient.name || "",
+      age: currentPatient.age ?? "",
+      gender: currentPatient.gender || "",
+      dateofbirth: formatDateForInput(currentPatient.dateofbirth) || "",
+      phone: currentPatient.phone || "",
+      email: currentPatient.email || "",
+      emergencycontactname: currentPatient.emergencycontactname || "",
+      emergencycontactphone: currentPatient.emergencycontactphone || "",
+      streetaddress: currentPatient.streetaddress || "",
+      suburb: currentPatient.suburb || "",
+      state: currentPatient.state || "",
+      postcode: currentPatient.postcode || "",
+      country: currentPatient.country || "",
     });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditFields(prev => ({ ...prev, [name]: value }));
+    setEditFields((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
     try {
-      // Merge editable fields into patient payload and set it for update
       setPatientData({ ...currentPatient, ...editFields });
       await updatePatient(currentPatient.pid);
       setIsEditing(false);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
     } catch (err) {
-      console.error('Error saving patient:', err);
+      console.error("Error saving patient:", err);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Delete this patient?')) return;
+    if (!window.confirm("Delete this patient?")) return;
     try {
       await deletePatient(currentPatient.pid);
-      navigate('/patient');
+      navigate("/patient");
     } catch (err) {
-      console.error('Error deleting patient:', err);
+      console.error("Error deleting patient:", err);
     }
   };
 
   if (error) return <div className="p-8 text-red-600">Error: {error}</div>;
-  if (!currentPatient) return <div className="p-8">No patient data found.</div>; 
+  if (!currentPatient) return <div className="p-8">No patient data found.</div>;
 
   const {
     profilephoto,
     name,
-    age,
     dateofbirth,
     gender,
-    phone,
-    email,
     createdat,
     emergencycontactname,
     emergencycontactphone,
@@ -233,52 +232,48 @@ const PatientProfilePage = () => {
   } = currentPatient;
 
   return (
-    <div className="min-h-screen bg-[#C2DCE7] py-8">
-
-      {/* Success popup */}
+    <div className="min-h-screen bg-[#C2DCE7] py-10 px-4">
       {showSuccess && (
-        <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-50">
           Update Successful
         </div>
       )}
-      
 
-      {/* White sheet */}
-      <div className="bg-white rounded-3xl shadow-2xl p-8 relative w-full overflow-hidden min-h-[75vh] md:min-h-[80vh] pb-20">
-   
+      <div className="w-[70vw] max-w-[1400px] mx-auto">
+        <div className="bg-white rounded-[32px] shadow-2xl p-8 md:p-10 relative overflow-hidden border border-white/60">
+          <div className="absolute top-6 right-28 w-24 h-24 bg-sky-100/70 rounded-full blur-xl pointer-events-none" />
+          <div className="absolute bottom-10 left-10 w-28 h-28 bg-blue-100/50 rounded-full blur-2xl pointer-events-none" />
 
-        {/*---------------------------------------- Header Section ------------------------------------- */}
-        <div className="flex justify-between items-center border-b pb-3 mb-6 relative">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="text-2xl leading-none"
-              aria-label="Go back"
-              title="Go back"
-            >
-              ←
-            </button>
-            Patient Profile
-          </h2>
+          <div className="flex items-center justify-between border-b border-slate-200 pb-5 mb-8 relative">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-2xl text-slate-700 hover:bg-slate-100 transition"
+                aria-label="Go back"
+                title="Go back"
+              >
+                ←
+              </button>
 
-          {/*--------------------------------------------- Logo -------------------------------------*/}
-          <img src={Logo} 
-            alt="Logo" 
-            className="w-[170px] object-contain absolute right-0 top-7 -translate-y-1/2 pointer-events-none select-none" 
-          />
-        </div>
+              <div>
+                <h2 className="text-3xl font-bold text-slate-800">Patient Profile</h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  View and manage patient records
+                </p>
+              </div>
+            </div>
 
-        {/* Main Content Layout */}
-        <div className="grid grid-cols-3 gap-6">
-          {/* Left (2/3) */}
-          <div className="col-span-2">
-            
-            {/* Patient Info Card */}
-            <div className="flex items-start gap-4 mb-6">
-            <div className="flex-shrink-0">
-              {/*------------------------------------Patient Profile Photo (clickable upload) --------------------------------------*/}
-              <div className="relative">
+            <img
+              src={Logo}
+              alt="Logo"
+              className="w-[170px] object-contain pointer-events-none select-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] gap-6">
+            <div className="bg-gradient-to-b from-[#EEF7FF] to-white border border-sky-100 rounded-3xl p-5 shadow-sm">
+              <div className="flex flex-col items-center">
                 <input
                   id="profilephoto-input"
                   type="file"
@@ -292,134 +287,284 @@ const PatientProfilePage = () => {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={loading || profileUploading}
-                  className="w-32 h-32 rounded-lg overflow-hidden border-4 border-blue-200 shadow p-0 bg-transparent flex items-center justify-center"
+                  className="group relative w-40 h-40 rounded-2xl overflow-hidden border-4 border-blue-200 shadow-md bg-white flex items-center justify-center"
                   title="Click to upload profile photo"
                 >
                   {profilephoto ? (
-                    <img src={profilephoto} alt="Profile" className="w-32 h-32 object-cover" />
+                    <img src={profilephoto} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-32 h-32 bg-gray-100 flex items-center justify-center text-gray-400">
-                      No Photo
+                    <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-400">
+                      <UserRound className="w-10 h-10 mb-2" />
+                      <span className="text-sm">No Photo</span>
+                    </div>
+                  )}
+
+                  <div className="absolute inset-x-0 bottom-0 bg-black/40 text-white text-xs py-2 opacity-0 group-hover:opacity-100 transition">
+                    Upload photo
+                  </div>
+
+                  {profileUploading && (
+                    <div className="absolute inset-0 bg-white/80 flex items-center justify-center text-sm font-medium text-slate-700">
+                      Uploading...
                     </div>
                   )}
                 </button>
 
-                {profileUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="bg-white/80 px-2 py-1 rounded">Uploading...</div>
-                  </div>
-                )}
-              </div>
+                {/* <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition"
+                >
+                  <Upload className="w-4 h-4" />
+                  Change Photo
+                </button> */}
 
-              {/* ------------------------------------Buttons under profile ------------------------------*/}
-              {/* Edit / Delete or Save / Cancel Buttons */}
-              <div className="flex justify-center gap-4 w-32 mt-2">
-                {isEditing ? (
-                  <>
-                    <button onClick={handleSave} disabled={loading} className={`p-2 ${loading ? 'bg-green-300' : 'bg-green-500 hover:bg-green-600'} text-white rounded`} title="Save">Save</button>
-                    <button onClick={handleCancel} className="p-2 bg-gray-200 hover:bg-gray-300 rounded" title="Cancel">Cancel</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={handleEditClick} className="p-2 bg-gray-200 hover:bg-gray-300 rounded" aria-label="Edit" title="Edit">
-                      <Edit className="w-5 h-5 text-gray-700" />
-                    </button>
-                    <button onClick={handleDelete} className="p-2 bg-red-100 hover:bg-red-200 rounded" aria-label="Delete" title="Delete">
-                      <Trash2 className="w-5 h-5 text-red-600" />
-                    </button>
-                  </>
-                )}
-              </div>
+                <div className="mt-5 text-center">
+                  <h3 className="text-xl font-semibold text-slate-800">
+                    {name || "Unnamed Patient"}
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">Patient ID #{patientPid ?? "-"}</p>
+                </div>
 
-              {/* Segmentation Button */}
-              <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-32 mt-4">
-                Segmentation
-              </button>
-            </div> 
-
-            {/* ---------------------------------Wrapper for text sections (aligned with photo) ----------------------- */}
-            <div className="ml-[10px] space-y-8">
-
-              {/* Patient Information */}
-              <div>
-                <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                  Patient Information
-                  <span className="border-b border-gray-200 w-24" />
-                </h3>
-
-                <div className="grid grid-cols-[auto,1fr] gap-y-3 gap-x-4 mt-2">
-                  <label className="text-sm text-gray-600 flex items-center">Name</label>
-                  <input name="name" value={isEditing ? editFields.name : (name || "")} onChange={isEditing ? handleChange : undefined} readOnly={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
-
-                  <label className="text-sm text-gray-600 flex items-center">Patient ID</label>
-                  <input value={patientPid ?? ""} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
-
-                  <label className="text-sm text-gray-600 flex items-center">Gender</label>
-                  <input name="gender" value={isEditing ? editFields.gender : (gender || "")} onChange={isEditing ? handleChange : undefined} readOnly={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
-
-                  <label className="text-sm text-gray-600 flex items-center">Date of Birth</label>
+                <div className="mt-5 flex items-center gap-3">
                   {isEditing ? (
-                    <input type="date" name="dateofbirth" value={editFields.dateofbirth || ''} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-md px-2 py-1 text-sm" />
+                    <>
+                      <button
+                        onClick={handleSave}
+                        disabled={loading}
+                        className={`px-4 py-2 rounded-xl text-white font-medium shadow ${
+                          loading ? "bg-emerald-300" : "bg-emerald-500 hover:bg-emerald-600"
+                        }`}
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={handleCancel}
+                        className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium"
+                      >
+                        Cancel
+                      </button>
+                    </>
                   ) : (
-                    <input value={toDDMMYYYY(dateofbirth)} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
+                    <>
+                      <button
+                        onClick={handleEditClick}
+                        className="p-3 bg-slate-100 hover:bg-slate-200 rounded-xl"
+                        aria-label="Edit"
+                        title="Edit"
+                      >
+                        <Edit className="w-5 h-5 text-slate-700" />
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        className="p-3 bg-red-50 hover:bg-red-100 rounded-xl"
+                        aria-label="Delete"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-5 h-5 text-red-600" />
+                      </button>
+                    </>
                   )}
-
-                  <label className="text-sm text-gray-600 flex items-center">Register Date</label>
-                  <input value={toDDMMYYYYHHMM(createdat)} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
                 </div>
-              </div>
 
-              {/* Emergency Contact */}
-              <div>
-                <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                  Emergency Contact
-                  <span className="border-b border-gray-200 w-24" />
-                </h3>
-
-                <div className="grid grid-cols-[auto,1fr] gap-y-3 gap-x-4 mt-2">
-                  <label className="text-sm text-gray-600 flex items-center">Name</label>
-                  <input name="emergencycontactname" value={isEditing ? editFields.emergencycontactname : (emergencycontactname || "")} onChange={isEditing ? handleChange : undefined} readOnly={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
-
-                  <label className="text-sm text-gray-600 flex items-center">Phone</label>
-                  <input name="emergencycontactphone" value={isEditing ? editFields.emergencycontactphone : (emergencycontactphone || "")} onChange={isEditing ? handleChange : undefined} readOnly={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
-                </div>
-              </div>
-
-              {/* Address */}
-              <div>
-                <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                  Address
-                  <span className="border-b border-gray-200 w-48" /> 
-                </h3>
-
-                <div className="grid grid-cols-[auto,1fr] gap-y-3 gap-x-4 mt-2">
-                  <label className="text-sm text-gray-600 flex items-center">Street</label>
-                  <input name="streetaddress" value={isEditing ? editFields.streetaddress : (streetaddress || "")} onChange={isEditing ? handleChange : undefined} readOnly={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
-
-                  <label className="text-sm text-gray-600 flex items-center">Suburb</label>
-                  <input name="suburb" value={isEditing ? editFields.suburb : (suburb || "")} onChange={isEditing ? handleChange : undefined} readOnly={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
-
-                  <label className="text-sm text-gray-600 flex items-center">State</label>
-                  <input name="state" value={isEditing ? editFields.state : (patientState || "")} onChange={isEditing ? handleChange : undefined} readOnly={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
-
-                  <label className="text-sm text-gray-600 flex items-center">Postcode</label>
-                  <input name="postcode" value={isEditing ? editFields.postcode : (postcode || "")} onChange={isEditing ? handleChange : undefined} readOnly={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
-
-                  <label className="text-sm text-gray-600 flex items-center">Country</label>
-                  <input name="country" value={isEditing ? editFields.country : (country || "")} onChange={isEditing ? handleChange : undefined} readOnly={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
-                </div>
+                <button className="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-2xl font-medium shadow-sm transition">
+                  Segmentation
+                </button>
               </div>
             </div>
 
-          {/* --------------------------- Record  ----------------------- */}
-          {/* --------------------------- Trend  ----------------------- */}
+            <div className="space-y-6 min-w-0">
+              <SectionCard
+                title="Patient Information"
+                icon={<UserRound className="w-5 h-5 text-blue-600" />}
+              >
+                <FieldRow
+                  label="Name"
+                  name="name"
+                  value={isEditing ? editFields.name : name || ""}
+                  onChange={handleChange}
+                  editable={isEditing}
+                />
+                <FieldRow label="Patient ID" value={patientPid ?? ""} editable={false} />
+
+                <SelectRow
+                  label="Gender"
+                  name="gender"
+                  value={isEditing ? editFields.gender : gender || ""}
+                  onChange={handleChange}
+                  editable={isEditing}
+                  options={["Male", "Female", "Other"]}
+                />
+
+                {isEditing ? (
+                  <FieldRow
+                    label="Date of Birth"
+                    name="dateofbirth"
+                    value={editFields.dateofbirth || ""}
+                    onChange={handleChange}
+                    editable
+                    type="date"
+                  />
+                ) : (
+                  <FieldRow
+                    label="Date of Birth"
+                    value={toDDMMYYYY(dateofbirth)}
+                    editable={false}
+                  />
+                )}
+
+                <FieldRow
+                  label="Register Date"
+                  value={toDDMMYYYYHHMM(createdat)}
+                  editable={false}
+                />
+              </SectionCard>
+
+              <SectionCard
+                title="Emergency Contact"
+                icon={<Phone className="w-5 h-5 text-blue-600" />}
+              >
+                <FieldRow
+                  label="Name"
+                  name="emergencycontactname"
+                  value={isEditing ? editFields.emergencycontactname : emergencycontactname || ""}
+                  onChange={handleChange}
+                  editable={isEditing}
+                />
+                <FieldRow
+                  label="Phone"
+                  name="emergencycontactphone"
+                  value={isEditing ? editFields.emergencycontactphone : emergencycontactphone || ""}
+                  onChange={handleChange}
+                  editable={isEditing}
+                />
+              </SectionCard>
+
+              <SectionCard
+                title="Address"
+                icon={<MapPin className="w-5 h-5 text-blue-600" />}
+              >
+                <FieldRow
+                  label="Street"
+                  name="streetaddress"
+                  value={isEditing ? editFields.streetaddress : streetaddress || ""}
+                  onChange={handleChange}
+                  editable={isEditing}
+                />
+                <FieldRow
+                  label="Suburb"
+                  name="suburb"
+                  value={isEditing ? editFields.suburb : suburb || ""}
+                  onChange={handleChange}
+                  editable={isEditing}
+                />
+                <FieldRow
+                  label="State"
+                  name="state"
+                  value={isEditing ? editFields.state : patientState || ""}
+                  onChange={handleChange}
+                  editable={isEditing}
+                />
+                <FieldRow
+                  label="Postcode"
+                  name="postcode"
+                  value={isEditing ? editFields.postcode : postcode || ""}
+                  onChange={handleChange}
+                  editable={isEditing}
+                />
+                <FieldRow
+                  label="Country"
+                  name="country"
+                  value={isEditing ? editFields.country : country || ""}
+                  onChange={handleChange}
+                  editable={isEditing}
+                />
+              </SectionCard>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-      
   );
 };
+
+function SectionCard({ title, icon, children }) {
+  return (
+    <div className="bg-[#F9FCFF] border border-sky-100 rounded-3xl p-5 shadow-sm">
+      <div className="flex items-center gap-2.5 mb-4">
+        <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
+          {icon}
+        </div>
+        <h3 className="text-xl font-semibold text-slate-800">{title}</h3>
+        <div className="flex-1 border-b border-slate-200 ml-2" />
+      </div>
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function FieldRow({
+  label,
+  name,
+  value,
+  onChange,
+  editable = false,
+  type = "text",
+}) {
+  return (
+    <div className="grid grid-cols-[160px_minmax(0,1fr)] items-center gap-5">
+      <label className="text-sm font-medium text-slate-600">{label}</label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={editable ? onChange : undefined}
+        readOnly={!editable}
+        className={`w-full rounded-xl px-4 py-3 text-sm border transition ${
+          editable
+            ? "bg-white border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            : "bg-slate-50 border-slate-200 text-slate-700"
+        }`}
+      />
+    </div>
+  );
+}
+
+function SelectRow({
+  label,
+  name,
+  value,
+  onChange,
+  editable = false,
+  options = [],
+}) {
+  return (
+    <div className="grid grid-cols-[160px_minmax(0,1fr)] items-center gap-5">
+      <label className="text-sm font-medium text-slate-600">{label}</label>
+
+      {editable ? (
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          className="w-full rounded-xl px-4 py-3 text-sm border bg-white border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="">Select gender</option>
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          value={value}
+          readOnly
+          className="w-full rounded-xl px-4 py-3 text-sm border bg-slate-50 border-slate-200 text-slate-700"
+        />
+      )}
+    </div>
+  );
+}
 
 export default PatientProfilePage;
