@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { usePubStore } from "../stores/usePubStore";
 import { useUserStore } from "../stores/useUserStore";
 import { useAuthStore } from "../stores/useAuthStore";
+import AddPublicationModal from "../components/AddPublicationModal";
 import Decoration from '../assets/images/main2.png';
 import Logo from "../assets/images/Logo.png";
 
@@ -29,8 +30,11 @@ const UserProfilePage = () => {
   const { user, fetchMe } = useAuthStore();
   // Local user state for display, to allow refresh after update
 
-  const { publications, loading, error, fetchPublicationsByUid } = usePubStore();
+  const { publications, loading, error, fetchPublicationsByUid, deletePublication } = usePubStore();
   const { updateUser, setuserData, loading: userLoading } = useUserStore();
+  // publication modal state
+  const [editingPub, setEditingPub] = useState(null);
+
   // Edit state
   const [isEditing, setIsEditing] = useState(false);
   const [editFields, setEditFields] = useState({
@@ -459,24 +463,40 @@ const UserProfilePage = () => {
                           <div className="border-b border-slate-300/70 flex-1" />
                         </div>
 
+                        {/* Add Publication Modal */}
+                        <AddPublicationModal uid={user?.uid} pub={editingPub} onClose={() => setEditingPub(null)} />
+
                         <div className="mb-6">
-                          <h3 className="text-lg font-semibold mb-2">Publications</h3>
+                          <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-lg font-semibold">Publications</h3>
+                            <button
+                              type="button"
+                              className="px-3 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
+                              onClick={() => {
+                                setEditingPub(null);
+                                document.getElementById("add_pub_modal").showModal();
+                              }}
+                            >
+                              Add Publication
+                            </button>
+                          </div>
                           {loading && <div>Loading publications...</div>}
                           {error && <div className="text-red-500">Error: {error}</div>}
                           {!loading && !error && publications.length === 0 && <div>No publications found.</div>}
                           {!loading && !error && publications.length > 0 && (
-                            <ul className="list-disc pl-5 space-y-1">
+                            <div className="space-y-4">
                               {publications.map((pub) => (
-                                <li key={pub.PID || pub.pid}>
-                                  <div className="font-medium">{pub.Title || pub.title}</div>
-                                  <div className="text-xs text-gray-500">{pub.PublicationDate || pub.publicationdate || "—"}</div>
-                                  <div className="text-xs">{pub.Description || pub.description || ""}</div>
-                                  {pub.Link && (
-                                    <a href={pub.Link} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline text-xs">View Publication</a>
+                                <div key={pub.PID || pub.pid} className="border rounded-lg p-4 bg-gray-50 shadow-sm">
+                                  <h4 className="font-semibold text-lg mb-2">{pub.title}</h4>
+                                  <p className="text-sm text-gray-600 mb-1">Author: {pub.author || "—"}</p>
+                                  <p className="text-sm text-gray-600 mb-2">Publication Date: {pub.publicationdate ? pub.publicationdate.slice(0, 10) : "—"}</p>
+                                  <p className="text-sm mb-2">{pub.description || "No description available."}</p>
+                                  {pub.link && (
+                                    <a href={pub.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline text-sm">View Publication</a>
                                   )}
-                                </li>
+                                </div>
                               ))}
-                            </ul>
+                            </div>
                           )}
                         </div>
                       </div>
