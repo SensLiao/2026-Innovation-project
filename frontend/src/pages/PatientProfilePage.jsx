@@ -11,22 +11,21 @@ const PatientProfilePage = () => {
   const navigate = useNavigate();
   const { currentPatient, fetchPatientByID, loading, error, setPatientData, updatePatient, deletePatient } = usePatientStore();
   const [showSuccess, setShowSuccess] = useState(false);
-
-  // Editable fields
+  const [isEditing, setIsEditing] = useState(false);
   const [editFields, setEditFields] = useState({
-    name: "",
-    age: "",
-    gender: "",
-    dateofbirth: "",
-    phone: "",
-    email: "",
-    emergencycontactname: "",
-    emergencycontactphone: "",
-    streetaddress: "",
-    suburb: "",
-    state: "",
-    postcode: "",
-    country: "",
+    name: '',
+    age: '',
+    gender: '',
+    dateofbirth: '',
+    phone: '',
+    email: '',
+    emergencycontactname: '',
+    emergencycontactphone: '',
+    streetaddress: '',
+    suburb: '',
+    state: '',
+    postcode: '',
+    country: '',
   });
 
   // Profile upload state and helpers
@@ -121,19 +120,19 @@ const PatientProfilePage = () => {
       fetchPatientByID(pid);
     } else if (!isEditing) {
       setEditFields({
-        name: currentPatient.name || "",
-        age: currentPatient.age ?? "",
-        gender: currentPatient.gender || "",
-        dateofbirth: toISO(currentPatient.dateofbirth),
-        phone: currentPatient.phone || "",
-        email: currentPatient.email || "",
-        emergencycontactname: currentPatient.emergencycontactname || "",
-        emergencycontactphone: currentPatient.emergencycontactphone || "",
-        streetaddress: currentPatient.streetaddress || "",
-        suburb: currentPatient.suburb || "",
-        state: currentPatient.state || "",
-        postcode: currentPatient.postcode || "",
-        country: currentPatient.country || "",
+        name: currentPatient.name || '',
+        age: currentPatient.age ?? '',
+        gender: currentPatient.gender || '',
+        dateofbirth: currentPatient.dateofbirth || '',
+        phone: currentPatient.phone || '',
+        email: currentPatient.email || '',
+        emergencycontactname: currentPatient.emergencycontactname || '',
+        emergencycontactphone: currentPatient.emergencycontactphone || '',
+        streetaddress: currentPatient.streetaddress || '',
+        suburb: currentPatient.suburb || '',
+        state: currentPatient.state || '',
+        postcode: currentPatient.postcode || '',
+        country: currentPatient.country || '',
       });
     }
   }, [pid, fetchPatientByID, currentPatient, isEditing]);
@@ -234,23 +233,40 @@ const PatientProfilePage = () => {
   } = currentPatient;
 
   return (
-    <div className="min-h-screen bg-[#C2DCE7] py-10">
+    <div className="min-h-screen bg-[#C2DCE7] py-8">
 
+      {/* Success popup */}
       {showSuccess && (
-        <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           Update Successful
         </div>
       )}
+      
 
-      <div className="w-[90%] max-w-6xl mx-auto bg-white rounded-3xl shadow-2xl p-10">
+      {/* White sheet */}
+      <div className="bg-white rounded-3xl shadow-2xl p-8 relative w-full overflow-hidden min-h-[75vh] md:min-h-[80vh] pb-20">
+   
 
-        {/* Header */}
-        <div className="flex justify-between items-center border-b pb-4 mb-8">
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <button onClick={() => navigate(-1)} className="text-3xl">←</button>
+        {/*---------------------------------------- Header Section ------------------------------------- */}
+        <div className="flex justify-between items-center border-b pb-3 mb-6 relative">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="text-2xl leading-none"
+              aria-label="Go back"
+              title="Go back"
+            >
+              ←
+            </button>
             Patient Profile
-          </h1>
-          <img src={Logo} alt="Logo" className="w-[150px]" />
+          </h2>
+
+          {/*--------------------------------------------- Logo -------------------------------------*/}
+          <img src={Logo} 
+            alt="Logo" 
+            className="w-[170px] object-contain absolute right-0 top-7 -translate-y-1/2 pointer-events-none select-none" 
+          />
         </div>
 
         {/* Main Content Layout */}
@@ -315,20 +331,14 @@ const PatientProfilePage = () => {
                 )}
               </div>
 
-            {/* Segmentation */}
-            <button
-  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg w-44 flex justify-center ml-[4px]"
->
-  Segmentation
-</button>
+              {/* Segmentation Button */}
+              <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-32 mt-4">
+                Segmentation
+              </button>
+            </div> 
 
-
-
-
-          </div>
-
-          {/* MIDDLE COLUMN */}
-          <div className="col-span-1 space-y-10">
+            {/* ---------------------------------Wrapper for text sections (aligned with photo) ----------------------- */}
+            <div className="ml-[10px] space-y-8">
 
               {/* Patient Information */}
               <div>
@@ -358,7 +368,6 @@ const PatientProfilePage = () => {
                   <input value={toDDMMYYYYHHMM(createdat)} readOnly className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
                 </div>
               </div>
-            </section>
 
               {/* Emergency Contact */}
               <div>
@@ -375,7 +384,6 @@ const PatientProfilePage = () => {
                   <input name="emergencycontactphone" value={isEditing ? editFields.emergencycontactphone : (emergencycontactphone || "")} onChange={isEditing ? handleChange : undefined} readOnly={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
                 </div>
               </div>
-            </section>
 
               {/* Address */}
               <div>
@@ -401,72 +409,16 @@ const PatientProfilePage = () => {
                   <input name="country" value={isEditing ? editFields.country : (country || "")} onChange={isEditing ? handleChange : undefined} readOnly={!isEditing} className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-sm" />
                 </div>
               </div>
-            </section>
+            </div>
+
+          {/* --------------------------- Record  ----------------------- */}
+          {/* --------------------------- Trend  ----------------------- */}
           </div>
-
-          {/* RIGHT COLUMN: CT + REPORT + SAMPLE1 */}
-          <div className="space-y-10">
-
-            {/* Recorded CT */}
-            <section>
-              <h3 className="text-lg font-bold mb-2">Recorded CT</h3>
-              <table className="w-full text-sm bg-blue-50 rounded-lg overflow-hidden">
-                <thead className="bg-blue-100">
-                  <tr>
-                    <th className="px-3 py-2">ID</th>
-                    <th className="px-3 py-2">Type</th>
-                    <th className="px-3 py-2">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ctData.map((r) => (
-                    <tr key={r.id}>
-                      <td className="px-3 py-2">{r.id}</td>
-                      <td className="px-3 py-2">{r.type}</td>
-                      <td className="px-3 py-2">{r.date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-
-            {/* Report Table */}
-            <section>
-              <h3 className="text-lg font-bold mb-2">Report</h3>
-              <table className="w-full text-sm bg-blue-50 rounded-lg overflow-hidden">
-                <thead className="bg-blue-100">
-                  <tr>
-                    <th className="px-3 py-2">ID</th>
-                    <th className="px-3 py-2">Type</th>
-                    <th className="px-3 py-2">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reportData.map((r) => (
-                    <tr key={r.id}>
-                      <td className="px-3 py-2">{r.id}</td>
-                      <td className="px-3 py-2">{r.type}</td>
-                      <td className="px-3 py-2">{r.date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-
-            {/* Sample1 under Report */}
-            <section>
-              <img
-                src={Sample1}
-                alt="Sample 1"
-                className="w-full rounded-lg shadow-md object-cover"
-              />
-            </section>
-
-          </div>
-
         </div>
       </div>
     </div>
+  </div>
+      
   );
 };
 

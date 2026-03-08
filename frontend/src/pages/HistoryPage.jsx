@@ -1,17 +1,95 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import Header from "../components/Header";
 import "./patient.css";
-import Decoration from '../assets/images/main2.png';
+import Decoration from "../assets/images/main2.png";
+import { usePatientStore } from "../stores/usePatientStore";
+import { useReportStore } from "../stores/useReportStore";
 
+/**
+ * HistoryPage
+ * Dashboard-style "History" page
+ * - Total Patients comes from usePatientStore
+ * - Reports comes from useReportStore
+ * - Other sections can still use placeholder data for now
+ */
 
 const HistoryPage = () => {
   const { state } = useLocation();
 
+  // -------------------- Patient store --------------------
+  const {
+    patientStats,
+    weeklyPatientStats,
+    statsLoading: patientStatsLoading,
+    fetchAllPatientStats,
+  } = usePatientStore();
+
+  // -------------------- Report store --------------------
+  const {
+    stats,
+    weeklyStats,
+    statsLoading: reportStatsLoading,
+    weeklyStatsLoading,
+    fetchAllStats,
+    fetchAllWeeklyStats,
+  } = useReportStore();
+
+  useEffect(() => {
+    fetchAllPatientStats();
+    fetchAllStats();
+    fetchAllWeeklyStats();
+  }, [fetchAllPatientStats, fetchAllStats, fetchAllWeeklyStats]);
+
+  const dashboardStats = useMemo(
+    () => ({
+      totalPatients: patientStats?.total ?? 0,
+      totalPatientsDelta: weeklyPatientStats?.total ?? 0,
+      ctUploaded: stats?.total ?? 0,
+      ctUploadedDelta:
+        (weeklyStats?.draft ?? 0) +
+        (weeklyStats?.revise ?? 0) +
+        (weeklyStats?.approved ?? 0),
+      reportsDraft: stats?.draft ?? 0,
+      reportsApproved: stats?.approved ?? 0,
+    }),
+    [patientStats, weeklyPatientStats, stats, weeklyStats]
+  );
+
+  const workflow = useMemo(
+    () => ({
+      max: Math.max(
+        stats?.total ?? 0,
+        stats?.draft ?? 0,
+        stats?.revise ?? 0,
+        stats?.approved ?? 0,
+        1
+      ),
+      rows: [
+        { label: "Draft", value: stats?.draft ?? 0, tone: "blue" },
+        { label: "Revising", value: stats?.revise ?? 0, tone: "green" },
+        { label: "Approved", value: stats?.approved ?? 0, tone: "green" },
+      ],
+    }),
+    [stats]
+  );
+
+  const recentActivity = useMemo(
+    () => [
+      { user: "Dr. Adams", action: "Approved Report", time: "15 mins ago" },
+      { user: "Dr. Chen", action: "Uploaded New Scan", time: "2 hours ago" },
+      { user: "Dr. Hu", action: "Segmented Scan", time: "3 hours ago" },
+    ],
+    []
+  );
+
+  const isLoading =
+    patientStatsLoading || reportStatsLoading || weeklyStatsLoading;
+
   return (
     <div className="min-h-screen bg-[#C2DCE7] py-8">
       {/* Decorative blobs */}
-      <div className="relative w-full max-w-6xl">
+      <div className="relative w-full">
         <div className="absolute -right-20 bottom-80 hidden md:block deco-blob-sm" />
         <img
           src={Decoration}
@@ -20,178 +98,257 @@ const HistoryPage = () => {
         />
 
         {/* Fixed-width wrapper */}
-        <div className="mx-auto w-[1200px]"> {/* <- fixed width, not max-w */}
+        <div className="mx-auto w-[1200px]">
+          {/* White sheet */}
+          <div className="bg-white rounded-3xl shadow-2xl p-8 relative w-full overflow-hidden min-h-[80vh] pb-16">
+            {/* Header */}
+            <Header activeTab="history" showLogout={true} />
 
-        {/* White sheet */}
-         <div className="bg-white rounded-3xl shadow-2xl p-8 relative w-full overflow-hidden min-h-[75vh] md:min-h-[80vh] pb-20">
-   
-          {/* Header - Note: activeTab is set to "history" and no Add Patient button */}
-          <Header 
-            activeTab="history"
-            showLogout={true}
-            // showAddPatient={false}
-          />
+            {/* Top spacing below header */}
+            <div className="mt-8" />
 
-          {/* Title */}
-          <div className="mt-10 md:mt-12">
-            <h1 className="text-5xl md:text-6xl font-extrabold text-[#3B82F6] leading-none">
-              Patient <span className="text-black text-4xl md:text-5xl font-semibold">History</span>
-            </h1>
-            <div className="mt-4 text-gray-500 text-lg">
-              <span className="inline-block border-t-2 border-dotted border-gray-400 w-56 align-middle mr-3" />
-              <span className="align-middle">View patient treatment history and records</span>
-              <span className="inline-block border-t-2 border-dotted border-gray-400 w-56 align-middle ml-3" />
-            </div>
-          </div>
+            {isLoading ? (
+              <div className="mt-10 p-8 bg-gray-50 rounded-lg">
+                <div className="text-center text-gray-500">
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    Loading history data...
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Fetching data from database.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Stats row */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <StatCard
+                    title="Total Patients"
+                    value={formatNumber(dashboardStats.totalPatients)}
+                    delta={
+                      dashboardStats.totalPatientsDelta > 0
+                        ? `+${dashboardStats.totalPatientsDelta}`
+                        : ""
+                    }
+                    deltaNote={
+                      dashboardStats.totalPatientsDelta > 0 ? "this week" : ""
+                    }
+                  />
 
-          {/* Content placeholder */}
-          <div className="mt-10 p-8 bg-gray-50 rounded-lg">
-            <div className="text-center text-gray-500">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No history records</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Patient history and treatment records will appear here.
-              </p>
-            </div>
+                  <StatCard
+                    title="CT Scans Uploaded"
+                    value={formatNumber(dashboardStats.ctUploaded)}
+                    delta={
+                      dashboardStats.ctUploadedDelta > 0
+                        ? `+${dashboardStats.ctUploadedDelta}`
+                        : ""
+                    }
+                    deltaNote={
+                      dashboardStats.ctUploadedDelta > 0 ? "this week" : ""
+                    }
+                  />
+
+                  <ReportsCard
+                    draft={dashboardStats.reportsDraft}
+                    approved={dashboardStats.reportsApproved}
+                  />
+                </div>
+
+                {/* Activity Trends */}
+                <section className="mt-8 rounded-2xl bg-[#EEF7FF] p-6">
+                  <div className="text-xl font-semibold text-slate-800">
+                    Activity Trends
+                  </div>
+
+                  <div className="mt-5 rounded-xl bg-white border border-slate-100 p-6">
+                    <TrendsPlaceholder
+                      values={[
+                        weeklyPatientStats?.total ?? 0,
+                        weeklyStats?.draft ?? 0,
+                        weeklyStats?.revise ?? 0,
+                        weeklyStats?.approved ?? 0,
+                      ]}
+                      labels={[
+                        "Patients",
+                        "Draft",
+                        "Revising",
+                        "Approved",
+                      ]}
+                    />
+                  </div>
+                </section>
+
+                {/* Bottom row */}
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <section className="rounded-2xl bg-[#EEF7FF] p-6">
+                    <div className="text-[16px] font-semibold text-slate-800">
+                      Workflow Status
+                    </div>
+
+                    <div className="mt-5 rounded-xl bg-white border border-slate-100 p-4 space-y-4">
+                      {workflow.rows.map((r) => (
+                        <ProgressRow
+                          key={r.label}
+                          label={r.label}
+                          value={r.value}
+                          max={workflow.max}
+                          tone={r.tone}
+                        />
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="rounded-2xl bg-[#EEF7FF] p-6">
+                    <div className="text-[16px] font-semibold text-slate-800">
+                      Recent Activity
+                    </div>
+
+                    <div className="mt-5 rounded-xl bg-white border border-slate-100 p-4">
+                      <div className="grid grid-cols-[1fr_1.6fr_auto] gap-3 text-slate-400 text-sm pb-3 border-b">
+                        <div>User</div>
+                        <div>Action</div>
+                        <div className="text-right">Time</div>
+                      </div>
+
+                      {recentActivity.map((row, index) => (
+                        <ActivityRow
+                          key={`${row.user}-${row.time}-${index}`}
+                          user={row.user}
+                          action={row.action}
+                          time={row.time}
+                        />
+                      ))}
+
+                      {recentActivity.length === 0 && (
+                        <div className="py-10 text-center text-slate-500 text-sm">
+                          No recent activity yet.
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                </div>
+              </>
+            )}
+
+            {/* Optional: show routed state if you pass it in */}
+            {state?.debug && (
+              <pre className="mt-8 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-4 overflow-auto">
+                {JSON.stringify(state, null, 2)}
+              </pre>
+            )}
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 };
 
 export default HistoryPage;
 
-//Usage Example
-// Example: DashboardPage.jsx or ReportStatsCard.jsx
+/* -------------------- Helpers + Components -------------------- */
 
-import { useReportStore } from '../stores/useReportStore';
-import { useEffect } from 'react';
+function formatNumber(n) {
+  if (typeof n !== "number") return String(n ?? "");
+  return n.toLocaleString();
+}
 
-export function ReportStatsCard() {
-  const { 
-    stats, 
-    weeklyStats, 
-    statsLoading, 
-    weeklyStatsLoading,
-    fetchAllStats, 
-    fetchAllWeeklyStats 
-  } = useReportStore();
+function StatCard({ title, value, delta, deltaNote }) {
+  return (
+    <div className="rounded-2xl bg-[#EEF7FF] p-6">
+      <div className="text-[16px] text-slate-800 font-medium">{title}</div>
+      <div className="mt-2 text-3xl font-semibold text-slate-900">{value}</div>
 
-  // Load both total and weekly stats on component mount
-  useEffect(() => {
-    fetchAllStats();        // Fetches: total, draft, revise, approved (all-time)
-    fetchAllWeeklyStats();  // Fetches: draft, revise, approved (this week)
-  }, [fetchAllStats, fetchAllWeeklyStats]);
+      {(delta || deltaNote) && (
+        <div className="mt-2 text-sm">
+          <span className="text-emerald-600 font-medium">{delta}</span>{" "}
+          <span className="text-slate-500">{deltaNote}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
-  // Calculate percentages: weekly / total
-  const calculatePercentage = (weekly, total) => {
-    if (total === 0) return 0;
-    return Math.round((weekly / total) * 100);
-  };
+function ReportsCard({ draft, approved }) {
+  return (
+    <div className="rounded-2xl bg-[#EEF7FF] p-6">
+      <div className="text-[16px] text-slate-800 font-medium">Reports</div>
 
-  if (statsLoading || weeklyStatsLoading) {
-    return <div>Loading statistics...</div>;
-  }
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <ReportPill label="Draft" value={draft} tone="blue" />
+        <ReportPill label="Approved" value={approved} tone="green" />
+      </div>
+    </div>
+  );
+}
+
+function ReportPill({ label, value, tone }) {
+  const toneClass =
+    tone === "green"
+      ? "bg-[#DFF7E6] text-slate-800"
+      : "bg-[#CDEAFF] text-slate-800";
 
   return (
-    <div className="grid grid-cols-3 gap-4 p-6">
-      {/* Draft Reports Card */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">Draft Reports</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Total:</span>
-            <span className="font-bold text-lg">{stats.draft}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">This Week:</span>
-            <span className="font-bold text-lg text-blue-600">{weeklyStats.draft}</span>
-          </div>
-          <div className="flex justify-between pt-2 border-t">
-            <span className="text-gray-600">Weekly %:</span>
-            <span className="font-bold text-blue-600">
-              {calculatePercentage(weeklyStats.draft, stats.draft)}%
-            </span>
-          </div>
-        </div>
+    <div className={`rounded-xl p-4 text-center ${toneClass}`}>
+      <div className="text-xl font-semibold">{formatNumber(value)}</div>
+      <div className="text-sm text-slate-600">{label}</div>
+    </div>
+  );
+}
+
+function TrendsPlaceholder({ values = [], labels = [] }) {
+  const safeValues = values.length > 0 ? values : [10, 20, 15, 30];
+  const safeLabels = labels.length > 0 ? labels : ["A", "B", "C", "D"];
+  const maxValue = Math.max(...safeValues, 1);
+
+  return (
+    <div className="h-[240px] relative overflow-hidden rounded-xl bg-[#F7FBFF] border border-slate-100">
+      <div className="absolute inset-0 flex items-end gap-6 px-10 pb-10">
+        {safeValues.map((value, i) => (
+          <div
+            key={i}
+            className="flex-1 rounded-t-2xl bg-[#D7E9F8] opacity-70"
+            style={{
+              height: `${Math.max(28, (value / maxValue) * 150)}px`,
+            }}
+          />
+        ))}
       </div>
 
-      {/* Revising Reports Card */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">Revising Reports</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Total:</span>
-            <span className="font-bold text-lg">{stats.revise}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">This Week:</span>
-            <span className="font-bold text-lg text-yellow-600">{weeklyStats.revise}</span>
-          </div>
-          <div className="flex justify-between pt-2 border-t">
-            <span className="text-gray-600">Weekly %:</span>
-            <span className="font-bold text-yellow-600">
-              {calculatePercentage(weeklyStats.revise, stats.revise)}%
-            </span>
-          </div>
-        </div>
+      <div className="absolute bottom-3 left-0 right-0 flex justify-between px-10 text-slate-400 text-sm">
+        {safeLabels.map((label, i) => (
+          <span key={i}>{label}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProgressRow({ label, value, max, tone }) {
+  const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
+  const barColor = tone === "green" ? "bg-emerald-500" : "bg-sky-500";
+
+  return (
+    <div className="grid grid-cols-[110px_1fr_60px] items-center gap-3">
+      <div className="text-sm text-slate-600 font-medium">{label}</div>
+
+      <div className="h-5 rounded-full bg-slate-100 border border-slate-200 overflow-hidden">
+        <div className={`h-full ${barColor}`} style={{ width: `${pct}%` }} />
       </div>
 
-      {/* Approved Reports Card */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">Approved Reports</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Total:</span>
-            <span className="font-bold text-lg">{stats.approved}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">This Week:</span>
-            <span className="font-bold text-lg text-green-600">{weeklyStats.approved}</span>
-          </div>
-          <div className="flex justify-between pt-2 border-t">
-            <span className="text-gray-600">Weekly %:</span>
-            <span className="font-bold text-green-600">
-              {calculatePercentage(weeklyStats.approved, stats.approved)}%
-            </span>
-          </div>
-        </div>
-      </div>
+      <div className="text-sm text-slate-500 text-right">{formatNumber(value)}</div>
+    </div>
+  );
+}
 
-      {/* Total Reports Overview */}
-      <div className="bg-white rounded-lg shadow p-6 col-span-3">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">Overall Statistics</h3>
-        <div className="grid grid-cols-4 gap-4">
-          <div>
-            <p className="text-gray-600">Total Reports</p>
-            <p className="text-3xl font-bold text-gray-800">{stats.total}</p>
-          </div>
-          <div>
-            <p className="text-gray-600">Total This Week</p>
-            <p className="text-3xl font-bold text-blue-600">
-              {weeklyStats.draft + weeklyStats.revise + weeklyStats.approved}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-600">Weekly %</p>
-            <p className="text-3xl font-bold text-purple-600">
-              {calculatePercentage(
-                weeklyStats.draft + weeklyStats.revise + weeklyStats.approved,
-                stats.total
-              )}%
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-600">Completion Rate</p>
-            <p className="text-3xl font-bold text-green-600">
-              {calculatePercentage(stats.approved, stats.total)}%
-            </p>
-          </div>
-        </div>
+function ActivityRow({ user, action, time }) {
+  return (
+    <div className="grid grid-cols-[1fr_1.6fr_auto] gap-3 py-4 border-b last:border-b-0 items-center">
+      <div className="text-slate-600">{user}</div>
+      <div className="text-slate-800 font-medium">{action}</div>
+      <div className="text-right">
+        <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700">
+          {time}
+        </span>
       </div>
     </div>
   );
