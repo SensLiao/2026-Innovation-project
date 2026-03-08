@@ -61,3 +61,39 @@ export const addSeg = async (req, res) => {
 }
 
 
+
+export const getSegNum = async (req, res) => {
+    try {
+        const segNum = await sql`
+            SELECT COUNT(sid) as count FROM segmentations;
+        `;
+        console.log("CT Scans / Segmentation counted successfully");
+        res.status(200).json({success:true, data: segNum[0].count});
+    } catch (error) {
+        console.error("Error counting segmentations:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const getSegThisWeek = async (req, res) => {
+    try {
+        // Calculate Monday of current week (start of week) in UTC
+        const today = new Date();
+        const dayOfWeek = today.getUTCDay();
+        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const weekStart = new Date(today);
+        weekStart.setUTCDate(today.getUTCDate() - daysToMonday);
+        weekStart.setUTCHours(0, 0, 0, 0);
+
+        const segThisWeek = await sql`
+            SELECT COUNT(sid) as count FROM segmentations
+            WHERE createdat >= ${weekStart.toISOString()}
+        `;
+        
+        console.log("Segmentations registered this week counted successfully");
+        res.status(200).json({success: true, data: segThisWeek[0].count});
+    } catch (error) {
+        console.error("Error counting segmentations this week:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};

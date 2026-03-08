@@ -64,3 +64,135 @@ const HistoryPage = () => {
 };
 
 export default HistoryPage;
+
+//Usage Example
+// Example: DashboardPage.jsx or ReportStatsCard.jsx
+
+import { useReportStore } from '../stores/useReportStore';
+import { useEffect } from 'react';
+
+export function ReportStatsCard() {
+  const { 
+    stats, 
+    weeklyStats, 
+    statsLoading, 
+    weeklyStatsLoading,
+    fetchAllStats, 
+    fetchAllWeeklyStats 
+  } = useReportStore();
+
+  // Load both total and weekly stats on component mount
+  useEffect(() => {
+    fetchAllStats();        // Fetches: total, draft, revise, approved (all-time)
+    fetchAllWeeklyStats();  // Fetches: draft, revise, approved (this week)
+  }, [fetchAllStats, fetchAllWeeklyStats]);
+
+  // Calculate percentages: weekly / total
+  const calculatePercentage = (weekly, total) => {
+    if (total === 0) return 0;
+    return Math.round((weekly / total) * 100);
+  };
+
+  if (statsLoading || weeklyStatsLoading) {
+    return <div>Loading statistics...</div>;
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-4 p-6">
+      {/* Draft Reports Card */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">Draft Reports</h3>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Total:</span>
+            <span className="font-bold text-lg">{stats.draft}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">This Week:</span>
+            <span className="font-bold text-lg text-blue-600">{weeklyStats.draft}</span>
+          </div>
+          <div className="flex justify-between pt-2 border-t">
+            <span className="text-gray-600">Weekly %:</span>
+            <span className="font-bold text-blue-600">
+              {calculatePercentage(weeklyStats.draft, stats.draft)}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Revising Reports Card */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">Revising Reports</h3>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Total:</span>
+            <span className="font-bold text-lg">{stats.revise}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">This Week:</span>
+            <span className="font-bold text-lg text-yellow-600">{weeklyStats.revise}</span>
+          </div>
+          <div className="flex justify-between pt-2 border-t">
+            <span className="text-gray-600">Weekly %:</span>
+            <span className="font-bold text-yellow-600">
+              {calculatePercentage(weeklyStats.revise, stats.revise)}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Approved Reports Card */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">Approved Reports</h3>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Total:</span>
+            <span className="font-bold text-lg">{stats.approved}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">This Week:</span>
+            <span className="font-bold text-lg text-green-600">{weeklyStats.approved}</span>
+          </div>
+          <div className="flex justify-between pt-2 border-t">
+            <span className="text-gray-600">Weekly %:</span>
+            <span className="font-bold text-green-600">
+              {calculatePercentage(weeklyStats.approved, stats.approved)}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Total Reports Overview */}
+      <div className="bg-white rounded-lg shadow p-6 col-span-3">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">Overall Statistics</h3>
+        <div className="grid grid-cols-4 gap-4">
+          <div>
+            <p className="text-gray-600">Total Reports</p>
+            <p className="text-3xl font-bold text-gray-800">{stats.total}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">Total This Week</p>
+            <p className="text-3xl font-bold text-blue-600">
+              {weeklyStats.draft + weeklyStats.revise + weeklyStats.approved}
+            </p>
+          </div>
+          <div>
+            <p className="text-gray-600">Weekly %</p>
+            <p className="text-3xl font-bold text-purple-600">
+              {calculatePercentage(
+                weeklyStats.draft + weeklyStats.revise + weeklyStats.approved,
+                stats.total
+              )}%
+            </p>
+          </div>
+          <div>
+            <p className="text-gray-600">Completion Rate</p>
+            <p className="text-3xl font-bold text-green-600">
+              {calculatePercentage(stats.approved, stats.total)}%
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

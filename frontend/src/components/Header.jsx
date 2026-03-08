@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../useDB/useAuth";
+import { useAuthStore } from "../stores/useAuthStore";
 import Logo from "../assets/images/Logo.png";
 
 // ------- DD/MM/YYYY formatter -------
@@ -17,6 +17,26 @@ export const toDDMMYYYY = (value) => {
   }).format(d);
 };
 
+// ------- Convert UTC timestamp to local time and format as DD/MM/YYYY HH:MM -------
+export const toDDMMYYYYHHMM = (value) => {
+  if (!value) return "—";
+  // Handle Firestore timestamps
+  if (value?.toDate) value = value.toDate();
+  if (value?.seconds) value = new Date(value.seconds * 1000);
+  // Create Date object from value (automatically parsed as UTC if ISO string)
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  // Format with local timezone using Intl.DateTimeFormat
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(d);
+};
+
 const Header = ({ 
   activeTab = "patient", 
   showLogout = true, 
@@ -24,7 +44,7 @@ const Header = ({
 }) => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
     navigate("/", { replace: true }); 
