@@ -1,0 +1,91 @@
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  REGISTRY: "192.168.50.174:5050"
+  IMAGE_BACKEND: "${REGISTRY}/root/soma-ai/backend"
+  IMAGE_FRONTEND: "${REGISTRY}/root/soma-ai/frontend"
+  TAG: "${CI_COMMIT_SHORT_SHA}"
+
+# ---- Test Stage ----
+test-frontend:
+  stage: test
+  image: node:20-alpine
+  script:
+    - cd frontend && npm ci && npm run test:run
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /\[skip ci\]/
+      when: never
+    - changes:
+        - frontend/**/*
+
+test-backend:
+  stage: test
+  image: node:20-slim
+  variables:
+    MOCK_MODE: "true"
+  script:
+    - cd backend && npm ci && npm run test:mock
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /\[skip ci\]/
+      when: never
+    - changes:
+        - backend/**/*
+
+# ---- Build Stage ----
+build-backend:
+  stage: build
+  image: docker:27
+  before_script:
+    - docker login -u root -p "${CI_REGISTRY_PASSWORD}" "${REGISTRY}"
+  script:
+    - docker build -t "${IMAGE_BACKEND}:${TAG}" -t "${IMAGE_BACKEND}:latest" backend/
+    - docker push "${IMAGE_BACKEND}:${TAG}"
+    - docker push "${IMAGE_BACKEND}:latest"
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /\[skip ci\]/
+      when: never
+    - when: on_success
+
+build-frontend:
+  stage: build
+  image: docker:27
+  before_script:
+    - docker login -u root -p "${CI_REGISTRY_PASSWORD}" "${REGISTRY}"
+  script:
+    - docker build -t "${IMAGE_FRONTEND}:${TAG}" -t "${IMAGE_FRONTEND}:latest" frontend/
+    - docker push "${IMAGE_FRONTEND}:${TAG}"
+    - docker push "${IMAGE_FRONTEND}:latest"
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /\[skip ci\]/
+      when: never
+    - when: on_success
+
+# ---- Deploy Stage (GitOps: update manifests then ArgoCD syncs) ----
+deploy:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache git curl
+  script:
+    - git config user.email ci@soma-ai.org
+    - git config user.name GitLab-CI
+    - "git remote set-url origin http://root:${GITLAB_DEPLOY_TOKEN}@192.168.50.174/root/soma-ai.git"
+    - git fetch origin main
+    - git checkout main
+    - "sed -i s/newTag:.*/newTag:.$TAG/ k8s/overlays/homelab/kustomization.yaml"
+    - git add k8s/overlays/homelab/kustomization.yaml
+    - "git diff --cached --quiet || git commit -m 'deploy: $TAG [skip ci]'"
+    - git push origin main
+    - "curl -s https://api.day.app/qw8Dy26UHnsfkDW7VjYX5n/Soma-AI-Deployed/$TAG || true"
+  environment:
+    name: homelab
+    url: https://soma-ai.org
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /\[skip ci\]/
+      when: never
+    - if: $CI_COMMIT_BRANCH == "main"

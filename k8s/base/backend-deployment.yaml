@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: soma-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: 192.168.50.174:5050/root/soma-ai/backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: SKIP_MODELS
+              value: "true"
+            - name: NO_PROXY
+              value: "*"
+            - name: no_proxy
+              value: "*"
+          envFrom:
+            - secretRef:
+                name: soma-ai-env
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          volumeMounts:
+            - name: models
+              mountPath: /app/models
+      # nodeSelector temporarily removed - V100 registry not configured
+      # Re-enable when models needed: kubernetes.io/hostname: k3s-v100
+      imagePullSecrets:
+        - name: gitlab-registry
+      volumes:
+        - name: models
+          emptyDir: {}

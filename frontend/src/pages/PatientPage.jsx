@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { usePatientDB } from "../useDB/usePatients";
+import { usePatientStore } from "../stores/usePatientStore";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./patient.css";
 import main from "../assets/images/Main.png";
@@ -9,7 +9,7 @@ import Header from "../components/Header";
 import { toDDMMYYYY } from "../components/Header";
 
 const PatientPage = () => {
-  const { patients, loading, error, fetchPatients, deletePatient, fetchPatientByID, updatePatient, setPatientData, patientData } = usePatientDB();
+  const { patients, loading, error, fetchPatients, deletePatient, fetchPatientByID, updatePatient, setPatientData, patientData } = usePatientStore();
   const [q, setQ] = useState("");
   const [editPid, setEditPid] = useState(null);
   const [editFields, setEditFields] = useState({ name: '', age: '', gender: '', email: '' });
