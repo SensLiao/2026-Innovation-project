@@ -1,10 +1,10 @@
 // src/components/RequireAuth.jsx
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "../useDB/useAuth";
+import { useAuthStore } from "../stores/useAuthStore";
 
 export default function RequireAuth() {
-  const { user, fetchMe } = useAuth();
+  const { user, fetchMe } = useAuthStore();
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {

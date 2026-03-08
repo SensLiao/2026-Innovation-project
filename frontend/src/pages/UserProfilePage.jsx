@@ -1,18 +1,36 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { usePubDB } from "../useDB/usePub";
-import { useUserDB } from "../useDB/useUsers";
-import { useAuth } from "../useDB/useAuth";
+import { usePubStore } from "../stores/usePubStore";
+import { useUserStore } from "../stores/useUserStore";
+import { useAuthStore } from "../stores/useAuthStore";
 import Decoration from '../assets/images/main2.png';
 import Logo from "../assets/images/Logo.png";
 
+// ------- Convert UTC timestamp to local time and format as DD/MM/YYYY HH:MM -------
+export const toDDMMYYYYHHMM = (value) => {
+  if (!value) return "—";
+  // Handle Firestore timestamps
+  if (value?.toDate) value = value.toDate();
+  if (value?.seconds) value = new Date(value.seconds * 1000);
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(d);
+};
+
 const UserProfilePage = () => {
   const navigate = useNavigate();
-  const { user, fetchMe } = useAuth();
+  const { user, fetchMe } = useAuthStore();
   // Local user state for display, to allow refresh after update
 
-  const { publications, loading, error, fetchPublicationsByUid } = usePubDB();
-  const { updateUser, setuserData, loading: userLoading } = useUserDB();
+  const { publications, loading, error, fetchPublicationsByUid } = usePubStore();
+  const { updateUser, setuserData, loading: userLoading } = useUserStore();
   // Edit state
   const [isEditing, setIsEditing] = useState(false);
   const [editFields, setEditFields] = useState({
@@ -25,6 +43,84 @@ const UserProfilePage = () => {
     profilephoto: user?.profilephoto || "",
   });
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Profile upload state and helpers
+  const [profileUploading, setProfileUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const fileToDataUrl = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const compressImageToDataUrl = (file, maxWidth = 1024, quality = 0.8) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const ratio = Math.min(1, maxWidth / Math.max(img.width, img.height));
+        const w = Math.round(img.width * ratio);
+        const h = Math.round(img.height * ratio);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      alert('Only JPG and PNG files are allowed');
+      e.target.value = '';
+      return;
+    }
+
+    const MAX_RAW_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_RAW_SIZE) {
+      alert('File too large (max 5MB)');
+      e.target.value = '';
+      return;
+    }
+
+    setProfileUploading(true);
+    try {
+      let dataUrl;
+      if (file.size > 500 * 1024) {
+        dataUrl = await compressImageToDataUrl(file, 1024, 0.8);
+      } else {
+        dataUrl = await fileToDataUrl(file);
+      }
+
+      // Immediate UI feedback
+      setuserData({ ...user, profilephoto: dataUrl });
+      setEditFields(prev => ({ ...prev, profilephoto: dataUrl }));
+
+      // Persist and refresh auth user
+      await updateUser(user.uid);
+      await fetchMe();
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 1200);
+    } catch (err) {
+      console.error('Error uploading avatar:', err);
+      alert('Failed to upload avatar: ' + (err.message || 'Unknown'));
+    } finally {
+      e.target.value = '';
+      setProfileUploading(false);
+    }
+  };
 
   // 首次进入没 user 时拉一次，会自动带上 cookie
   useEffect(() => {
@@ -164,19 +260,39 @@ const UserProfilePage = () => {
 
                       {/* Left column: avatar + buttons */}
                       <div className="flex flex-col items-start">
-                        <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-blue-100 mb-4">
-                          {user.profilephoto ? (
-                            <img src={user.profilephoto} alt="Profile" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400">No Photo</div>
+                        <div className="relative">
+                          <input
+                            id="avatar-input"
+                            type="file"
+                            accept="image/png, image/jpeg"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            className="hidden"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={userLoading || profileUploading}
+                            className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-blue-100 mb-4 p-0 bg-transparent flex items-center justify-center"
+                            title="Click to change avatar"
+                          >
+                            {user.profilephoto ? (
+                              <img src={user.profilephoto} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">No Photo</div>
+                            )}
+                          </button>
+
+                          {profileUploading && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="bg-white/80 px-2 py-1 rounded">Uploading...</div>
+                            </div>
                           )}
                         </div>
 
                       {!isEditing ? (
                         <div className="flex flex-col gap-3">
-                          <button className="h-10 w-32 bg-[#007AFF] text-white text-[11px] rounded-lg hover:bg-[#006CE0]">
-                            Change Avatar
-                          </button>
                           <button className="h-10 w-32 bg-[#007AFF] text-white text-[11px] rounded-lg hover:bg-[#006CE0]">
                             Change Password
                           </button>
@@ -326,7 +442,7 @@ const UserProfilePage = () => {
                           <div className="flex items-center gap-8 py-1">
                             <span className="text-slate-600 whitespace-nowrap w-28">Created At:</span>
                             <span className="text-slate-700 w-64">
-                              {user?.createdat ? new Date(user.createdat).toISOString().slice(0, 10) : "—"}
+                              {user?.createdat ? toDDMMYYYYHHMM(user.createdat) : "—"}
                             </span>
                           </div>
 
@@ -376,174 +492,3 @@ const UserProfilePage = () => {
 
 export default UserProfilePage;
 
-// Format date as YYYY-MM-DD
-function formatDate(val) {
-  if (!val) return "—";
-  const d = new Date(val);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toISOString().slice(0, 10);
-}
-
-
-    //   <div className="bg-white p-8 rounded shadow w-full max-w-md relative">
-    //     <div className="flex flex-col items-center mb-6">
-    //       <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-blue-200">
-    //         {user.profilephoto ? (
-    //           <img src={user.profilephoto} alt="Profile" className="w-full h-full object-cover" />
-    //         ) : (
-    //           <div className="w-full h-full flex items-center justify-center text-gray-400">No Photo</div>
-    //         )}
-    //       </div>
-    //       {isEditing ? (
-    //         <>
-    //           <input
-    //             className="text-2xl font-bold mb-2 border-b border-gray-300 focus:outline-none focus:border-blue-400 text-center w-full"
-    //             value={editFields.name}
-    //             onChange={e => setEditFields(f => ({ ...f, name: e.target.value }))}
-    //           />
-    //           <input
-    //             className="text-gray-500 mb-2 border-b border-gray-300 focus:outline-none focus:border-blue-400 text-center w-full"
-    //             value={editFields.email}
-    //             onChange={e => setEditFields(f => ({ ...f, email: e.target.value }))}
-    //           />
-    //         </>
-    //       ) : (
-    //         <>
-    //           <h2 className="text-2xl font-bold mb-2">{user.name || "User"}</h2>
-    //           <p className="text-gray-500">{user.email}</p>
-    //         </>
-    //       )}
-    //     </div>
-    //     <div className="space-y-2 text-sm mb-6">
-    //       <div>
-    //         <strong>Phone:</strong>{" "}
-    //         {isEditing ? (
-    //           <input
-    //             className="border-b border-gray-300 focus:outline-none focus:border-blue-400 w-40"
-    //             value={editFields.phone}
-    //             onChange={e => setEditFields(f => ({ ...f, phone: e.target.value }))}
-    //           />
-    //         ) : (user.phone || "—")}
-    //       </div>
-    //       <div>
-    //         <strong>Year of Experience:</strong>{" "}
-    //         {isEditing ? (
-    //           <input
-    //             className="border-b border-gray-300 focus:outline-none focus:border-blue-400 w-20"
-    //             type="number"
-    //             value={editFields.yearofexperience}
-    //             onChange={e => setEditFields(f => ({ ...f, yearofexperience: e.target.value }))}
-    //           />
-    //         ) : ( user.yearofexperience ?? "—")}
-    //       </div>
-    //       <div>
-    //         <strong>Education:</strong>{" "}
-    //         {isEditing ? (
-    //           <input
-    //             className="border-b border-gray-300 focus:outline-none focus:border-blue-400 w-40"
-    //             value={editFields.education}
-    //             onChange={e => setEditFields(f => ({ ...f, education: e.target.value }))}
-    //           />
-    //         ) : (user.education || "—")}
-    //       </div>
-    //       <div>
-    //         <strong>Languages:</strong>{" "}
-    //         {isEditing ? (
-    //           <input
-    //             className="border-b border-gray-300 focus:outline-none focus:border-blue-400 w-40"
-    //             value={editFields.languages}
-    //             onChange={e => setEditFields(f => ({ ...f, languages: e.target.value }))}
-    //           />
-    //         ) : ( user.languages || "—")}
-    //       </div>
-    //       <div><strong>Created At:</strong> {formatDate(user.createdat)}</div>
-    //     </div>
-    //     {/* Edit/Save/Cancel buttons */}
-    //     <div className="flex gap-3 mb-6">
-    //       {isEditing ? (
-    //         <>
-    //           <button
-    //             className="px-4 py-2 bg-green-500 text-white rounded"
-    //             onClick={async () => {
-    //               // Ensure yearofexperience is always a string (not number) for backend
-    //               let yoe = editFields.yearofexperience;
-    //               if (yoe === null || yoe === undefined) yoe = "";
-    //               yoe = String(yoe);
-    //               console.log(editFields.yearofexperience)
-    //               setuserData({
-    //                 name: editFields.name,
-    //                 email: editFields.email,
-    //                 phone: editFields.phone,
-    //                 yearofexperience: yoe,
-    //                 education: editFields.education,
-    //                 languages: editFields.languages,
-    //                 profilephoto: editFields.profilephoto,
-    //               });
-    //               await updateUser(user.uid);
-    //               await fetchMe(); // Refresh auth user info
-
-    //               // Update editFields with latest value from localUser after update
-    //               setEditFields(prev => ({
-    //                 ...prev,
-    //                 yearofexperience: yoe
-    //               }));
-    //               setIsEditing(false);
-    //               setShowSuccess(true);
-    //               setTimeout(() => setShowSuccess(false), 2000);
-    //             }}
-    //             disabled={userLoading}
-    //           >
-    //             Save
-    //           </button>
-    //           <button
-    //             className="px-4 py-2 bg-gray-400 text-white rounded"
-    //             onClick={() => {
-    //               setIsEditing(false);
-    //               setEditFields({
-    //                 name: user.name || "",
-    //                 email: user.email || "",
-    //                 phone: user.phone || "",
-    //                 yearofexperience: user.yearofexperience ?? "",
-    //                 education: user.education || "",
-    //                 languages: user.languages || "",
-    //                 profilephoto: user.profilephoto || "",
-    //               });
-    //             }}
-    //             disabled={userLoading}
-    //           >
-    //             Cancel
-    //           </button>
-    //         </>
-    //       ) : (
-    //         <button
-    //           className="px-4 py-2 bg-blue-500 text-white rounded"
-    //           onClick={() => setIsEditing(true)}
-    //         >
-    //           Edit
-    //         </button>
-
-    //       )}
-    //     </div>
-    //     <div className="mb-6">
-    //       <h3 className="text-lg font-semibold mb-2">Publications</h3>
-    //       {loading && <div>Loading publications...</div>}
-    //       {error && <div className="text-red-500">Error: {error}</div>}
-    //       {!loading && !error && publications.length === 0 && <div>No publications found.</div>}
-    //       {!loading && !error && publications.length > 0 && (
-    //         <ul className="list-disc pl-5 space-y-1">
-    //           {publications.map((pub) => (
-    //             <li key={pub.PID || pub.pid}>
-    //               <div className="font-medium">{pub.Title || pub.title}</div>
-    //               <div className="text-xs text-gray-500">{pub.PublicationDate || pub.publicationdate || "—"}</div>
-    //               <div className="text-xs">{pub.Description || pub.description || ""}</div>
-    //               {pub.Link && (
-    //                 <a href={pub.Link} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline text-xs">View Publication</a>
-    //               )}
-    //             </li>
-    //           ))}
-    //         </ul>
-    //       )}
-    //     </div>
-    //     <button onClick={() => navigate(-1)} className="mt-6 px-4 py-2 bg-blue-500 text-white rounded">Back</button>
-    //   </div>
-    // </div>

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../useDB/useAuth';
-import { useUserDB } from '../useDB/useUsers';
+import { useAuthStore } from '../stores/useAuthStore';
+import { useUserStore } from '../stores/useUserStore';
 import { useNavigate } from 'react-router-dom';
 import LoginImage from '../assets/images/Login.png';
 import Decoration from '../assets/images/main2.png';
 import Logo from "../assets/images/Logo.png";
 
 const LoginPage = () => {
-  const { login, loading, error } = useAuth();
-  const { addUser, signupData, setSignupData } = useUserDB();
+  const { login, loading, error } = useAuthStore();
+  const { addUser, signupData, setSignupData } = useUserStore();
   // const { users, loading, error, fetchUsers, addUser, signupData, setSignupData } = useUserDB();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

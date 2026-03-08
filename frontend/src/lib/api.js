@@ -1,6 +1,6 @@
 // src/lib/api.js
 import axios from "axios";
-import { useAuth } from "../useDB/useAuth";
+import { useAuthStore } from "../stores/useAuthStore";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000/api";
 
@@ -18,7 +18,7 @@ api.interceptors.response.use(
     const status = err?.response?.status;
     if (status === 401) {
       // 会话失效：清空本地 user，必要时跳转登录
-      try { useAuth.getState().logout(); } catch {}
+      try { useAuthStore.getState().logout(); } catch {}
       // 可选：window.location.href = "/";
     }
     return Promise.reject(err);

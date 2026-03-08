@@ -84,3 +84,39 @@ export const deletePatient = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const getPatientNum = async (req, res) => {
+    try {
+        const patientNum = await sql`
+            SELECT COUNT(PID) as count FROM patients;
+        `;
+        console.log("Total Patients counted");
+        res.status(200).json({success:true, data: patientNum[0].count});
+    } catch (error) {
+        console.error("Error counting patients:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const getPatientsThisWeek = async (req, res) => {
+    try {
+        // Calculate Monday of current week (start of week) in UTC
+        const today = new Date();
+        const dayOfWeek = today.getUTCDay();
+        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const weekStart = new Date(today);
+        weekStart.setUTCDate(today.getUTCDate() - daysToMonday);
+        weekStart.setUTCHours(0, 0, 0, 0);
+
+        const patientsThisWeek = await sql`
+            SELECT COUNT(PID) as count FROM patients
+            WHERE createdat >= ${weekStart.toISOString()}
+        `;
+        
+        console.log("Weekly patient count fetched successfully");
+        res.status(200).json({success: true, data: patientsThisWeek[0].count});
+    } catch (error) {
+        console.error("Error counting weekly patients:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
