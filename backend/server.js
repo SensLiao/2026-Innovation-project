@@ -14,6 +14,7 @@ import globals from './globals.js';
 import * as modelModule from './routes/models.js';
 import buildAuthRouter from './routes/authRoute.js';
 import segRoute from './routes/segRoute.js';
+import reportRoute from './routes/reportRoute.js';
 
 dotenv.config();
 
@@ -54,6 +55,7 @@ app.use('/api', modelModule.router);
 app.use('/api', agentRoute);  // Multi-agent medical report routes
 app.use('/api/auth', buildAuthRouter());
 app.use('/api/segs', segRoute);
+app.use('/api/reports', reportRoute); // Diagnosis report routes
 
 async function initDB() {
   // Initialize your database connection here if needed
@@ -61,58 +63,58 @@ async function initDB() {
   try{
     await sql`
       CREATE TABLE IF NOT EXISTS users (
-        UID SERIAL PRIMARY KEY,
-        Name VARCHAR(50) NOT NULL,
-        Email VARCHAR(50) UNIQUE NOT NULL,
-        Phone VARCHAR(32) UNIQUE,
-        PasswordHash VARCHAR(255) NOT NULL,
-        CreatedAt TIMESTAMP DEFAULT NOW(),
-        ProfilePhoto VARCHAR(255),
-        YearOfExperience INT DEFAULT 0 CHECK (YearOfExperience BETWEEN 0 AND 100),
-        Education VARCHAR(100),
-        Languages VARCHAR(100)
+        uid SERIAL PRIMARY KEY,
+        name VARCHAR(50) NOT NULL,
+        email VARCHAR(50) UNIQUE NOT NULL,
+        phone VARCHAR(32) UNIQUE,
+        passwordhash VARCHAR(255) NOT NULL,
+        createdat TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        profilephoto VARCHAR(255),
+        yearofexperience INT DEFAULT 0 CHECK (yearofexperience BETWEEN 0 AND 100),
+        education VARCHAR(100),
+        languages VARCHAR(100)
       );
     `;
     await sql`
       CREATE TABLE IF NOT EXISTS publication (
-        PID SERIAL PRIMARY KEY,
-        Title VARCHAR(100) NOT NULL,
-        Description TEXT,
-        Author VARCHAR(50) NOT NULL,
-        PublicationDate DATE NOT NULL,
-        Link VARCHAR(255),
-        UID INT NOT NULL REFERENCES users(UID) ON DELETE CASCADE
+        pid SERIAL PRIMARY KEY,
+        title VARCHAR(100) NOT NULL,
+        description TEXT,
+        author VARCHAR(50) NOT NULL,
+        publicationdate DATE NOT NULL,
+        link VARCHAR(255),
+        uid INT NOT NULL REFERENCES users(uid) ON DELETE CASCADE
       );
     `
     await sql`
       CREATE TABLE IF NOT EXISTS patients (
-        PID SERIAL PRIMARY KEY,
-        Name VARCHAR(50) NOT NULL,
-        Age INT NOT NULL,
-        DateOfBirth DATE NOT NULL,
-        Gender VARCHAR(10) NOT NULL,
-        Phone VARCHAR(32),
-        Email VARCHAR(50),
-        ProfilePhoto VARCHAR(255),
-        CreatedAt TIMESTAMP DEFAULT NOW(),
-        EmergencyContactName VARCHAR(50),
-        EmergencyContactPhone VARCHAR(32),
-        StreetAddress VARCHAR(100),
-        Suburb VARCHAR(50),
-        State VARCHAR(50),
-        Postcode VARCHAR(10),
-        Country VARCHAR(50),
+        pid SERIAL PRIMARY KEY,
+        name VARCHAR(50) NOT NULL,
+        age INT NOT NULL,
+        dateofbirth DATE NOT NULL,
+        gender VARCHAR(10) NOT NULL,
+        phone VARCHAR(32),
+        email VARCHAR(50),
+        profilephoto TEXT,
+        createdat TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        emergencycontactname VARCHAR(50),
+        emergencycontactphone VARCHAR(32),
+        streetaddress VARCHAR(100),
+        suburb VARCHAR(50),
+        state VARCHAR(50),
+        postcode VARCHAR(10),
+        country VARCHAR(50),
 
-        CONSTRAINT patient_exists UNIQUE (Name, Age, DateOfBirth, Gender, Phone, Email, ProfilePhoto)
+        CONSTRAINT patient_exists UNIQUE (name, age, dateofbirth, gender, phone, email)
       );
     `;
-
+    
     await sql`
       CREATE TABLE IF NOT EXISTS segmentations (
         sid SERIAL PRIMARY KEY,
         pid INT NOT NULL REFERENCES patients(PID) ON DELETE CASCADE,
         uid INT NOT NULL REFERENCES users(UID) ON DELETE CASCADE,
-        createdat TIMESTAMP DEFAULT NOW(),
+        createdat TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         model VARCHAR(50) NOT NULL,
         uploadimage TEXT NOT NULL,
         origimsize INT[] NOT NULL,
