@@ -34,9 +34,13 @@ SOMA is a clinician-centred medical AI platform for chest CT. It carries a scan 
 
 ## 🏗 Architecture
 
-<p align="center"><img src="docs/architecture.png" alt="SOMA system architecture" width="100%"></p>
+<p align="center"><img src="docs/architecture-clinical.png" alt="SOMA clinical workflow" width="100%"></p>
 
-<p align="center"><sub>Interactive segmentation feeds a stateful multi-agent reporting loop grounded by a curated medical retrieval layer.</sub></p>
+<p align="center"><sub>The clinical workflow — interactive CT segmentation feeds a five-agent reporting pipeline on an Orchestrator state machine, grounded by a curated knowledge base (RAG), with a human-in-the-loop revision loop.</sub></p>
+
+<p align="center"><img src="docs/architecture-system.png" alt="SOMA system architecture" width="100%"></p>
+
+<p align="center"><sub>The system architecture — from the doctor's browser through the React SPA and Node/Express API to the multi-agent orchestrator, AI/ML services, PostgreSQL + pgvector, and the CI/CD pipeline.</sub></p>
 
 The workflow is human-in-the-loop by design:
 
@@ -52,21 +56,9 @@ The workflow is human-in-the-loop by design:
 
 <p align="center"><sub>The segmentation workspace: point and box prompts return a lesion mask in milliseconds, with IoU reported per mask (real model output).</sub></p>
 
-<p align="center"><img src="docs/specialists.png" alt="SOMA multi-agent reporting pipeline" width="100%"></p>
+## 📊 Engineering deep-dive — out-engineering the API
 
-<p align="center"><sub>Four specialist agents behind an Orchestrator state machine, plus an Alignment router that only runs on revision — a doctor moves every case past Draft Ready.</sub></p>
-
-## 📊 Engineering &amp; measured results
-
-<p align="center"><img src="docs/numbers.png" alt="SOMA measured results" width="100%"></p>
-
-<p align="center"><sub>Numbers measured on the production path, not estimated: 441 guideline entries, 768-dim embeddings, 26–55 ms retrieval, IoU ~0.92, 270 ms intent routing, 100% mode/intent accuracy.</sub></p>
-
-The revision loop was the bottleneck: every doctor message has to be understood — revise, re-analyse, or a plain question, and for which agent — before anything runs. The default GPT-4o-mini router was metered and not accurate enough, so the team fine-tuned Qwen3-1.7B on 5,000 samples with a single RTX 4090 and replaced the API call outright.
-
-<p align="center"><img src="docs/qwen.png" alt="Fine-tuned Qwen3-1.7B intent router" width="100%"></p>
-
-<p align="center"><sub>The self-hosted intent router reads each chat message and decides mode, target agent, and scope. Against GPT-4o-mini: 100% vs ~95% mode accuracy, 100% vs ~85% intent accuracy, 270 ms vs ~500 ms.</sub></p>
+The revision loop was the bottleneck: every doctor message has to be understood — revise, re-analyse, or a plain question, and for which agent — before anything runs. The default GPT-4o-mini router was metered and not accurate enough, so the team fine-tuned **Qwen3-1.7B** on 5,000 samples with a single RTX 4090 and replaced the API call outright — **270 ms** with **100% mode/intent accuracy** on the team's eval, against GPT-4o-mini's ~500 ms and ~95% / ~85%.
 
 ## 👤 My role
 
