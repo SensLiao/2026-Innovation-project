@@ -52,9 +52,17 @@ The workflow is human-in-the-loop by design:
 
 ## 📸 Screenshots
 
-<p align="center"><img src="docs/product-shot.png" alt="SOMA interactive segmentation workspace" width="100%"></p>
+<p align="center"><img src="docs/app-segmentation.png" alt="SOMA — interactive segmentation workspace" width="100%"></p>
 
-<p align="center"><sub>The segmentation workspace: point and box prompts return a lesion mask in milliseconds, with IoU reported per mask (real model output).</sub></p>
+<p align="center"><sub>The segmentation workspace — point/box tools, patient &amp; clinical context, and an AI assistant that drives the multi-agent report pipeline.</sub></p>
+
+<p align="center"><img src="docs/app-reports.png" alt="SOMA — report management" width="100%"></p>
+
+<p align="center"><sub>Report management — every case tracked through Draft Ready → Revising → Approved, with evidence-cited findings and patient context.</sub></p>
+
+<p align="center"><img src="docs/app-patients.png" alt="SOMA — patient workspace" width="100%"></p>
+
+<p align="center"><sub>The patient workspace. Live at <a href="https://app.soma-ai.org">app.soma-ai.org</a> — public demo, synthetic data.</sub></p>
 
 ## 📊 Engineering deep-dive — out-engineering the API
 

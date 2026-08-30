@@ -34,9 +34,13 @@ SOMA 是一个以临床医生为中心的胸部 CT 医学 AI 平台。它将一�
 
 ## 🏗 架构
 
-<p align="center"><img src="docs/architecture.png" alt="SOMA system architecture" width="100%"></p>
+<p align="center"><img src="docs/architecture-clinical.png" alt="SOMA 临床工作流" width="100%"></p>
 
-<p align="center"><sub>交互式分割为一个有状态的多智能体报告回路提供输入，并由一个精选的医学检索层进行事实支撑。</sub></p>
+<p align="center"><sub>临床工作流 —— 交互式 CT 分割为运行在 Orchestrator 状态机上的五智能体报告流水线提供输入，由精选知识库（RAG）事实支撑，并带有 human-in-the-loop 的修改回路。</sub></p>
+
+<p align="center"><img src="docs/architecture-system.png" alt="SOMA 系统架构" width="100%"></p>
+
+<p align="center"><sub>系统架构 —— 从医生浏览器，经 React SPA 与 Node/Express API，到多智能体编排器、AI/ML 服务、PostgreSQL + pgvector，以及 CI/CD 流水线。</sub></p>
 
 整个工作流在设计上即为 human-in-the-loop：
 
@@ -48,25 +52,21 @@ SOMA 是一个以临床医生为中心的胸部 CT 医学 AI 平台。它将一�
 
 ## 📸 截图
 
-<p align="center"><img src="docs/product-shot.png" alt="SOMA interactive segmentation workspace" width="100%"></p>
+<p align="center"><img src="docs/app-segmentation.png" alt="SOMA — 分割工作区" width="100%"></p>
 
-<p align="center"><sub>分割工作区：point 与 box 提示在毫秒级返回病灶掩膜，并为每个掩膜报告 IoU（真实模型输出）。</sub></p>
+<p align="center"><sub>分割工作区 —— point/box 工具、病人与临床上下文，以及驱动多智能体报告流水线的 AI 助手。</sub></p>
 
-<p align="center"><img src="docs/specialists.png" alt="SOMA multi-agent reporting pipeline" width="100%"></p>
+<p align="center"><img src="docs/app-reports.png" alt="SOMA — 报告管理" width="100%"></p>
 
-<p align="center"><sub>四个专家智能体位于 Orchestrator 状态机之后，外加一个仅在修改时运行的 Alignment router —— 每个病例都由医生推动越过 Draft Ready。</sub></p>
+<p align="center"><sub>报告管理 —— 每个病例都在 Draft Ready → Revising → Approved 之间流转，带证据引用的发现与病人上下文。</sub></p>
 
-## 📊 工程实现与实测结果
+<p align="center"><img src="docs/app-patients.png" alt="SOMA — 病人工作区" width="100%"></p>
 
-<p align="center"><img src="docs/numbers.png" alt="SOMA measured results" width="100%"></p>
+<p align="center"><sub>病人工作区。线上体验：<a href="https://app.soma-ai.org">app.soma-ai.org</a> —— 公开 demo，合成数据。</sub></p>
 
-<p align="center"><sub>这些数字在生产路径上实测得到，而非估算：441 条指南条目、768 维嵌入、26–55 ms 检索、IoU 约 0.92、270 ms 意图路由、100% 的 mode/intent 准确率。</sub></p>
+## 📊 工程深挖 —— 把 API 卷赢
 
-修改回路曾是瓶颈：每一条医生消息在触发任何操作前，都必须先被理解 —— 是修改、重新分析，还是单纯的提问，以及归属于哪个智能体。默认的 GPT-4o-mini 路由既要计费又不够准，因此团队在单张 RTX 4090 上用 5,000 条样本微调了 Qwen3-1.7B，直接取代了这次 API 调用。
-
-<p align="center"><img src="docs/qwen.png" alt="Fine-tuned Qwen3-1.7B intent router" width="100%"></p>
-
-<p align="center"><sub>这个自托管的意图路由为每条 chat 消息判定 mode、目标智能体与 scope。对比 GPT-4o-mini：mode 准确率 100% 对约 95%，intent 准确率 100% 对约 85%，延迟 270 ms 对约 500 ms。</sub></p>
+修改回路曾是瓶颈：每一条医生消息在触发任何操作前，都必须先被理解 —— 是修改、重新分析，还是单纯的提问，以及归属于哪个智能体。默认的 GPT-4o-mini 路由既要计费又不够准，于是团队在单张 RTX 4090 上用 5,000 条样本微调了 **Qwen3-1.7B**，直接取代了这次 API 调用 —— **270 ms**、在团队评测上达到 **100% 的 mode/intent 准确率**（GPT-4o-mini 约 500 ms、约 95% / 85%）。
 
 ## 👤 我的角色
 
