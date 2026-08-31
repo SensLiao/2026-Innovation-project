@@ -78,7 +78,8 @@ SOMA 是一个以临床医生为中心的胸部 CT 医学 AI 平台。它把一�
 | `approved` | 医生已签署 | `completed`、`revising` |
 | `completed` | 终态 | — |
 
-<!-- image-slot: docs/state-machine.png — 六状态病例机与合法迁移，以及“一个意图→只重跑一个智能体”的修改回路 -->
+<p align="center"><img src="docs/state-machine.png" alt="SOMA 病例状态机：六个状态及其合法迁移，旁边是修改路由器——一条医生消息只路由到一个智能体" width="100%"></p>
+<p align="center"><sub>病例状态机与修改路由器——一条消息解析为一个意图，一个意图只重跑一个智能体。</sub></p>
 
 **智能体。** 每一个都是独立模块，有自己的系统提示词与模型档位：
 

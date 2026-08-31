@@ -78,7 +78,8 @@ The system underneath is a thin path from browser to orchestrator. The React SPA
 | `approved` | The doctor signed off | `completed`, `revising` |
 | `completed` | Terminal | — |
 
-<!-- image-slot: docs/state-machine.png — the six-state case machine with legal transitions, and the revision loop showing one intent routing to exactly one agent -->
+<p align="center"><img src="docs/state-machine.png" alt="SOMA case state machine: six states with their legal transitions, beside a revision router where one doctor message routes to exactly one agent" width="100%"></p>
+<p align="center"><sub>The case state machine and the revision router — one message resolves to one intent, and one intent re-runs one agent.</sub></p>
 
 **The agents.** Each is a separate module with its own system prompt and model tier:
 
